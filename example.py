@@ -125,7 +125,7 @@ def example_AdaANN():
         f = torch.zeros(len(params))
 
         for i in range(len(params)):
-            y_out = targetPosterior(params[i], c)
+            y_out = targetPosterior(params[i], d)
             val = torch.linalg.norm(y_out - d[:, 10])
             f[i] = -val ** 2 / 2
 
