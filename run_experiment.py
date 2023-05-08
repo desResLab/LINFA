@@ -3,6 +3,7 @@ import torch
 import numpy as np
 import scipy as sp
 from maf import MAF, RealNVP
+
 # from TrivialModels import circuitTrivial
 # from circuitModels import rcModel, rcrModel
 # from highdimModels import Highdim
@@ -31,6 +32,22 @@ class experiment:
         self.log_interval = 10  # int: How often to show loss stat                  default 10
         self.calibrate_interval = 300  # int: How often to update surrogate model          default 1000
         self.budget = 216  # int: Total number of true model evaluation
+
+        self.use_surrogate = False  # boo: decide if the surrogate model is used
+        self.optimizer = 'Adam'  # str: type of optimizer used
+        self.lr_scheduler = 'StepLR'  # str: type of lr scheduler used
+        self.lr_step = 1000  # int: number of steps for lr step scheduler
+        self.tol = 0.001  # float: tolerance for AdaAnn scheduler
+        self.t0 = 0.01  # float: initial inverse temperature value
+        self.N = 100  # int: number of sample points during annealing
+        self.N_1 = 1000  # int: number of sample points at t=1
+        self.T_0 = 500  # int: number of parameter updates at initial t0
+        self.T = 5  # int: number of parameter updates during annealing
+        self.T_1 = 5001  # int: number of parameter updates at t=1
+        self.M = 1000  # int: number of sample points used to update temperature
+        self.annealing = True  # boo: decide if annealing is used
+        self.scheduler = 'AdaAnn'  # str: type of annealing scheduler used
+        self.linear_step = 0.0001  # float: step size for constant annealing scheduler
 
         self.output_dir = './results/' + self.name
         self.results_file = 'results.txt'
@@ -65,19 +82,66 @@ class experiment:
             raise ValueError('Unrecognized model.')
 
         nf = nf.to(self.device)
-        optimizer = torch.optim.RMSprop(nf.parameters(), lr=self.lr)
-        scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, self.lr_decay)
+        if self.optimizer == 'Adam':
+            optimizer = torch.optim.Adam(np.parameters(), lr=self.lr)
+        elif self.optimizer == 'RMSprop':
+            optimizer = torch.optim.RMSprop(nf.parameters(), lr=self.lr)
+        else:
+            raise ValueError('Unrecognized optimizer.')
+
+        if self.lr_scheduler == 'StepLR':
+            scheduler = torch.optim.lr_scheduer.StepLR(optimizer, self.lr_step)
+        elif self.lr_scheduler == 'ExponentialLR':
+            scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, self.lr_decay)
+        else:
+            raise ValueError('Unrecognized learning rate scheduler.')
+        # optimizer = torch.optim.RMSprop(nf.parameters(), lr=self.lr)
+        # scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, self.lr_decay)
 
         loglist = []
         for i in range(self.n_iter):
             scheduler.step()
-            self.train_NoFAS(nf, optimizer, i, loglist, sampling=True, update=True)
+            self.train(nf, optimizer, i, loglist, sampling=True, update=True)
+
+        if self.annealing:
+            tvals = []
+            t = self.t0
+            dt = 0
+            while t < 1:
+                t = min(1, t + dt)
+                tvals = np.concatenate([tvals, np.array([t])])
+                self.n_iter = self.T
+                self.batch_size = self.N
+                if t == self.t0:
+                    self.n_iter = self.T_0
+                if t == 1:
+                    self.batch_size = self.N_1
+                    self.n_iter = self.T_1
+                loglist = []
+                for i in range(self.n_iter):
+                    self.train(nf, optimizer, i, loglist, sampling=True, update=self.use_surrogate, t=t)
+                    if t == 1:
+                        scheduler.step()
+
+                if self.scheduler == 'AdaAnn':
+                    z0 = nf.base_dist.sample([self.M])
+                    zk, log_jacobians = nf(z0)
+                    log_qk = self.model_logdensity.den_t(zk)
+                    dt = self.tol / torch.sqrt(log_qk.var())
+                    dt = dt.detach().numpy()
+
+                if self.scheduler == 'Linear':
+                    dt = self.linear_step
+        else:
+            loglist = []
+            for i in range(self.n_iter):
+                self.train(nf, optimizer, i, loglist, sampling=True, update=self.use_surrogate)
 
         # rt.surrogate.surrogate_save() # Used for saving the resulting surrogate model
         np.savetxt(self.output_dir + '/grid_trace.txt', self.surrogate.grid_record.detach().numpy())
         np.savetxt(self.output_dir + '/' + self.log_file, np.array(loglist), newline="\n")
 
-    def train_NoFAS(self, nf, optimizer, iteration, log, sampling=True, update=True):
+    def train(self, nf, optimizer, iteration, log, sampling=True, update=True, t=1):
         nf.train()
         x0 = nf.base_dist.sample([self.batch_size])
         xk, sum_log_abs_det_jacobians = nf(x0)
@@ -103,7 +167,7 @@ class experiment:
             self.surrogate.update(xk0, max_iters=6000)
 
         # Free energy bound
-        loss = (- torch.sum(sum_log_abs_det_jacobians, 1) - self.model_logdensity(xk)).mean()
+        loss = (- torch.sum(sum_log_abs_det_jacobians, 1) - t * self.model_logdensity(xk)).mean()
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
@@ -111,5 +175,3 @@ class experiment:
         if iteration % self.log_interval == 0:
             print("{}\t{}".format(iteration, loss.item()))
             log.append([iteration, loss.item()] + list(torch.std(xk, dim=0).detach().numpy()))
-
-
