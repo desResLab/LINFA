@@ -1,25 +1,32 @@
-# A Package
+## LINFA
 
-Variational Inference with NoFAS: Normalizing Flow with Adaptive Surrogate for Computationally Expensive Models
+LINFA is a for library for variational inference with normalizing flow and adaptive annealing. It combines the 
 
-NoFAS estimates the posterior distribution of hidden variables for a computationally expensive model using normalizing 
-flow with an adaptive surrogate. In particular, masked autoregressive flow (MAF) and RealNVP are used in the code, which are 
+In particular, masked autoregressive flow (MAF) and RealNVP are used in the code, which are 
 implemented by [Kamen Bliznashki](https://github.com/kamenbliznashki/normalizing_flows). 
-The code includes four numerical experiments: closed form mapping, RC, RCR, and non-isomorphic Sobol function.
-RC and RCR are implemented by [the Schiavazzi Lab at the University of Notre Dame](https://github.com/desResLab/supplMatHarrod20).
+
+
+### Papers
+The methodology and the numerical examples are discussed in two papers: 
+- Y. Wang, F. Liu and D.E. Schiavazzi, *[Variational Inference with NoFAS: Normalizing Flow with Adaptive Surrogate for Computationally Expensive Models](https://www.sciencedirect.com/science/article/abs/pii/S0021999122005162)*
+- E.R. Cobian, J.D. Hauenstein, F. Liu and D.E. Schiavazzi, *[AdaAnn: Adaptive Annealing Scheduler for Probability Density Approximation](https://www.dl.begellhouse.com/journals/52034eb04b657aea,796f39cb1acf1296,6f85fe1149ff41d9.html?sgstd=1)*
 
 Need AdaANN
-## Paper
-The methodology and the numerical examples are discussed in the paper:
-Y. Wang, F. Liu and D.E. Schiavazzi, *[Variational Inference with NoFAS: Normalizing Flow with Adaptive Surrogate for Computationally Expensive Models](https://arxiv.org/pdf/2108.12657.pdf)*
 
-Need AdaANN
-## Requirements:
+### Requirements:
 * PyTorch 1.4.0
 * Numpy 1.19.2
 * Scipy 1.6.1
 
-## Usage
+### Available numerical benchmarks
+
+The code includes four numerical experiments: closed form mapping, RC, RCR, and non-isomorphic Sobol function.
+RC and RCR are implemented by [the Schiavazzi Lab at the University of Notre Dame](https://github.com/desResLab/supplMatHarrod20).
+
+
+### Usage
+
+
 
 ## Recommended Hyperparameters of NoFAS
 All experiments used RMSprop as the optimizer equipped exponential decay scheduler with decay factor 0.9999. All normalizing flows use ReLU activations and 
