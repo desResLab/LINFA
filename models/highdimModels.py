@@ -1,7 +1,7 @@
 import sys, os
 import numpy as np
 import torch
-from FNN_surrogate_nested import Surrogate
+
 torch.set_default_tensor_type(torch.DoubleTensor)
 
 
@@ -16,9 +16,8 @@ class Highdim:
         self.defOut = self.solve_t(self.defParam)
         self.stdRatio = 0.01
         self.data = None
-        self.surrogate = Surrogate("highdim", lambda x: self.solve_t(self.transform(x)), self.input_num, self.output_num,
-                                   torch.Tensor([[-3, 3], [-3, 3], [-3, 3], [-3, 3], [-3, 3]]), 20)
-
+        # self.surrogate = Surrogate("highdim", lambda x: self.solve_t(self.transform(x)), self.input_num, self.output_num,
+        #                            torch.Tensor([[-3, 3], [-3, 3], [-3, 3], [-3, 3], [-3, 3]]), 20)
 
     def genDataFile(self, dataSize=50, dataFileName="source/data/data_highdim.txt", store=True):
         def_out = self.defOut[0]
@@ -36,7 +35,8 @@ class Highdim:
         Data = torch.tensor(self.data)
         ll1 = -0.5 * np.prod(self.data.shape) * np.log(2.0 * np.pi)  # a number
         ll2 = (-0.5 * self.data.shape[1] * torch.log(torch.prod(stds))).item()  # a number
-        ll3 = - 0.5 * torch.sum(torch.sum((modelOut.unsqueeze(0) - Data.t().unsqueeze(1)) ** 2, dim=0) / stds[0] ** 2, dim=1, keepdim=True)
+        ll3 = - 0.5 * torch.sum(torch.sum((modelOut.unsqueeze(0) - Data.t().unsqueeze(1)) ** 2, dim=0) / stds[0] ** 2,
+                                dim=1, keepdim=True)
         negLL = -(ll1 + ll2 + ll3)
         return negLL
 
@@ -51,6 +51,7 @@ class Highdim:
         else:
             modelOut = self.solve_t(self.transform(x))
         return - self.evalNegLL_t(modelOut).reshape(batch_size, 1) + adjust
+
     def rev_solve_t(self, y):
         x = torch.Tensor([[0]] * y.size(0))
         x = torch.cat([y[:, 3:4], x], dim=1)

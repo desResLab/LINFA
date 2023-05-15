@@ -1,16 +1,15 @@
 import numpy as np
 import torch
-from FNN_surrogate_nested import Surrogate
 
 torch.set_default_tensor_type(torch.DoubleTensor)
-class circuitTrivial:
+class Trivial:
     def __init__(self):
         # Init parameters
         self.defParam = torch.Tensor([[3.0, 5.0]])
         self.RM = torch.Tensor([[1.0, 1.0],
                                 [1.0, -1.0]])
         self.stdRatio = 0.05
-        self.surrogate = Surrogate("Trivial", self.solve_t, 2, 2, [[0, 6], [0, 6]], 20)
+        # self.surrogate = Surrogate("Trivial", self.solve_t, 2, 2, [[0, 6], [0, 6]], 20)
         self.data = None
 
     def genDataFile(self, dataSize=50, dataFileName="source/data/data_trivial.txt", store=True):

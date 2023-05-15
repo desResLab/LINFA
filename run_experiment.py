@@ -29,11 +29,12 @@ class experiment:
         self.n_iter = 25001  # int: Number of iterations                         default 25001
         self.lr = 0.003  # float: Learning rate                              default 0.003
         self.lr_decay = 0.9999  # float: Learning rate decay                        default 0.9999
+
+        self.run_nofas = True  # boo: decide if nofas is used
         self.log_interval = 10  # int: How often to show loss stat                  default 10
         self.calibrate_interval = 300  # int: How often to update surrogate model          default 1000
         self.budget = 216  # int: Total number of true model evaluation
 
-        self.use_surrogate = False  # boo: decide if the surrogate model is used
         self.optimizer = 'Adam'  # str: type of optimizer used
         self.lr_scheduler = 'StepLR'  # str: type of lr scheduler used
         self.lr_step = 1000  # int: number of steps for lr step scheduler
@@ -63,6 +64,10 @@ class experiment:
         self.surrogate = None
 
     def run(self):
+        if self.run_nofas:
+            if not os.path.isdir(self.name + ".sur") or not os.path.isdir(self.name + ".npz"):
+                print("Abort: NoFAS enabled, without surrogate files. \nPlease include the following surrogate files in root directory.\n{}.sur and {}.npz".format(self.name, self.name))
+                exit(0)
         # setup file ops
         if not os.path.isdir(self.output_dir):
             os.makedirs(self.output_dir)
@@ -83,25 +88,18 @@ class experiment:
 
         nf = nf.to(self.device)
         if self.optimizer == 'Adam':
-            optimizer = torch.optim.Adam(np.parameters(), lr=self.lr)
+            optimizer = torch.optim.Adam(nf.parameters(), lr=self.lr)
         elif self.optimizer == 'RMSprop':
             optimizer = torch.optim.RMSprop(nf.parameters(), lr=self.lr)
         else:
             raise ValueError('Unrecognized optimizer.')
 
         if self.lr_scheduler == 'StepLR':
-            scheduler = torch.optim.lr_scheduer.StepLR(optimizer, self.lr_step)
+            scheduler = torch.optim.lr_scheduler.StepLR(optimizer, self.lr_step)
         elif self.lr_scheduler == 'ExponentialLR':
             scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, self.lr_decay)
         else:
             raise ValueError('Unrecognized learning rate scheduler.')
-        # optimizer = torch.optim.RMSprop(nf.parameters(), lr=self.lr)
-        # scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, self.lr_decay)
-
-        loglist = []
-        for i in range(self.n_iter):
-            scheduler.step()
-            self.train(nf, optimizer, i, loglist, sampling=True, update=True)
 
         if self.annealing:
             tvals = []
@@ -118,15 +116,15 @@ class experiment:
                     self.batch_size = self.N_1
                     self.n_iter = self.T_1
                 loglist = []
-                for i in range(self.n_iter):
-                    self.train(nf, optimizer, i, loglist, sampling=True, update=self.use_surrogate, t=t)
+                for i in range(1, self.n_iter + 1):
+                    self.train(nf, optimizer, i, loglist, sampling=True, update=self.run_nofas, t=t)
                     if t == 1:
                         scheduler.step()
 
                 if self.scheduler == 'AdaAnn':
                     z0 = nf.base_dist.sample([self.M])
                     zk, log_jacobians = nf(z0)
-                    log_qk = self.model_logdensity.den_t(zk)
+                    log_qk = self.model_logdensity(zk)
                     dt = self.tol / torch.sqrt(log_qk.var())
                     dt = dt.detach().numpy()
 
@@ -134,8 +132,9 @@ class experiment:
                     dt = self.linear_step
         else:
             loglist = []
-            for i in range(self.n_iter):
-                self.train(nf, optimizer, i, loglist, sampling=True, update=self.use_surrogate)
+            for i in range(1, self.n_iter+1):
+                scheduler.step()
+                self.train(nf, optimizer, i, loglist, sampling=True, update=True)
 
         # rt.surrogate.surrogate_save() # Used for saving the resulting surrogate model
         np.savetxt(self.output_dir + '/grid_trace.txt', self.surrogate.grid_record.detach().numpy())
