@@ -102,6 +102,8 @@ class experiment:
             raise ValueError('Unrecognized learning rate scheduler.')
 
         if self.annealing:
+            i = 1
+            prev_i = 1
             tvals = []
             t = self.t0
             dt = 0
@@ -116,10 +118,12 @@ class experiment:
                     self.batch_size = self.N_1
                     self.n_iter = self.T_1
                 loglist = []
-                for i in range(1, self.n_iter + 1):
+                while i < prev_i + self.n_iter:
                     self.train(nf, optimizer, i, loglist, sampling=True, update=self.run_nofas, t=t)
                     if t == 1:
                         scheduler.step()
+                    i += 1
+                prev_i = i
 
                 if self.scheduler == 'AdaAnn':
                     z0 = nf.base_dist.sample([self.M])
