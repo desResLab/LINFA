@@ -8,13 +8,27 @@ torch.set_default_tensor_type(torch.DoubleTensor)
 
 
 class FNN(nn.Module):
+    """Fully Connected Neural Network"""
+
     def __init__(self, input_size, output_size):
+        """
+        Args:
+            input_size: Input size for FNN
+            output_size: Output size for FNN
+        """
         super().__init__()
         self.fc1 = nn.Linear(input_size, 64)
         self.fc2 = nn.Linear(64, 32)
         self.fc3 = nn.Linear(32, output_size)
 
     def forward(self, x):
+        """
+        Args:
+            x: torch.Tensor [num_samples, input_size], assumed to be a batch.
+
+        Returns:
+            torch.Tensor, assumed to be a batch.
+        """
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
         # x = F.relu(self.fc3(x))
@@ -23,7 +37,18 @@ class FNN(nn.Module):
 
 
 class Surrogate:
-    def __init__(self, model_name, model_func, input_size, output_size, limits=None, memory_len=20):
+    """Surrogate Model that Enables NoFAS"""
+    def __init__(self, model_name, model_func, input_size, output_size, limits=None, memory_len=20, surrogate=None):
+        """
+        Args:
+            model_name: string, name of the true model to be approximated
+            model_func: function, with only one input of torch.Tensor
+            input_size: int, input dimension of true model.
+            output_size: int, output dimension of true model.
+            limits: list or tuple, bounds for all inputs, in format of [[low_0, high_0], [low_1, high_1], ... ]
+            memory_len: int, the maximal number of batches stored in buffer. Default: 20
+            surrogate: None or torch.nn.Module class, the implementation of surrogate model used. Default: FNN
+        """
         self.input_size = input_size
         self.output_size = output_size
         self.model_name = model_name
@@ -35,7 +60,7 @@ class Surrogate:
         self.tsd = None
         self.limits = limits
         self.pre_grid = None
-        self.surrogate = FNN(input_size, output_size)
+        self.surrogate = FNN(input_size, output_size) if surrogate is None else surrogate
         self.beta_0 = 0.5
         self.beta_1 = 0.1
 
