@@ -21,6 +21,11 @@ jobs:
         echo 'Installing pip...'
         python -m pip install build --user
 
+    - name: Install prerequisites
+      run: |
+        echo 'Installing prerequisites...'
+        pip install -r requirements.txt
+
     - name: Build a binary wheel and a source tarball
       run: |
         echo 'Building python library...'
