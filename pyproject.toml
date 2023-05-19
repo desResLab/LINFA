@@ -1,0 +1,35 @@
+# pyproject.toml
+
+[build-system]
+requires      = ["setuptools>=61.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "linfa_vi"
+version = "0.0.0"
+description = "A Python library for inference with normalizing flow and annealing"
+readme = "README.md"
+authors = [{ name = "resDesLab ", email = "" }]
+license = { file = "LICENSE" }
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+]
+keywords = ["variational inference", "normalizig flow", "adaptive annealing", "physics-based modeling"]
+dependencies = [
+    "pytorch==1.4.0",
+    "numpy==1.19.2",
+    "scipy==1.6.1",
+    'tomli; python_version < "3.11"',    
+]
+requires-python = ">=3.9"
+
+[project.optional-dependencies]
+dev = ["black", "bumpver", "isort", "pip-tools", "pytest"]
+
+[project.urls]
+Homepage = "https://github.com/realpython/reader"
+
+# [project.scripts]
+# realpython = "reader.__main__:main"
