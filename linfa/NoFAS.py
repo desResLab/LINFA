@@ -13,8 +13,8 @@ class FNN(nn.Module):
     def __init__(self, input_size, output_size):
         """
         Args:
-            input_size: Input size for FNN
-            output_size: Output size for FNN
+            input_size (int): Input size for FNN
+            output_size (int): Output size for FNN
         """
         super().__init__()
         self.fc1 = nn.Linear(input_size, 64)
@@ -24,7 +24,7 @@ class FNN(nn.Module):
     def forward(self, x):
         """
         Args:
-            x: torch.Tensor. [num_samples, input_size], assumed to be a batch.
+            x (torch.Tensor): [num_samples, input_size], assumed to be a batch.
 
         Returns:
             torch.Tensor. Assumed to be a batch.
@@ -37,18 +37,19 @@ class FNN(nn.Module):
 
 
 class Surrogate:
-    """Surrogate Model that Enables NoFAS"""
+    """Class to create surrogate models for inference with NoFAS
+
+       Args:
+            model_name (string): name of the true model to be approximated
+            model_func (function): with only one input of torch.Tensor
+            input_size (int): input dimension of true model.
+            output_size (int): output dimension of true model.
+            limits (list or lists): bounds for all inputs, in format of [[low_0, high_0], [low_1, high_1], ... ]
+            memory_len (int): the maximal number of batches stored in buffer. Default: 20
+            surrogate (None or torch.nn.Module): the implementation of surrogate model used. Default: FNN
+
+    """
     def __init__(self, model_name, model_func, input_size, output_size, limits=None, memory_len=20, surrogate=None):
-        """
-        Args:
-            model_name: string, name of the true model to be approximated
-            model_func: function, with only one input of torch.Tensor
-            input_size: int, input dimension of true model.
-            output_size: int, output dimension of true model.
-            limits: list or tuple, bounds for all inputs, in format of [[low_0, high_0], [low_1, high_1], ... ]
-            memory_len: int, the maximal number of batches stored in buffer. Default: 20
-            surrogate: None or torch.nn.Module class, the implementation of surrogate model used. Default: FNN
-        """
         self.input_size = input_size
         self.output_size = output_size
         self.model_name = model_name
@@ -72,17 +73,16 @@ class Surrogate:
 
     @property
     def limits(self):
+        """Retrieves the limits of all inputs
+        """
         return self.__limits
 
     @limits.setter
     def limits(self, limits):
-        """
-        Set the limits of all inputs
+        """Sets the limits of all inputs
+        
         Args:
-            limits: list or tuple. [[low_0, high_0], [low_1, high_1], ...]
-
-        Returns:
-            None
+            limits (list or tuple): Lists lower and upper bound in the format *[[low_0, high_0], [low_1, high_1], ...]*
 
         """
         limits = torch.Tensor(limits).tolist()
@@ -103,10 +103,12 @@ class Surrogate:
 
     @pre_grid.setter
     def pre_grid(self, pre_grid):
-        """
-        Assign the pregrid of surrogate model. If nofas is not enabled, this serves as the whole training grid.
+        """Assign the pregrid of surrogate model. 
+
+        f nofas is not enabled, this serves as the whole training grid.
+        
         Args:
-            pre_grid: None or torch.Tensor, [data_num, feature_dim]. If None, will try to search for files npz containing this info.
+            pre_grid (None or torch.Tensor): Specifies a matrix of model inputs with size [data_num, feature_dim]. If None, will try to search for *npz* containing this info.
 
         Returns:
             None
@@ -131,15 +133,15 @@ class Surrogate:
             self.grid_record = self.__pre_grid.clone()
 
     def gen_grid(self, input_limits=None, gridnum=4, store=True):
-        """
-        Generate pre-grid.
+        """Generates a pre-grid.
+        
         Args:
-            input_limits: None or list[list]. If None, use self.limits. If list[list], rewrite self.limits and use it
-            gridnum: int. the number of grid points per dimension.
-            store: boolean. Store the pre-grid or not in self.pre_grid.
+            input_limits (None or list[list]): If None, use self.limits. If list[list], rewrite self.limits and use it.
+            gridnum (int): Contains the number of grid points per dimension.
+            store (bool): Flag indicating the pre-grid is store in self.pre_grid. If False then self.pre_grid is None.
 
         Returns:
-            torch.Tensor. [gridnum ** dim, dim]
+            torch.Tensor: Input values for the full tensor grid in *dim* dimensions stored in a matrix [gridnum ** dim, dim].
         """
         meshpoints = []
         if input_limits is not None:
@@ -156,18 +158,19 @@ class Surrogate:
         return grid
 
     def surrogate_save(self):
-        """
-        Save surrogate model to [self.name].sur and [self.name].npz
+        """Save surrogate model to [self.name].sur and [self.name].npz
+        
         Returns:
             None
+
         """
         torch.save(self.surrogate.state_dict(), self.model_name + '.sur')
         np.savez(self.model_name, limits=self.limits, pre_grid=self.pre_grid,
                  grid_record=self.grid_record)
 
     def surrogate_load(self):
-        """
-        Load surrogate model from [self.name].sur and [self.name].npz
+        """Load surrogate model from [self.name].sur and [self.name].npz
+        
         Returns:
             None
         """
@@ -181,15 +184,18 @@ class Surrogate:
                 print("Warning: [" + key + "] is not a surrogate variables.")
 
     def pre_train(self, max_iters, lr, lr_exp, record_interval, store=True, reg=False):
-        """
-        Train surrogate model with pre-grid. Optimizer is RMSprop; Exponential Scheduler enabled.
+        """Train surrogate model with pre-grid.
+
+         Training is performed with the RMSprop optimizer and with an exponential learning rate scheduler.
+
         Args:
-            max_iters: int. The maximal number of iterations.
-            lr: double. Learning rate for RMSprop.
-            lr_exp: double. Decay factor for exponential scheduler.
-            record_interval: int. The number of iterations to print loss info
-            store: boolean. If true, self.surrogate_save() will be called.
-            reg: boolean. If true, L1 regularization will be used with parameter 0.0001
+            max_iters (int): The maximal number of iterations.
+            lr (double): Learning rate for RMSprop.
+            lr_exp (double): Decay factor for exponential scheduler.
+            record_interval (int): The number of iterations to print loss info
+            store (bool): If true, self.surrogate_save() will be called.
+            reg (bool): If true, L1 regularization will be used with parameter 0.0001
+
         Returns:
             None
         """
@@ -220,17 +226,19 @@ class Surrogate:
             self.surrogate_save()
 
     def update(self, x, max_iters=10000, lr=0.01, lr_exp=0.999, record_interval=500, store=False, tol=1e-5, reg=False):
-        """
-        Model calibration for NoFAS. Optimizer is RMSprop, Scheduler is exponential.
+        """Model calibration for NoFAS.
+        
+        Fine tuning is performed with the RMSprop optimizer and an exponential learning rate scheduler.
+        
         Args:
-            x: torch.Tensor. Input feature that needs true model output.
-            max_iters: int. Maximal number of iteration. Default 10000.
-            lr: double. Learning rate for RMSprop. Default 0.01
-            lr_exp: double. Decay factor of exponential scheduler.
-            record_interval: int. The number of iterations to print loss information.
-            store: boolean. If ture, self.surrogate_save() will be called.
-            tol: double. Optimization will be terminated if loss < tol ** 2
-            reg: boolean. If ture, L1 regularizaiton will be used with parameter 0.1
+            x (torch.Tensor): Input feature that needs true model output.
+            max_iters (int): Maximal number of iteration. Default 10000.
+            lr (double): Learning rate for RMSprop. Default 0.01
+            lr_exp (double): Decay factor of exponential scheduler.
+            record_interval (int): The number of iterations to print loss information.
+            store (bool): If ture, self.surrogate_save() will be called.
+            tol (double): Optimization will be terminated if loss < tol ** 2
+            reg (bool): If ture, L1 regularizaiton will be used with parameter 0.1
 
         Returns:
             None
@@ -278,12 +286,13 @@ class Surrogate:
             self.surrogate_save()
 
     def forward(self, x):
-        """
-        forward function of surrogate.
+        """Function to evaluate the surrogate
+        
         Args:
-            x: torch.Tensor. [data_num, feature_dim]
+            x (torch.Tensor): Contains a matrix of model inputs in the form [data_num, feature_dim]
 
         Returns:
+            COMPLETE!!!
 
         """
         return self.surrogate((x - self.m) / self.sd) * self.tsd + self.tm
