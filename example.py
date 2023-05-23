@@ -5,7 +5,7 @@ import random
 import numpy as np
 import os
 
-def trivial_example(run_nofas=True, run_adaann=False):
+def trivial_example():
     from models.TrivialModels import Trivial
     exp = experiment()
     exp.name = "Trivial"
@@ -26,8 +26,8 @@ def trivial_example(run_nofas=True, run_adaann=False):
     exp.lr_decay = 0.9999  # float: Learning rate decay                        default 0.9999
     exp.log_interval = 10  # int: How often to show loss stat                  default 10
 
-    exp.run_nofas = run_nofas
-    exp.annealing = run_adaann
+    exp.run_nofas = True
+    exp.annealing = False
     exp.calibrate_interval = 1000  # int: How often to update surrogate model          default 1000
     exp.budget = 64  # int: Total number of true model evaluation
 
@@ -73,7 +73,7 @@ def trivial_example(run_nofas=True, run_adaann=False):
     exp.run()
 
 
-def highdim_example(run_nofas=True, run_adaann=False):
+def highdim_example():
     from models.highdimModels import Highdim
     exp = experiment()
     exp.name = "Highdim"
@@ -94,8 +94,8 @@ def highdim_example(run_nofas=True, run_adaann=False):
     exp.lr_decay = 0.9999  # float: Learning rate decay                        default 0.9999
     exp.log_interval = 10  # int: How often to show loss stat                  default 10
 
-    exp.run_nofas = run_nofas
-    exp.annealing = run_adaann
+    exp.run_nofas = True
+    exp.annealing = False
     exp.calibrate_interval = 250  # int: How often to update surrogate model          default 1000
     exp.budget = 1023  # int: Total number of true model evaluation
 
@@ -136,7 +136,7 @@ def highdim_example(run_nofas=True, run_adaann=False):
     exp.run()
 
 
-def RC_example(run_nofas=True, run_adaann=False):
+def RC_example():
     from models.circuitModels import rcModel
     exp = experiment()
     exp.name = "RC"
@@ -157,8 +157,8 @@ def RC_example(run_nofas=True, run_adaann=False):
     exp.lr_decay = 0.9999  # float: Learning rate decay                        default 0.9999
     exp.log_interval = 10  # int: How often to show loss stat                  default 10
 
-    exp.run_nofas = run_nofas
-    exp.annealing = run_adaann
+    exp.run_nofas = True
+    exp.annealing = False
     exp.calibrate_interval = 1000  # int: How often to update surrogate model          default 1000
     exp.budget = 64  # int: Total number of true model evaluation
 
@@ -204,7 +204,7 @@ def RC_example(run_nofas=True, run_adaann=False):
     exp.run()
 
 
-def RCR_example(run_nofas=True, run_adaann=False):
+def RCR_example():
     from models.circuitModels import rcrModel
     exp = experiment()
     exp.name = "RCR"
@@ -225,8 +225,8 @@ def RCR_example(run_nofas=True, run_adaann=False):
     exp.lr_decay = 0.9999  # float: Learning rate decay                        default 0.9999
     exp.log_interval = 10  # int: How often to show loss stat                  default 10
 
-    exp.run_nofas = run_nofas
-    exp.annealing = run_adaann
+    exp.run_nofas = True
+    exp.annealing = False
     exp.calibrate_interval = 300  # int: How often to update surrogate model          default 1000
     exp.budget = 216  # int: Total number of true model evaluation
 
@@ -274,7 +274,7 @@ def RCR_example(run_nofas=True, run_adaann=False):
     exp.run()
 
 
-def AdaANN_example(run_nofas=False, run_adaann=True):
+def AdaANN_example():
     from run_experiment import experiment
     import torch
     import random
@@ -298,8 +298,8 @@ def AdaANN_example(run_nofas=False, run_adaann=True):
     exp.n_iter = 1000  # int: Number of iterations                         default 25001
     exp.lr = 0.001  # float: Learning rate                              default 0.003
     exp.log_interval = 10  # int: How often to show loss stat                  default 10
-    exp.run_nofas = run_nofas
-    exp.annealing = run_adaann
+    exp.run_nofas = False
+    exp.annealing = True
 
     exp.optimizer = 'Adam'  # str: type of optimizer used
     exp.lr_scheduler = 'StepLR'  # str: type of lr scheduler used
