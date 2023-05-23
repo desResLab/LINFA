@@ -22,6 +22,7 @@ class experiment:
         self.input_order = 'sequential'  # str: Input order for create_mask                  default 'sequential'
         self.batch_norm_order = True  # boo: Order to decide if batch_norm is used        default True
         self.sampling_interval = 200  # int: How often to sample from normalizing flow
+        self.store_nf_interval = 1000
 
         self.input_size = 3  # int: Dimensionality of input                      default 2
         self.batch_size = 500  # int: Number of samples generated                  default 100
@@ -63,9 +64,11 @@ class experiment:
         self.model_logdensity = None
         self.surrogate = None
 
+
+
     def run(self):
         if self.run_nofas:
-            if not os.path.isdir(self.name + ".sur") or not os.path.isdir(self.name + ".npz"):
+            if not os.path.exists(self.name + ".sur") or not os.path.exists(self.name + ".npz"):
                 print("Abort: NoFAS enabled, without surrogate files. \nPlease include the following surrogate files in root directory.\n{}.sur and {}.npz".format(self.name, self.name))
                 exit(0)
         # setup file ops
@@ -178,3 +181,6 @@ class experiment:
         if iteration % self.log_interval == 0:
             print("{}\t{}".format(iteration, loss.item()))
             log.append([iteration, loss.item()] + list(torch.std(xk, dim=0).detach().numpy()))
+
+        if self.store_nf_interval > 0 and iteration % self.store_nf_interval == 0:
+            torch.save(nf.state_dict(), self.output_dir + '/' + self.name + "_" + str(iteration) + ".nf")

@@ -49,8 +49,8 @@ def trivial_example():
     model.data = np.loadtxt('source/data/data_trivial.txt')
     exp.surrogate = Surrogate("Trivial", model.solve_t, 2, 2, [[0, 6], [0, 6]], 20)
     if exp.run_nofas:
-        if not os.path.isdir(exp.name + ".sur") or not os.path.isdir(exp.name + ".npz"):
-            print("Warning: Surrogate model files: {0}.npz and {0}.npz are note detected. ".format(exp.name))
+        if not os.path.exists(exp.name + ".sur") or not os.path.exists(exp.name + ".npz"):
+            print("Warning: Surrogate model files: {0}.npz and {0}.npz are not detected. ".format(exp.name))
             print("Training Surrogate ...")
             exp.surrogate.gen_grid(gridnum=4)
             exp.surrogate.pre_train(120000, 0.03, 0.9999, 500, store=True)
@@ -118,8 +118,8 @@ def highdim_example():
     exp.surrogate = Surrogate("highdim", lambda x: model.solve_t(model.transform(x)), model.input_num, model.output_num,
                               torch.Tensor([[-3, 3], [-3, 3], [-3, 3], [-3, 3], [-3, 3]]), 20)
     if exp.run_nofas:
-        if not os.path.isdir(exp.name + ".sur") or not os.path.isdir(exp.name + ".npz"):
-            print("Warning: Surrogate model files: {0}.npz and {0}.npz are note detected. ".format(exp.name))
+        if not os.path.exists(exp.name + ".sur") or not os.path.exists(exp.name + ".npz"):
+            print("Warning: Surrogate model files: {0}.npz and {0}.npz are not detected. ".format(exp.name))
             print("Training Surrogate ...")
             exp.surrogate.gen_grid(gridnum=4)
             exp.surrogate.pre_train(120000, 0.03, 0.9999, 500, store=True)
@@ -184,8 +184,8 @@ def RC_example():
     exp.surrogate = Surrogate("RC", lambda x: model.solve_t(model.transform(x)), exp.input_size, 3,
                               torch.Tensor([[-7, 7], [-7, 7]]), 20)
     if exp.run_nofas:
-        if not os.path.isdir(exp.name + ".sur") or not os.path.isdir(exp.name + ".npz"):
-            print("Warning: Surrogate model files: {0}.npz and {0}.npz are note detected. ".format(exp.name))
+        if not os.path.exists(exp.name + ".sur") or not os.path.exists(exp.name + ".npz"):
+            print("Warning: Surrogate model files: {0}.npz and {0}.npz are not detected. ".format(exp.name))
             print("Training Surrogate ...")
             exp.surrogate.gen_grid(gridnum=4)
             exp.surrogate.pre_train(120000, 0.03, 0.9999, 500, store=True)
@@ -252,8 +252,8 @@ def RCR_example():
     exp.surrogate = Surrogate("RCR", lambda x: model.solve_t(model.transform(x)), exp.input_size, 3,
                               torch.Tensor([[-7, 7], [-7, 7], [-7, 7]]), 20)
     if exp.run_nofas:
-        if not os.path.isdir(exp.name + ".sur") or not os.path.isdir(exp.name + ".npz"):
-            print("Warning: Surrogate model files: {0}.npz and {0}.npz are note detected. ".format(exp.name))
+        if not os.path.exists(exp.name + ".sur") or not os.path.exists(exp.name + ".npz"):
+            print("Warning: Surrogate model files: {0}.npz and {0}.npz are not detected. ".format(exp.name))
             print("Training Surrogate ...")
             exp.surrogate.gen_grid(gridnum=4)
             exp.surrogate.pre_train(120000, 0.03, 0.9999, 500, store=True)
@@ -350,8 +350,8 @@ def AdaANN_example():
 
 
 if __name__ == '__main__':
-    # trivial_example() # Checked
+    trivial_example() # Checked
     # highdim_example()
     # RC_example()
     # RCR_example()
-    AdaANN_example()
+    # AdaANN_example()
