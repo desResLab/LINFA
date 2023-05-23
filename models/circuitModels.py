@@ -66,7 +66,7 @@ class circuitModel():
         self.numOutputs = numOutputs
         self.parName = parName
 
-        self.stdRatio = 0.05
+        self.stdRatio = 0.01
         self.limits = limits
         self.mmHgToBarye = 1333.22
         self.defParam = defParam
