@@ -1,0 +1,4 @@
+dist/
+linfa_vi.egg-info/
+*.npz
+*.sur

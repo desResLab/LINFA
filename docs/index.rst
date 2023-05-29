@@ -10,7 +10,8 @@ Welcome to linfa's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-
+   content/linfa_background
+   content/modules
 
 Indices and tables
 ==================
