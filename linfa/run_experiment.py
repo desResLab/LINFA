@@ -29,7 +29,43 @@ torch.set_default_tensor_type(torch.DoubleTensor)
 #             elif func == "exp":
 #                 self.funcs.append(lambda x: torch.exp((x - a) / (b - a) * (np.log(d) - np.log(c)) + np.log(c)))
 #                 self.log_jacob.append(lambda x: (x - a) / (b - a) * (np.log(d) - np.log(c)) + np.log(c) + np.log(np.log(d) - np.log(c)) - np.log(b - a))
-
+#
+#     def forward(self, z):
+#         """
+#         from desired scale to original scale, evaluate original samples.
+#         Args:
+#             z: torch.Tensor. samples in desired scale.
+#
+#         Returns:
+#             torch.Tensor. samples in original scale.
+#         """
+#         if z.size(1) != self.n:
+#             raise ValueError("Inconsistent size. Got {}, should be {}".format(z.size(1), self.n))
+#         zi = torch.chunk(z, chunks=self.n, dim=1)
+#         x = []
+#         for zz, func in zip(zi, self.funcs):
+#             x.append(func(zz))
+#
+#         return torch.cat(x, dim=1)
+#
+#
+#     def compute_log_jacob_func(self, z):
+#         """
+#         from desired scale to original scale, compute log absolute determinant of Jacobian matrix.
+#         Args:
+#             z: torch.Tensor. samples in desired scale.
+#
+#         Returns:
+#             torch.Tensor. samples in original scale.
+#         """
+#         if z.size(1) != self.n:
+#             raise ValueError("Inconsistent size. Got {}, should be {}".format(z.size(1), self.n))
+#         zi = torch.chunk(z, chunks=self.n, dim=1)
+#         jacob_res = 0
+#         for zz, log_jacob_func in zip(zi, self.log_jacob):
+#             jacob_res += log_jacob_func(zz)
+#
+#         return jacob_res
 
 class experiment:
     def __init__(self):
