@@ -1,4 +1,5 @@
 dist/
 linfa_vi.egg-info/
+.idea/
 *.npz
 *.sur
