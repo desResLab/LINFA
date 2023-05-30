@@ -1,3 +1,0 @@
-LINFA Documentation 
-*******************
-
