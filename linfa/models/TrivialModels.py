@@ -4,7 +4,7 @@ import torch
 torch.set_default_tensor_type(torch.DoubleTensor)
 
 class Trivial:
-    def __init__(self,transform):
+    def __init__(self):
         # Init parameters
         self.defParam = torch.Tensor([[3.0, 5.0]])
         self.RM = torch.Tensor([[1.0, 1.0],
@@ -12,7 +12,6 @@ class Trivial:
         self.stdRatio = 0.05
         # self.surrogate = Surrogate("Trivial", self.solve_t, 2, 2, [[0, 6], [0, 6]], 20)
         self.data = None
-        self.transform = transform
 
     def genDataFile(self, dataSize=50, dataFileName="source/data/data_trivial.txt", store=True):
         def_out = self.solve_t(self.defParam)[0]
@@ -23,8 +22,7 @@ class Trivial:
         return self.data
 
     def solve_t(self, params):
-        params_norm = self.transform(params)
-        z1, z2 = torch.chunk(params_norm, chunks=2, dim=1)
+        z1, z2 = torch.chunk(params, chunks=2, dim=1)
         x = torch.cat((z1 ** 3 / 10, torch.exp(z2 / 3)), 1)
         return torch.matmul(x, self.RM)
 

@@ -5,6 +5,7 @@ from linfa.nofas import Surrogate
 import torch
 import random
 import numpy as np
+import math
 import os
 
 class linfa_test_suite(unittest.TestCase):
@@ -19,7 +20,7 @@ class linfa_test_suite(unittest.TestCase):
         from linfa.models.TrivialModels import Trivial
 
         exp = experiment()
-        exp.name = "Trivial"
+        exp.name = "trivial"
         exp.flow_type = 'realnvp'  # str: Type of flow                                 default 'realnvp'
         exp.n_blocks = 5  # int: Number of layers                             default 5
         exp.hidden_size = 100  # int: Hidden layer size for MADE in each layer     default 100
@@ -62,13 +63,13 @@ class linfa_test_suite(unittest.TestCase):
         trsf = Transformation(trsf_info)
 
         # Define model
-        model = Trivial(trsf)
+        model = Trivial()
 
         # Get data
         model.data = np.loadtxt('../resource/data/data_trivial.txt')
 
         # Define surrogate
-        exp.surrogate = Surrogate("Trivial", model.solve_t, 2, 2, [[0, 6], [0, 6]], 20)
+        exp.surrogate = Surrogate(exp.name, model.solve_t, 2, 2, [[0, 6], [0, 6]], 20)
         if exp.run_nofas:
             if not os.path.isfile(exp.name + ".sur") or not os.path.isfile(exp.name + ".npz"):
                 print("Warning: Surrogate model files: {0}.npz and {0}.npz could not be found. ".format(exp.name))
@@ -79,10 +80,14 @@ class linfa_test_suite(unittest.TestCase):
         exp.surrogate.surrogate_load()
 
         # Define log density
-        def log_density(x, model, surrogate):
+        def log_density(x, model, surrogate, transform):
             stds = torch.abs(model.solve_t(model.defParam)) * model.stdRatio
             Data = torch.tensor(model.data)
-            modelOut = surrogate.forward(x)
+            if surrogate:
+              modelOut = exp.surrogate.forward(x)
+            else:
+              modelOut = model.solve_t(transform(x))
+              
             # Eval LL
             ll1 = -0.5 * np.prod(model.data.shape) * np.log(2.0 * np.pi)
             ll2 = (-0.5 * model.data.shape[1] * torch.log(torch.prod(stds))).item()
@@ -92,7 +97,7 @@ class linfa_test_suite(unittest.TestCase):
             return -negLL
 
         # Assign log-density model
-        exp.model_logdensity = lambda x: log_density(x, model, exp.surrogate)
+        exp.model_logdensity = lambda x: log_density(x, model, exp.surrogate, trsf)
 
         # Run VI
         exp.run()
@@ -107,7 +112,7 @@ class linfa_test_suite(unittest.TestCase):
         from linfa.models.highdimModels import Highdim
         
         exp = experiment()
-        exp.name = "Highdim"
+        exp.name = "highdim"
         exp.flow_type = 'realnvp'  # str: Type of flow                                 default 'realnvp'
         exp.n_blocks = 15  # int: Number of layers                             default 5
         exp.hidden_size = 100  # int: Hidden layer size for MADE in each layer     default 100
@@ -143,27 +148,56 @@ class linfa_test_suite(unittest.TestCase):
 
         exp.device = torch.device('cuda:0' if torch.cuda.is_available() and not exp.no_cuda else 'cpu')
 
-        # Model Setting
+        # Define transformation
+        # One list for each variable
+        trsf_info = [['exp',0,1,1,math.exp(1)],
+                     ['exp',0,1,1,math.exp(1)],
+                     ['exp',0,1,1,math.exp(1)],
+                     ['exp',0,1,1,math.exp(1)],
+                     ['exp',0,1,1,math.exp(1)]]
+        trsf = Transformation(trsf_info)
+
+        # Define the model
         model = Highdim()
-        model.data = np.loadtxt('./resource/data/data_highdim.txt')
-        exp.surrogate = Surrogate("highdim", lambda x: model.solve_t(model.transform(x)), model.input_num, model.output_num,
+
+        # Read data
+        model.data = np.loadtxt('../resource/data/data_highdim.txt')
+
+        # Define the surrogate
+        exp.surrogate = Surrogate(exp.name, lambda x: model.solve_t(trsf(x)), model.input_num, model.output_num,
                                   torch.Tensor([[-3, 3], [-3, 3], [-3, 3], [-3, 3], [-3, 3]]), 20)
         if exp.run_nofas:
             if not os.path.isfile(exp.name + ".sur") or not os.path.isfile(exp.name + ".npz"):
                 print("Warning: Surrogate model files: {0}.npz and {0}.npz could not be found. ".format(exp.name))
                 print("Training Surrogate ...")
                 exp.surrogate.gen_grid(gridnum=4)
-                exp.surrogate.pre_train(120000, 0.03, 0.9999, 500, store=True)
+                exp.surrogate.pre_train(40000, 0.03, 0.9999, 500, store=True)
         exp.surrogate.surrogate_load()
 
-        # Define log density
-        def log_density(x, model, surrogate):
+        # Define the log density
+        def log_density(x, model, surrogate, transform):
             batch_size = x.size(0)
             adjust = torch.sum(x, dim=1, keepdim=True)
-            modelOut = surrogate.forward(x)
-            return - model.evalNegLL_t(modelOut).reshape(batch_size, 1) + adjust
+            # Eval model or surrogate
+            if surrogate:
+              modelOut = surrogate.forward(x)
+            else:
+              modelOut = model.solve_t(transform(x))
 
-        exp.model_logdensity = lambda x: log_density(x, model, exp.surrogate)
+            data_size = len(model.data[0])
+            stds = model.defOut * model.stdRatio
+            Data = torch.tensor(model.data)
+            ll1 = -0.5 * np.prod(model.data.shape) * np.log(2.0 * np.pi)  # a number
+            ll2 = (-0.5 * model.data.shape[1] * torch.log(torch.prod(stds))).item()  # a number
+            ll3 = - 0.5 * torch.sum(torch.sum((modelOut.unsqueeze(0) - Data.t().unsqueeze(1)) ** 2, dim=0) / stds[0] ** 2,
+                                    dim=1, keepdim=True)
+            negLL = -(ll1 + ll2 + ll3)            
+            return - negLL.reshape(batch_size, 1) + adjust
+        
+        # Assign log-density model
+        exp.model_logdensity = lambda x: log_density(x, model, exp.surrogate,trsf)
+
+        # Run VI
         exp.run()
 
 
