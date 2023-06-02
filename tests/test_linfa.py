@@ -20,7 +20,7 @@ class linfa_test_suite(unittest.TestCase):
         from linfa.models.TrivialModels import Trivial
 
         exp = experiment()
-        exp.name = "trivial"
+        exp.name = "trivial2"
         exp.flow_type = 'realnvp'  # str: Type of flow                                 default 'realnvp'
         exp.n_blocks = 5  # int: Number of layers                             default 5
         exp.hidden_size = 100  # int: Hidden layer size for MADE in each layer     default 100
@@ -28,12 +28,12 @@ class linfa_test_suite(unittest.TestCase):
         exp.activation_fn = 'relu'  # str: Actication function used                     default 'relu'
         exp.input_order = 'sequential'  # str: Input order for create_mask                  default 'sequential'
         exp.batch_norm_order = True  # boo: Order to decide if batch_norm is used        default True
-        exp.sampling_interval = 1000  # int: How often to sample from normalizing flow
+        exp.sampling_interval = 5000  # int: How often to sample from normalizing flow
 
         exp.input_size = 2  # int: Dimensionality of input                      default 2
         exp.batch_size = 200  # int: Number of samples generated                  default 100
         exp.true_data_num = 2  # double: number of true model evaluated        default 2
-        exp.n_iter = 25001  # int: Number of iterations                         default 25001
+        exp.n_iter = 50001 # 25001  # int: Number of iterations                         default 25001
         exp.lr = 0.002  # float: Learning rate                              default 0.003
         exp.lr_decay = 0.9999  # float: Learning rate decay                        default 0.9999
         exp.log_interval = 10  # int: How often to show loss stat                  default 10
@@ -55,6 +55,8 @@ class linfa_test_suite(unittest.TestCase):
         exp.lr_scheduler = 'ExponentialLR'
 
         exp.device = torch.device('cuda:0' if torch.cuda.is_available() and not exp.no_cuda else 'cpu')
+        print('--- Running on device: '+ str(exp.device))
+        print('')
 
         # Define transformation
         # One list for each variable
@@ -71,7 +73,7 @@ class linfa_test_suite(unittest.TestCase):
         model.data = np.loadtxt('../resource/data/data_trivial.txt')
 
         # Define surrogate
-        exp.surrogate = Surrogate(exp.name, model.solve_t, 2, 2, [[0, 6], [0, 6]], 20)
+        exp.surrogate = Surrogate(exp.name, lambda x: model.solve_t(trsf(x)), 2, 2, [[0, 6], [0, 6]], 20)
         if exp.run_nofas:
             if not os.path.isfile(exp.name + ".sur") or not os.path.isfile(exp.name + ".npz"):
                 print("Warning: Surrogate model files: {0}.npz and {0}.npz could not be found. ".format(exp.name))
@@ -86,20 +88,22 @@ class linfa_test_suite(unittest.TestCase):
             # Compute transformation log Jacobian
             adjust = transform.compute_log_jacob_func(x)
 
+            batch_size = x.size(0)
             stds = torch.abs(model.solve_t(model.defParam)) * model.stdRatio
             Data = torch.tensor(model.data)
             if surrogate:
               modelOut = exp.surrogate.forward(x)
             else:
-              modelOut = model.solve_t(transform(x))
+              modelOut = model.solve_t(transform.forward(x))
               
             # Eval LL
             ll1 = -0.5 * np.prod(model.data.shape) * np.log(2.0 * np.pi)
             ll2 = (-0.5 * model.data.shape[1] * torch.log(torch.prod(stds))).item()
-            ll3 = - 0.5 * torch.sum(torch.sum((modelOut.unsqueeze(0) - Data.t().unsqueeze(1)) ** 2, dim=0) / stds[0] ** 2,
-                                    dim=1, keepdim=True)
+            ll3 = - 0.5 * torch.sum(torch.sum((modelOut.unsqueeze(0) - Data.t().unsqueeze(1)) ** 2, dim=0) / stds[0] ** 2, dim=1, keepdim=True)
             negLL = -(ll1 + ll2 + ll3)
-            return -negLL + adjust
+            # return -negLL.reshape(batch_size, 1) + adjust
+            # ADJUST SEMBRA ESSERE UN PROBLEMA!!!! MA CE LA POSTERIOR PREDICTIVE CHE NON E' OK...
+            return -negLL # + adjust
 
         # Assign log-density model
         exp.model_logdensity = lambda x: log_density(x, model, exp.surrogate, trsf)

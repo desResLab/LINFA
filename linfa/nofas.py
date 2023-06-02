@@ -6,7 +6,6 @@ from os import path
 
 torch.set_default_tensor_type(torch.DoubleTensor)
 
-
 class FNN(nn.Module):
     """Fully Connected Neural Network"""
 

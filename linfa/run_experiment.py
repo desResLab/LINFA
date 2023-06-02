@@ -59,8 +59,6 @@ class experiment:
 
         self.no_cuda = True
         self.device = torch.device('cuda:0' if torch.cuda.is_available() and not self.no_cuda else 'cpu')
-        print('--- Running on device: '+ str(self.device))
-        print('')
 
         # Local pointer to the main components for inference
         self.transform        = None
@@ -86,6 +84,9 @@ class experiment:
         # setup file ops
         if not os.path.isdir(self.output_dir):
             os.makedirs(self.output_dir)
+
+        # Save a copy of the data in the result folder so it is handy
+        np.savetxt(self.output_dir + '/' + self.name + '_data', self.model.data, newline="\n")
 
         # setup device
         torch.manual_seed(self.seed)
