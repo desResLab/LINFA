@@ -4,7 +4,6 @@ import torch
 
 torch.set_default_tensor_type(torch.DoubleTensor)
 
-
 class Highdim:
     def __init__(self):
         # Init parameters

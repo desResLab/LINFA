@@ -1,5 +1,6 @@
 import unittest
 from linfa.run_experiment import experiment
+from linfa.transform import Transformation
 from linfa.nofas import Surrogate
 import torch
 import random
@@ -8,11 +9,15 @@ import os
 
 class linfa_test_suite(unittest.TestCase):
 
-    def trivial_example(run_nofas=True, run_adaann=False):
+    def trivial_example(self, run_nofas=True, run_adaann=False):
+
         print('')
         print('--- TEST 1: TRIVIAL FUNCTION - NOFAS')
         print('')
+
+        # Import trivial model
         from linfa.models.TrivialModels import Trivial
+
         exp = experiment()
         exp.name = "Trivial"
         exp.flow_type = 'realnvp'  # str: Type of flow                                 default 'realnvp'
@@ -37,29 +42,40 @@ class linfa_test_suite(unittest.TestCase):
         exp.calibrate_interval = 1000  # int: How often to update surrogate model          default 1000
         exp.budget = 64  # int: Total number of true model evaluation
 
-        exp.output_dir = './results/' + exp.name
+        exp.output_dir   = './results/' + exp.name
         exp.results_file = 'results.txt'
-        exp.log_file = 'log.txt'
+        exp.log_file     = 'log.txt'
         exp.samples_file = 'samples.txt'
-        exp.seed = random.randint(0, 10 ** 9)  # int: Random seed used
-        exp.n_sample = 5000  # int: Total number of iterations
-        exp.no_cuda = True
+        exp.seed         = random.randint(0, 10 ** 9)  # int: Random seed used
+        exp.n_sample     = 5000  # int: Total number of iterations
+        exp.no_cuda      = True
 
-        exp.optimizer = 'RMSprop'
+        exp.optimizer    = 'RMSprop'
         exp.lr_scheduler = 'ExponentialLR'
 
         exp.device = torch.device('cuda:0' if torch.cuda.is_available() and not exp.no_cuda else 'cpu')
 
-        # Model Setting
-        model = Trivial()
-        model.data = np.loadtxt('./resource/data/data_trivial.txt')
+        # Define transformation
+        # One list for each variable
+        trsf_info = [['identity',0,0,0,0],
+                     ['identity',0,0,0,0]]
+        trsf = Transformation(trsf_info)
+
+        # Define model
+        model = Trivial(trsf)
+
+        # Get data
+        model.data = np.loadtxt('../resource/data/data_trivial.txt')
+
+        # Define surrogate
         exp.surrogate = Surrogate("Trivial", model.solve_t, 2, 2, [[0, 6], [0, 6]], 20)
         if exp.run_nofas:
-            if not os.path.isdir(exp.name + ".sur") or not os.path.isdir(exp.name + ".npz"):
-                print("Warning: Surrogate model files: {0}.npz and {0}.npz are note detected. ".format(exp.name))
+            if not os.path.isfile(exp.name + ".sur") or not os.path.isfile(exp.name + ".npz"):
+                print("Warning: Surrogate model files: {0}.npz and {0}.npz could not be found. ".format(exp.name))
                 print("Training Surrogate ...")
+                # 4 samples for each dimension: pre-grid size = 16
                 exp.surrogate.gen_grid(gridnum=4)
-                exp.surrogate.pre_train(120000, 0.03, 0.9999, 500, store=True)
+                exp.surrogate.pre_train(40000, 0.03, 0.9999, 500, store=True)
         exp.surrogate.surrogate_load()
 
         # Define log density
@@ -75,15 +91,21 @@ class linfa_test_suite(unittest.TestCase):
             negLL = -(ll1 + ll2 + ll3)
             return -negLL
 
+        # Assign log-density model
         exp.model_logdensity = lambda x: log_density(x, model, exp.surrogate)
+
+        # Run VI
         exp.run()
 
 
-    def highdim_example(run_nofas=True, run_adaann=False):
+    def highdim_example(self, run_nofas=True, run_adaann=False):
+
         print('')
         print('--- TEST 2: HIGH DIMENSIONAL SOBOL FUNCTION - NOFAS')
         print('')
+
         from linfa.models.highdimModels import Highdim
+        
         exp = experiment()
         exp.name = "Highdim"
         exp.flow_type = 'realnvp'  # str: Type of flow                                 default 'realnvp'
@@ -127,8 +149,8 @@ class linfa_test_suite(unittest.TestCase):
         exp.surrogate = Surrogate("highdim", lambda x: model.solve_t(model.transform(x)), model.input_num, model.output_num,
                                   torch.Tensor([[-3, 3], [-3, 3], [-3, 3], [-3, 3], [-3, 3]]), 20)
         if exp.run_nofas:
-            if not os.path.isdir(exp.name + ".sur") or not os.path.isdir(exp.name + ".npz"):
-                print("Warning: Surrogate model files: {0}.npz and {0}.npz are note detected. ".format(exp.name))
+            if not os.path.isfile(exp.name + ".sur") or not os.path.isfile(exp.name + ".npz"):
+                print("Warning: Surrogate model files: {0}.npz and {0}.npz could not be found. ".format(exp.name))
                 print("Training Surrogate ...")
                 exp.surrogate.gen_grid(gridnum=4)
                 exp.surrogate.pre_train(120000, 0.03, 0.9999, 500, store=True)
@@ -145,7 +167,7 @@ class linfa_test_suite(unittest.TestCase):
         exp.run()
 
 
-    def rc_example(run_nofas=True, run_adaann=False):
+    def rc_example(self, run_nofas=True, run_adaann=False):
         print('')
         print('--- TEST 3: RC MODEL - NOFAS')
         print('')
@@ -196,8 +218,8 @@ class linfa_test_suite(unittest.TestCase):
         exp.surrogate = Surrogate("RC", lambda x: model.solve_t(model.transform(x)), exp.input_size, 3,
                                   torch.Tensor([[-7, 7], [-7, 7]]), 20)
         if exp.run_nofas:
-            if not os.path.isdir(exp.name + ".sur") or not os.path.isdir(exp.name + ".npz"):
-                print("Warning: Surrogate model files: {0}.npz and {0}.npz are note detected. ".format(exp.name))
+            if not os.path.isfile(exp.name + ".sur") or not os.path.isfile(exp.name + ".npz"):
+                print("Warning: Surrogate model files: {0}.npz and {0}.npz could not be found. ".format(exp.name))
                 print("Training Surrogate ...")
                 exp.surrogate.gen_grid(gridnum=4)
                 exp.surrogate.pre_train(120000, 0.03, 0.9999, 500, store=True)
@@ -216,7 +238,7 @@ class linfa_test_suite(unittest.TestCase):
         exp.run()
 
 
-    def rcr_example(run_nofas=True, run_adaann=False):
+    def rcr_example(self, run_nofas=True, run_adaann=False):
         print('')
         print('--- TEST 4: RCR MODEL - NOFAS')
         print('')
@@ -267,8 +289,8 @@ class linfa_test_suite(unittest.TestCase):
         exp.surrogate = Surrogate("RCR", lambda x: model.solve_t(model.transform(x)), exp.input_size, 3,
                                   torch.Tensor([[-7, 7], [-7, 7], [-7, 7]]), 20)
         if exp.run_nofas:
-            if not os.path.isdir(exp.name + ".sur") or not os.path.isdir(exp.name + ".npz"):
-                print("Warning: Surrogate model files: {0}.npz and {0}.npz are note detected. ".format(exp.name))
+            if not os.path.isfile(exp.name + ".sur") or not os.path.isfile(exp.name + ".npz"):
+                print("Warning: Surrogate model files: {0}.npz and {0}.npz could not be found. ".format(exp.name))
                 print("Training Surrogate ...")
                 exp.surrogate.gen_grid(gridnum=4)
                 exp.surrogate.pre_train(120000, 0.03, 0.9999, 500, store=True)
@@ -289,7 +311,7 @@ class linfa_test_suite(unittest.TestCase):
         exp.run()
 
 
-    def adaann_example(run_nofas=False, run_adaann=True):
+    def adaann_example(self, run_nofas=False, run_adaann=True):
         print('')
         print('--- TEST 5: FRIEDMAN 1 MODEL - ADAANN')
         print('')
@@ -368,5 +390,5 @@ class linfa_test_suite(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    # Execute tests
-    unittest.main()
+  # Execute tests
+  unittest.main()

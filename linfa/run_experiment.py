@@ -9,63 +9,6 @@ from linfa.maf import MAF, RealNVP
 # from highdimModels import Highdim
 
 torch.set_default_tensor_type(torch.DoubleTensor)
-# class Transformation(torch.nn.Module):
-#     def __init__(self, func_info=None):
-#         super().__init__()
-#         self.funcs = []
-#         self.log_jacob = []
-#         self.n = len(func_info)
-#         for func, a, b, c, d in func_info:
-#             if func == "tanh":
-#                 m1 = (a + b) / 2
-#                 t1 = (b - a) / 2
-#                 m2 = (c + d) / 2
-#                 t2 = (d - c) / 2
-#                 self.funcs.append(lambda x: torch.tanh((x - m1) / (b - a) * 6.0) * t2 + m2)
-#                 self.log_jacob.append(lambda x: torch.log(1.0 - torch.tanh((x - m1) / (b - a) * 6.0) ** 2) + np.log(t2) + np.log(12) - np.log(t1))
-#             elif func == "linear":
-#                 self.funcs.append(lambda x: (x - a) / (b - a) * (d - c) + c)
-#                 self.log_jacob.append(lambda x: - np.log(b - a) + np.log(d - c))
-#             elif func == "exp":
-#                 self.funcs.append(lambda x: torch.exp((x - a) / (b - a) * (np.log(d) - np.log(c)) + np.log(c)))
-#                 self.log_jacob.append(lambda x: (x - a) / (b - a) * (np.log(d) - np.log(c)) + np.log(c) + np.log(np.log(d) - np.log(c)) - np.log(b - a))
-#
-#     def forward(self, z):
-#         """
-#         from desired scale to original scale, evaluate original samples.
-#         Args:
-#             z: torch.Tensor. samples in desired scale.
-#
-#         Returns:
-#             torch.Tensor. samples in original scale.
-#         """
-#         if z.size(1) != self.n:
-#             raise ValueError("Inconsistent size. Got {}, should be {}".format(z.size(1), self.n))
-#         zi = torch.chunk(z, chunks=self.n, dim=1)
-#         x = []
-#         for zz, func in zip(zi, self.funcs):
-#             x.append(func(zz))
-#
-#         return torch.cat(x, dim=1)
-#
-#
-#     def compute_log_jacob_func(self, z):
-#         """
-#         from desired scale to original scale, compute log absolute determinant of Jacobian matrix.
-#         Args:
-#             z: torch.Tensor. samples in desired scale.
-#
-#         Returns:
-#             torch.Tensor. samples in original scale.
-#         """
-#         if z.size(1) != self.n:
-#             raise ValueError("Inconsistent size. Got {}, should be {}".format(z.size(1), self.n))
-#         zi = torch.chunk(z, chunks=self.n, dim=1)
-#         jacob_res = 0
-#         for zz, log_jacob_func in zip(zi, self.log_jacob):
-#             jacob_res += log_jacob_func(zz)
-#
-#         return jacob_res
 
 class experiment:
     def __init__(self):
@@ -127,6 +70,7 @@ class experiment:
     # @model_logdensity.setter
     # def model_logdensity(self, model_logdensity):
     #     self.__model_logdensity = lambda z: model_logdensity(z) + self.transformation.compute_log_jacob_func(z)
+
     def run(self):
         if self.run_nofas:
             if not os.path.exists(self.name + ".sur") or not os.path.exists(self.name + ".npz"):
@@ -200,27 +144,29 @@ class experiment:
                     dt = self.linear_step
         else:
             loglist = []
-            for i in range(1, self.n_iter+1):
-                scheduler.step()
+            for i in range(1, self.n_iter+1):                
                 self.train(nf, optimizer, i, loglist, sampling=True, update=True)
+                scheduler.step()
 
         # rt.surrogate.surrogate_save() # Used for saving the resulting surrogate model
         np.savetxt(self.output_dir + '/grid_trace.txt', self.surrogate.grid_record.detach().numpy())
         np.savetxt(self.output_dir + '/' + self.log_file, np.array(loglist), newline="\n")
 
     def train(self, nf, optimizer, iteration, log, sampling=True, update=True, t=1):
+        # Train the normalizing flow
         nf.train()
+
         x0 = nf.base_dist.sample([self.batch_size])
         xk, sum_log_abs_det_jacobians = nf(x0)
 
-        # generate samples on the way
+        # generate samples on the fly for evaluation
         if sampling and iteration % self.sampling_interval == 0:
             x00 = nf.base_dist.sample([self.n_sample])
             xkk, _ = nf(x00)
             np.savetxt(self.output_dir + '/samples' + str(iteration), xkk.data.numpy(), newline="\n")
 
         if torch.any(torch.isnan(xk)):
-            print("Error: " + str(iteration))
+            print("Error: samples xk are nan at iteration " + str(iteration))
             print(xk)
             np.savetxt(self.output_dir + '/' + self.log_file, np.array(log), newline="\n")
             exit(-1)
@@ -228,9 +174,10 @@ class experiment:
         # updating surrogate model
         if iteration % self.calibrate_interval == 0 and update and self.surrogate.grid_record.size(0) < self.budget:
             xk0 = xk[:self.true_data_num, :].data.clone()
-            print("\n")
-            print(list(self.surrogate.grid_record.size())[0])
-            print(xk0)
+            print('-- Updating surrogate model')
+            # print("\n")
+            # print(list(self.surrogate.grid_record.size())[0])
+            # print(xk0)
             self.surrogate.update(xk0, max_iters=6000)
 
         # Free energy bound
@@ -238,9 +185,9 @@ class experiment:
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-        print("{}\t{}".format(iteration, loss.item()), end='\r')
+        print('%7d %8.3e' % (iteration, loss.item()), end='\r')
         if iteration % self.log_interval == 0:
-            print("{}\t{}".format(iteration, loss.item()))
+            print('%7d %8.3e' % (iteration, loss.item()))
             log.append([iteration, loss.item()] + list(torch.std(xk, dim=0).detach().numpy()))
 
         if self.store_nf_interval > 0 and iteration % self.store_nf_interval == 0:

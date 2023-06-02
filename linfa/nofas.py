@@ -204,8 +204,7 @@ class Surrogate:
         optimizer = torch.optim.RMSprop(self.surrogate.parameters(), lr=lr)
         scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, lr_exp)
         for i in range(max_iters):
-            self.surrogate.train()
-            scheduler.step()
+            self.surrogate.train()            
             y = self.surrogate(grid)
             loss = torch.sum((y - out) ** 2) / y.size(0)
             if reg:
@@ -216,12 +215,13 @@ class Surrogate:
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+            scheduler.step()
 
             if i % record_interval == 0:
                 if reg:
-                    print('iter {}\t loss {}\t reg_loss {}'.format(i, loss, reg_loss))
+                    print('iter %7d loss %8.3e reg_loss %8.3e' % (i, loss, reg_loss))
                 else:
-                    print('iter {}   loss {}'.format(i, loss))
+                    print('iter %7d loss %8.3e' % (i, loss))
         if store:
             self.surrogate_save()
 
@@ -232,13 +232,13 @@ class Surrogate:
         
         Args:
             x (torch.Tensor): Input feature that needs true model output.
-            max_iters (int): Maximal number of iteration. Default 10000.
-            lr (double): Learning rate for RMSprop. Default 0.01
+            max_iters (int): Maximum number of iteration. Default 10000.
+            lr (double): Learning rate for RMSprop. Default 0.01.
             lr_exp (double): Decay factor of exponential scheduler.
             record_interval (int): The number of iterations to print loss information.
             store (bool): If ture, self.surrogate_save() will be called.
-            tol (double): Optimization will be terminated if loss < tol ** 2
-            reg (bool): If ture, L1 regularizaiton will be used with parameter 0.1
+            tol (double): Optimization will be terminated if loss < tol ** 2.
+            reg (bool): If ture, L1 regularizaiton will be used with parameter 0.1.
 
         Returns:
             None
@@ -249,20 +249,25 @@ class Surrogate:
         if torch.any(s < thresh):
             p = x[:, s < thresh]
             x[:, s < thresh] += torch.normal(0, 1, size=tuple(p.size())) * thresh
-        print("Std: ", s)
-        print("Std after: ", torch.std(x, dim=0))
+        s_aft = torch.std(x, dim=0)            
+        
+        # Print the std for each dimension before and after inflation    
+        print('Std bfr inflation -> Std aft inflation')
+        for loopA in range(s.size(0)):
+          print("%8.3e -> %8.3e" % (s[loopA],s_aft[loopA]))
+        print()          
+
         if len(self.memory_grid) >= self.memory_len:
             self.memory_grid.pop()
             self.memory_out.pop()
         self.memory_grid.insert(0, (x - self.m) / self.sd)
         self.memory_out.insert(0, (self.mf(x) - self.tm) / self.tsd)
         sizes = [list(self.pre_grid.size())[0]] + [list(item.size())[0] for item in self.memory_grid]
-        # print(sizes)
+
         optimizer = torch.optim.RMSprop(self.surrogate.parameters(), lr=lr)
         scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, lr_exp)
         for i in range(max_iters):
-            self.surrogate.train()
-            scheduler.step()
+            self.surrogate.train()            
             y = self.surrogate(torch.cat(((self.pre_grid - self.m) / self.sd, *self.memory_grid), dim=0))
             out = torch.cat(((self.pre_out - self.tm) / self.tsd, *self.memory_out), dim=0)
             raw_loss = torch.stack([item.mean() for item in torch.split(torch.sum((y - out) ** 2, dim=1), sizes)])
@@ -277,6 +282,7 @@ class Surrogate:
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+            scheduler.step()
 
             if i % record_interval == 0:
                 print('Updating: {}\t loss {}'.format(i, loss), end='\r')

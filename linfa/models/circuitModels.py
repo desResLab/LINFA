@@ -5,7 +5,6 @@ import torch
 
 torch.set_default_tensor_type(torch.DoubleTensor)
 
-
 def solve_ivp_s(func, t0, t_bound, y0, max_step, t_eval, batch_size, aux_size):
     # PyTorch - Reimplementing scipy.integrate.solve_ivp (Runge-Kuta Method solving ODE) - Output compared and tested.
     n = int((t_bound - t0) / max_step)
