@@ -28,7 +28,7 @@ class linfa_test_suite(unittest.TestCase):
         exp.activation_fn = 'relu'  # str: Actication function used                     default 'relu'
         exp.input_order = 'sequential'  # str: Input order for create_mask                  default 'sequential'
         exp.batch_norm_order = True  # boo: Order to decide if batch_norm is used        default True
-        exp.sampling_interval = 200  # int: How often to sample from normalizing flow
+        exp.sampling_interval = 1000  # int: How often to sample from normalizing flow
 
         exp.input_size = 2  # int: Dimensionality of input                      default 2
         exp.batch_size = 200  # int: Number of samples generated                  default 100
@@ -60,10 +60,12 @@ class linfa_test_suite(unittest.TestCase):
         # One list for each variable
         trsf_info = [['identity',0,0,0,0],
                      ['identity',0,0,0,0]]
-        trsf = Transformation(trsf_info)
+        trsf = Transformation(trsf_info)        
+        exp.transform = trsf
 
         # Define model
         model = Trivial()
+        exp.model = model
 
         # Get data
         model.data = np.loadtxt('../resource/data/data_trivial.txt')
@@ -73,7 +75,6 @@ class linfa_test_suite(unittest.TestCase):
         if exp.run_nofas:
             if not os.path.isfile(exp.name + ".sur") or not os.path.isfile(exp.name + ".npz"):
                 print("Warning: Surrogate model files: {0}.npz and {0}.npz could not be found. ".format(exp.name))
-                print("Training Surrogate ...")
                 # 4 samples for each dimension: pre-grid size = 16
                 exp.surrogate.gen_grid(gridnum=4)
                 exp.surrogate.pre_train(40000, 0.03, 0.9999, 500, store=True)
@@ -81,6 +82,10 @@ class linfa_test_suite(unittest.TestCase):
 
         # Define log density
         def log_density(x, model, surrogate, transform):
+
+            # Compute transformation log Jacobian
+            adjust = transform.compute_log_jacob_func(x)
+
             stds = torch.abs(model.solve_t(model.defParam)) * model.stdRatio
             Data = torch.tensor(model.data)
             if surrogate:
@@ -94,7 +99,7 @@ class linfa_test_suite(unittest.TestCase):
             ll3 = - 0.5 * torch.sum(torch.sum((modelOut.unsqueeze(0) - Data.t().unsqueeze(1)) ** 2, dim=0) / stds[0] ** 2,
                                     dim=1, keepdim=True)
             negLL = -(ll1 + ll2 + ll3)
-            return -negLL
+            return -negLL + adjust
 
         # Assign log-density model
         exp.model_logdensity = lambda x: log_density(x, model, exp.surrogate, trsf)
@@ -156,9 +161,11 @@ class linfa_test_suite(unittest.TestCase):
                      ['exp',0,1,1,math.exp(1)],
                      ['exp',0,1,1,math.exp(1)]]
         trsf = Transformation(trsf_info)
+        exp.transform = trsf
 
         # Define the model
         model = Highdim()
+        exp.model = model
 
         # Read data
         model.data = np.loadtxt('../resource/data/data_highdim.txt')
@@ -169,7 +176,6 @@ class linfa_test_suite(unittest.TestCase):
         if exp.run_nofas:
             if not os.path.isfile(exp.name + ".sur") or not os.path.isfile(exp.name + ".npz"):
                 print("Warning: Surrogate model files: {0}.npz and {0}.npz could not be found. ".format(exp.name))
-                print("Training Surrogate ...")
                 exp.surrogate.gen_grid(gridnum=4)
                 exp.surrogate.pre_train(40000, 0.03, 0.9999, 500, store=True)
         exp.surrogate.surrogate_load()
@@ -177,7 +183,10 @@ class linfa_test_suite(unittest.TestCase):
         # Define the log density
         def log_density(x, model, surrogate, transform):
             batch_size = x.size(0)
-            adjust = torch.sum(x, dim=1, keepdim=True)
+
+            # Compute transformation log Jacobian
+            adjust = transform.compute_log_jacob_func(x)
+
             # Eval model or surrogate
             if surrogate:
               modelOut = surrogate.forward(x)
@@ -202,12 +211,16 @@ class linfa_test_suite(unittest.TestCase):
 
 
     def rc_example(self, run_nofas=True, run_adaann=False):
+
         print('')
         print('--- TEST 3: RC MODEL - NOFAS')
         print('')
+
+        # Import model
         from linfa.models.circuitModels import rcModel
+        
         exp = experiment()
-        exp.name = "RC"
+        exp.name = "rc"
         exp.flow_type = 'maf'  # str: Type of flow                                 default 'realnvp'
         exp.n_blocks = 5  # int: Number of layers                             default 5
         exp.hidden_size = 100  # int: Hidden layer size for MADE in each layer     default 100
@@ -243,42 +256,78 @@ class linfa_test_suite(unittest.TestCase):
 
         exp.device = torch.device('cuda:0' if torch.cuda.is_available() and not exp.no_cuda else 'cpu')
 
-        # Model Setting
+        # Define transformation
+        # One list for each variable
+        trsf_info = [['tanh',-8.0,8.0,100.0,1500.0],
+                     ['exp',0.0,7.0,math.exp(-8.0),math.exp(-5.0)]]
+        trsf = Transformation(trsf_info)
+        exp.transform = trsf
+
+        # Define model
         cycleTime = 1.07
         totalCycles = 10
-        forcing = np.loadtxt('./resource/data/inlet.flow')
+        forcing = np.loadtxt('../resource/data/inlet.flow')
         model = rcModel(cycleTime, totalCycles, forcing)  # RCR Model Defined
-        model.data = np.loadtxt('./resource/data/data_rc.txt')
-        exp.surrogate = Surrogate("RC", lambda x: model.solve_t(model.transform(x)), exp.input_size, 3,
+        exp.model = model
+
+        # Read Data
+        model.data = np.loadtxt('../resource/data/data_rc.txt')
+
+        # Define surrogate model
+        exp.surrogate = Surrogate(exp.name, lambda x: model.solve_t(trsf(x)), exp.input_size, 3,
                                   torch.Tensor([[-7, 7], [-7, 7]]), 20)
         if exp.run_nofas:
             if not os.path.isfile(exp.name + ".sur") or not os.path.isfile(exp.name + ".npz"):
                 print("Warning: Surrogate model files: {0}.npz and {0}.npz could not be found. ".format(exp.name))
-                print("Training Surrogate ...")
                 exp.surrogate.gen_grid(gridnum=4)
                 exp.surrogate.pre_train(120000, 0.03, 0.9999, 500, store=True)
         exp.surrogate.surrogate_load()
 
         # Define log density
-        def log_density(x, model, surrogate):
+        def log_density(x, model, surrogate, transform):
+
             batch_size = x.size(0)
-            x1, x2 = torch.chunk(x, chunks=3, dim=1)
-            adjust = torch.log(1.0 - torch.tanh(x1 / 7.0 * 3.0) ** 2) + x2 / 7 * 3
+            
+            # Compute transformation log Jacobian
+            adjust = transform.compute_log_jacob_func(x)
 
-            modelOut = surrogate.forward(x)
-            return - model.evalNegLL_t(modelOut).reshape(batch_size, 1) + adjust
+            if surrogate:
+                modelOut = surrogate.forward(x)
+            else:
+                modelOut = model.solve_t(transform(x))
 
-        exp.model_logdensity = lambda x: log_density(x, model, exp.surrogate)
+            data_size = len(model.data[0])
+            # Get the absolute values of the standard deviations
+            stds = model.defOut * model.stdRatio
+            Data = torch.tensor(model.data)
+            
+            # Eval Gaussian LL
+            ll1 = -0.5 * np.prod(model.data.shape) * np.log(2.0 * np.pi)  # a number
+            ll2 = (-0.5 * model.data.shape[1] * torch.log(torch.prod(stds))).item()  # a number
+            ll3 = 0.0
+            for i in range(3):
+                ll3 = ll3 - 0.5 * torch.sum(((modelOut[:, i].repeat(data_size, 1).t().float() - Data[i, :].float()) / stds[0, i]) ** 2, dim=1)
+            negLL = -(ll1 + ll2 + ll3)
+            return - negLL.reshape(batch_size, 1) + adjust
+
+        # Assign log-density
+        exp.model_logdensity = lambda x: log_density(x, model, exp.surrogate, trsf)
+
+        # Run VI
         exp.run()
 
 
     def rcr_example(self, run_nofas=True, run_adaann=False):
+
         print('')
         print('--- TEST 4: RCR MODEL - NOFAS')
         print('')
+
+        # Import rcr model
         from linfa.models.circuitModels import rcrModel
+
         exp = experiment()
-        exp.name = "RCR"
+        exp.name = "rcr"
         exp.flow_type = 'maf'  # str: Type of flow                                 default 'realnvp'
         exp.n_blocks = 15  # int: Number of layers                             default 5
         exp.hidden_size = 100  # int: Hidden layer size for MADE in each layer     default 100
@@ -314,41 +363,74 @@ class linfa_test_suite(unittest.TestCase):
 
         exp.device = torch.device('cuda:0' if torch.cuda.is_available() and not exp.no_cuda else 'cpu')
 
-        # Model Setting
+        # Define transformation
+        # One list for each variable
+        trsf_info = [['tanh',-8.0,8.0,100.0,1500.0],
+                     ['tanh',-8.0,8.0,100.0,1500.0],
+                     ['exp',0.0,7.0,math.exp(-8.0),math.exp(-5.0)]]
+        trsf = Transformation(trsf_info)
+        exp.transform = trsf
+
+        # Define model
         cycleTime = 1.07
         totalCycles = 10
-        forcing = np.loadtxt('./resource/data/inlet.flow')
+        forcing = np.loadtxt('../resource/data/inlet.flow')
         model = rcrModel(cycleTime, totalCycles, forcing)  # RCR Model Defined
-        model.data = np.loadtxt('./resource/data/data_rcr.txt')
-        exp.surrogate = Surrogate("RCR", lambda x: model.solve_t(model.transform(x)), exp.input_size, 3,
+        exp.model = model
+
+        # Read data
+        model.data = np.loadtxt('../resource/data/data_rcr.txt')
+
+        # Define surrogate
+        exp.surrogate = Surrogate(exp.name, lambda x: model.solve_t(trsf(x)), exp.input_size, 3,
                                   torch.Tensor([[-7, 7], [-7, 7], [-7, 7]]), 20)
         if exp.run_nofas:
             if not os.path.isfile(exp.name + ".sur") or not os.path.isfile(exp.name + ".npz"):
                 print("Warning: Surrogate model files: {0}.npz and {0}.npz could not be found. ".format(exp.name))
-                print("Training Surrogate ...")
                 exp.surrogate.gen_grid(gridnum=4)
                 exp.surrogate.pre_train(120000, 0.03, 0.9999, 500, store=True)
         exp.surrogate.surrogate_load()
 
         # Define log density
-        def log_density(x, model, surrogate):
-            batch_size = x.size(0)
-            x1, x2, x3 = torch.chunk(x, chunks=3, dim=1)
-            adjust = torch.log(1.0 - torch.tanh(x1 / 7.0 * 3.0) ** 2) \
-                     + torch.log(1.0 - torch.tanh(x2 / 7.0 * 3.0) ** 2) \
-                     + x3 / 7 * 3
+        def log_density(x, model, surrogate, transform):
 
-            modelOut = surrogate.forward(x)
-            return - model.evalNegLL_t(modelOut).reshape(batch_size, 1) + adjust
+            batch_size = list(x.size())[0]
 
-        exp.model_logdensity = lambda x: log_density(x, model, exp.surrogate)
+            # Compute transformation log Jacobian
+            adjust = transform.compute_log_jacob_func(x)
+
+            if surrogate:
+                modelOut = surrogate.forward(x)
+            else:
+                modelOut = model.solve_t(transform(x))
+
+            data_size = len(model.data[0])
+            # Get the absolute values of the standard deviations
+            stds = model.defOut * model.stdRatio
+            Data = torch.tensor(model.data)
+            # Eval LL
+            ll1 = -0.5 * np.prod(model.data.shape) * np.log(2.0 * np.pi)  # a number
+            ll2 = (-0.5 * model.data.shape[1] * torch.log(torch.prod(stds))).item()  # a number
+            ll3 = 0.0
+            for i in range(3):
+                ll3 = ll3 - 0.5 * torch.sum(((modelOut[:, i].repeat(data_size, 1).t().float() - Data[i, :].float()) / stds[0, i]) ** 2, dim=1)
+            negLL = -(ll1 + ll2 + ll3)
+
+            return - negLL.reshape(batch_size, 1) + adjust
+
+        # Assign logdensity model
+        exp.model_logdensity = lambda x: log_density(x, model, exp.surrogate, trsf)
+
+        # Run VI
         exp.run()
 
 
     def adaann_example(self, run_nofas=False, run_adaann=True):
+
         print('')
         print('--- TEST 5: FRIEDMAN 1 MODEL - ADAANN')
         print('')
+
         from linfa.run_experiment import experiment
         import torch
         import random
@@ -357,7 +439,7 @@ class linfa_test_suite(unittest.TestCase):
 
         # Experiment Setting
         exp = experiment()
-        exp.name = "AdaANN"
+        exp.name = "adaann"
         exp.flow_type = 'realnvp'  # str: Type of flow                                 default 'realnvp'
         exp.n_blocks = 10  # int: Number of layers                             default 5
         exp.hidden_size = 50  # int: Hidden layer size for MADE in each layer     default 100
@@ -400,15 +482,15 @@ class linfa_test_suite(unittest.TestCase):
         exp.device = torch.device('cuda:0' if torch.cuda.is_available() and not exp.no_cuda else 'cpu')
 
         # Model Setting
-        data_set = pd.read_csv('./resource/data/D1000.csv')
+        data_set = pd.read_csv('../resource/data/D1000.csv')
         data = torch.tensor(data_set.values)
 
+        # Define logdensity
         def log_density(params, d):
             def targetPosterior(b, x):
-                return b[0] * torch.sin(np.pi * x[:, 0] * x[:, 1]) + b[1] ** 2 * (x[:, 2] - b[2]) ** 2 + x[:, 3] * b[3] + x[
-                                                                                                                          :,
-                                                                                                                          4] * \
-                       b[4] + x[:, 5] * b[5] + x[:, 6] * b[6] + x[:, 7] * b[7] + x[:, 8] * b[8] + x[:, 9] * b[9]
+                return b[0] * torch.sin(np.pi * x[:, 0] * x[:, 1]) + b[1] ** 2 * (x[:, 2] - b[2]) ** 2 + \
+                                        x[:, 3] * b[3] + x[:,4] * b[4] + x[:, 5] * b[5] + x[:, 6] * b[6] + \
+                                        x[:, 7] * b[7] + x[:, 8] * b[8] + x[:, 9] * b[9]
 
             f = torch.zeros(len(params))
 
@@ -418,10 +500,12 @@ class linfa_test_suite(unittest.TestCase):
                 f[i] = -val ** 2 / 2
 
             return f
-
+        
+        # Assign logdensity
         exp.model_logdensity = lambda x: log_density(x, data)
-        exp.run()
 
+        # Run VI
+        exp.run()
 
 if __name__ == '__main__':
   # Execute tests

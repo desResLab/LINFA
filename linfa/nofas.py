@@ -199,6 +199,9 @@ class Surrogate:
         Returns:
             None
         """
+        print('')
+        print('--- Pre-training surrogate model')
+        print('')
         grid = (self.pre_grid - self.m) / self.sd
         out = (self.pre_out - self.tm) / self.tsd
         optimizer = torch.optim.RMSprop(self.surrogate.parameters(), lr=lr)
@@ -219,9 +222,12 @@ class Surrogate:
 
             if i % record_interval == 0:
                 if reg:
-                    print('iter %7d loss %8.3e reg_loss %8.3e' % (i, loss, reg_loss))
+                    print('SUR: PRE: it: %7d | loss: %8.3e | reg_loss: %8.3e' % (i, loss, reg_loss))
                 else:
-                    print('iter %7d loss %8.3e' % (i, loss))
+                    print('SUR: PRE: it: %7d | loss: %8.3e' % (i, loss))
+        print('')
+        print('--- Surrogate model pre-train complete')
+        print('')
         if store:
             self.surrogate_save()
 
@@ -252,10 +258,13 @@ class Surrogate:
         s_aft = torch.std(x, dim=0)            
         
         # Print the std for each dimension before and after inflation    
-        print('Std bfr inflation -> Std aft inflation')
+        print('')
+        print('--- Updating surrogate model')
+        print('')
+        print('Std before inflation -> Std after inflation')
         for loopA in range(s.size(0)):
           print("%8.3e -> %8.3e" % (s[loopA],s_aft[loopA]))
-        print()          
+        print('')          
 
         if len(self.memory_grid) >= self.memory_len:
             self.memory_grid.pop()
@@ -276,6 +285,7 @@ class Surrogate:
 
             # loss = raw_loss[0] * self.weights[:len(self.memory_grid)].sum() + torch.sum(
             #     raw_loss[1:] * self.weights[:len(self.memory_grid)])
+
             if reg:
                 for param in self.surrogate.parameters():
                     loss += torch.abs(param).sum() * 0.1
@@ -285,9 +295,13 @@ class Surrogate:
             scheduler.step()
 
             if i % record_interval == 0:
-                print('Updating: {}\t loss {}'.format(i, loss), end='\r')
+                # print('Updating: {}\t loss {}'.format(i, loss), end='\r')
+                print('SUR: UPD: it: %7d | loss: %8.3e' % (i, loss))
             if loss < tol ** 2: break
-        print('                                                        ', end='\r')
+        # print('                                                        ', end='\r')
+        print('')
+        print('--- Surrogate model updated')
+        print('')                  
         if store:
             self.surrogate_save()
 
