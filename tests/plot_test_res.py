@@ -21,7 +21,7 @@ def plot_log(log_file,out_dir):
   plt.gca().tick_params(axis='both', labelsize=fs)
   plt.tight_layout()
   plt.savefig(out_dir+'log_plot.pdf',bbox_inches='tight')
-  # plt.show()
+  plt.close()
 
 def plot_params(param_data,LL_data,idx1,idx2,out_dir,out_info):  
   param_data = np.loadtxt(param_data)  
@@ -30,8 +30,8 @@ def plot_params(param_data,LL_data,idx1,idx2,out_dir,out_info):
   plt.figure(figsize=(3,2))
   plt.scatter(param_data[:,idx1],param_data[:,idx2],s=2,marker='o',c=np.exp(dent_data))
   plt.colorbar()
-  plt.gca().xaxis.set_major_formatter(mtick.FormatStrFormatter('%.3f'))
-  plt.gca().yaxis.set_major_formatter(mtick.FormatStrFormatter('%.3f'))
+  plt.gca().xaxis.set_major_formatter(mtick.FormatStrFormatter('%.1f'))
+  plt.gca().yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1e'))
   plt.gca().tick_params(axis='both', labelsize=fs)
   plt.xlabel('$z_{K,'+str(idx1+1)+'}$',fontsize=fs)
   plt.ylabel('$z_{K,'+str(idx2+1)+'}$',fontsize=fs)  
@@ -44,6 +44,7 @@ def plot_params(param_data,LL_data,idx1,idx2,out_dir,out_info):
   plt.ylim([avg_2-3*std_2,avg_2+3*std_2])
   plt.tight_layout()
   plt.savefig(out_dir+'params_plot_' + out_info + '_'+str(idx1)+'_'+str(idx2)+'.pdf',bbox_inches='tight')
+  plt.close()
 
 def plot_outputs(sample_file,obs_file,idx1,idx2,out_dir,out_info):  
   sample_data = np.loadtxt(sample_file)  
@@ -57,18 +58,15 @@ def plot_outputs(sample_file,obs_file,idx1,idx2,out_dir,out_info):
   plt.xlabel('$x_{'+str(idx1+1)+'}$',fontsize=fs)
   plt.ylabel('$x_{'+str(idx2+1)+'}$',fontsize=fs)  
   # Set limits based on avg and std
-  # avg_1 = np.mean(sample_data[:,idx1])
-  # std_1 = np.std(sample_data[:,idx1])
-  # avg_2 = np.mean(sample_data[:,idx2])
-  # std_2 = np.std(sample_data[:,idx2])  
-  avg_1 = np.mean(obs_data[idx1,:])
-  std_1 = np.std(obs_data[idx1,:])
-  avg_2 = np.mean(obs_data[idx2,:])
-  std_2 = np.std(obs_data[idx2,:])  
+  avg_1 = np.mean(sample_data[:,idx1])
+  std_1 = np.std(sample_data[:,idx1])
+  avg_2 = np.mean(sample_data[:,idx2])
+  std_2 = np.std(sample_data[:,idx2])  
   plt.xlim([avg_1-3*std_1,avg_1+3*std_1])
   plt.ylim([avg_2-3*std_2,avg_2+3*std_2])
   plt.tight_layout()
   plt.savefig(out_dir+'data_plot_' + out_info + '_'+str(idx1)+'_'+str(idx2)+'.pdf',bbox_inches='tight')
+  plt.close()
 
 # =========
 # MAIN CODE
@@ -116,22 +114,29 @@ if __name__ == '__main__':
   obs_file    = out_dir + args.exp_name + '_data'
   out_info    = args.exp_name + '_' + str(args.step_num)
 
-  # Get total number of parameters
-  tot_params  = np.loadtxt(param_file).shape[1]
-  tot_outputs = np.loadtxt(output_file).shape[1]
-
   # Plot loss profile
-  print('Plotting log...')
-  plot_log(log_file,out_dir)
+  if(os.path.isfile(log_file)):
+    print('Plotting log...')
+    plot_log(log_file,out_dir)
+  else:
+    print('Log file not found...')
 
   # Plot 2D slice of posterior samples
-  print('Plotting posterior samples...')
-  for loopA in range(tot_params):
-    for loopB in range(loopA+1, tot_params):
-      plot_params(param_file,LL_file,loopA,loopB,out_dir,out_info)
+  if(os.path.isfile(param_file) and os.path.isfile(LL_file)):
+    tot_params  = np.loadtxt(param_file).shape[1]
+    print('Plotting posterior samples...')
+    for loopA in range(tot_params):
+      for loopB in range(loopA+1, tot_params):
+        plot_params(param_file,LL_file,loopA,loopB,out_dir,out_info)
+  else:
+    print('File with posterior samples not found...')
 
   # Plot 2D slice of outputs and observations
-  print('Plotting posterior predictive samples...')
-  for loopA in range(tot_outputs):
-    for loopB in range(loopA+1, tot_outputs):
-      plot_outputs(output_file,obs_file,loopA,loopB,out_dir,out_info)
+  if(os.path.isfile(output_file) and os.path.isfile(obs_file)):
+    tot_outputs = np.loadtxt(output_file).shape[1]
+    print('Plotting posterior predictive samples...')
+    for loopA in range(tot_outputs):
+      for loopB in range(loopA+1, tot_outputs):
+        plot_outputs(output_file,obs_file,loopA,loopB,out_dir,out_info)
+  else:
+    print('File with posterior predictive samples not found...')

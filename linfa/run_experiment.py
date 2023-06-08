@@ -86,7 +86,8 @@ class experiment:
             os.makedirs(self.output_dir)
 
         # Save a copy of the data in the result folder so it is handy
-        np.savetxt(self.output_dir + '/' + self.name + '_data', self.model.data, newline="\n")
+        if hasattr(self.model,'data'):
+          np.savetxt(self.output_dir + '/' + self.name + '_data', self.model.data, newline="\n")
 
         # setup device
         torch.manual_seed(self.seed)
@@ -123,17 +124,19 @@ class experiment:
             tvals = []
             t = self.t0
             dt = 0
+            loglist = []
             while t < 1:
                 t = min(1, t + dt)
                 tvals = np.concatenate([tvals, np.array([t])])
                 self.n_iter = self.T
                 self.batch_size = self.N
+                
                 if t == self.t0:
                     self.n_iter = self.T_0
                 if t == 1:
                     self.batch_size = self.N_1
                     self.n_iter = self.T_1
-                loglist = []
+
                 while i < prev_i + self.n_iter:
                     self.train(nf, optimizer, i, loglist, sampling=True, update=self.run_nofas, t=t)
                     if t == 1:
@@ -143,7 +146,7 @@ class experiment:
 
                 if self.scheduler == 'AdaAnn':
                     z0 = nf.base_dist.sample([self.M])
-                    zk, log_jacobians = nf(z0)
+                    zk, _ = nf(z0)
                     log_qk = self.model_logdensity(zk)
                     dt = self.tol / torch.sqrt(log_qk.var())
                     dt = dt.detach().numpy()
@@ -173,20 +176,28 @@ class experiment:
             x00 = nf.base_dist.sample([self.n_sample])
             xkk, _ = nf(x00)
             # Save surrogate grid
-            np.savetxt(self.output_dir + '/' + self.name + '_grid_' + str(iteration), self.surrogate.grid_record.detach().numpy(), newline="\n")
-            # Save surrogate grid
+            if not(self.surrogate is None):
+              np.savetxt(self.output_dir + '/' + self.name + '_grid_' + str(iteration), self.surrogate.grid_record.detach().numpy(), newline="\n")
+            # Save log profile
             np.savetxt(self.output_dir + '/' + self.log_file, np.array(log), newline="\n")
             # Save transformed samples          
             np.savetxt(self.output_dir + '/' + self.name + '_samples_' + str(iteration), xkk.data.numpy(), newline="\n")
             # Save samples in the original space
-            np.savetxt(self.output_dir + '/' + self.name + '_params_' + str(iteration), self.transform(xkk).data.numpy(), newline="\n")
+            if not(self.transform is None):
+              np.savetxt(self.output_dir + '/' + self.name + '_params_' + str(iteration), self.transform.forward(xkk).data.numpy(), newline="\n")
+            else:
+              np.savetxt(self.output_dir + '/' + self.name + '_params_' + str(iteration), xkk.data.numpy(), newline="\n")
             # Save log density at the same samples
             np.savetxt(self.output_dir + '/' + self.name + '_logdensity_' + str(iteration), self.model_logdensity(xkk).data.numpy(), newline="\n")
-            # Save model outputs at the samples
-            if self.surrogate:
-                np.savetxt(self.output_dir + '/' + self.name + '_outputs_' + str(iteration), self.surrogate.forward(xkk).data.numpy(), newline="\n")
-            else:
-                np.savetxt(self.output_dir + '/' + self.name + '_outputs_' + str(iteration), self.model.solve_t(self.transform(xkk)).data.numpy(), newline="\n")
+            # Save model outputs at the samples - If a model is defined
+            if not(self.transform is None):
+              stds = torch.abs(self.model.solve_t(self.model.defParam)) * self.model.stdRatio
+              o00 = torch.randn(x00.size(0), self.model.data.shape[0])
+              noise = o00*stds.repeat(o00.size(0),1)
+              if self.surrogate:
+                np.savetxt(self.output_dir + '/' + self.name + '_outputs_' + str(iteration), (self.surrogate.forward(xkk) + noise).data.numpy(), newline="\n")
+              else:
+                np.savetxt(self.output_dir + '/' + self.name + '_outputs_' + str(iteration), (self.model.solve_t(self.transform.forward(xkk)) + noise).data.numpy(), newline="\n")
 
         if torch.any(torch.isnan(xk)):
             print("Error: samples xk are nan at iteration " + str(iteration))
