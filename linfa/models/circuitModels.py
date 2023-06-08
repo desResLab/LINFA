@@ -143,6 +143,7 @@ class rcModel(circuitModel):
         super().__init__(numParam, numState, numAuxState, numOutputs,
                          parName, limits, defParam,
                          cycleTime, totalCycles, forcing)
+        self.stdRatio = 0.01
         # self.surrogate = Surrogate("RC", lambda x: self.solve_t(self.transform(x)), numParam, numOutputs,
         #                            torch.Tensor([[-7, 7], [-7, 7]]), 20)
 
@@ -202,6 +203,7 @@ class rcrModel(circuitModel):
         super().__init__(numParam, numState, numAuxState, numOutputs,
                          parName, limits, defParam,
                          cycleTime, totalCycles, forcing)
+        self.stdRatio = 0.05
         # self.surrogate = Surrogate("RCR", lambda x: self.solve_t(self.transform(x)), numParam, numOutputs,
         #                            torch.Tensor([[-7, 7], [-7, 7], [-7, 7]]), 20)
 

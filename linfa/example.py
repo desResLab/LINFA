@@ -1,5 +1,5 @@
 from run_experiment import experiment
-from NoFAS import Surrogate
+from nofas import Surrogate
 import torch
 import random
 import numpy as np
@@ -350,8 +350,8 @@ def AdaANN_example():
 
 
 if __name__ == '__main__':
-    trivial_example() # Checked
+    # trivial_example() # Checked
     # highdim_example()
-    # RC_example()
+    RC_example()
     # RCR_example()
     # AdaANN_example()

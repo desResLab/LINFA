@@ -2,7 +2,7 @@ import os
 import torch
 import numpy as np
 import scipy as sp
-from linfa.maf import MAF, RealNVP
+from maf import MAF, RealNVP
 
 # from TrivialModels import circuitTrivial
 # from circuitModels import rcModel, rcrModel
