@@ -286,7 +286,7 @@ def AdaANN_example():
     exp.name = "AdaANN"
     exp.flow_type = 'realnvp'  # str: Type of flow                                 default 'realnvp'
     exp.n_blocks = 10  # int: Number of layers                             default 5
-    exp.hidden_size = 50  # int: Hidden layer size for MADE in each layer     default 100
+    exp.hidden_size = 20  # int: Hidden layer size for MADE in each layer     default 100
     exp.n_hidden = 1  # int: Number of hidden layers in each MADE         default 1
     exp.activation_fn = 'relu'  # str: Actication function used                     default 'relu'
     exp.input_order = 'sequential'  # str: Input order for create_mask                  default 'sequential'
@@ -296,21 +296,21 @@ def AdaANN_example():
     exp.input_size = 10  # int: Dimensionality of input                      default 2
     exp.batch_size = 100  # int: Number of samples generated                  default 100
     exp.n_iter = 1000  # int: Number of iterations                         default 25001
-    exp.lr = 0.001  # float: Learning rate                              default 0.003
+    exp.lr = 0.005  # float: Learning rate                              default 0.003
     exp.log_interval = 10  # int: How often to show loss stat                  default 10
     exp.run_nofas = False
     exp.annealing = True
 
     exp.optimizer = 'Adam'  # str: type of optimizer used
     exp.lr_scheduler = 'StepLR'  # str: type of lr scheduler used
-    exp.lr_step = 1000  # int: number of steps for lr step scheduler
-    exp.tol = 0.001  # float: tolerance for AdaAnn scheduler
-    exp.t0 = 0.01  # float: initial inverse temperature value
+    exp.lr_step = 500  # int: number of steps for lr step scheduler
+    exp.tol = 0.4  # float: tolerance for AdaAnn scheduler
+    exp.t0 = 0.001  # float: initial inverse temperature value
     exp.N = 100  # int: number of sample points during annealing
-    exp.N_1 = 1000  # int: number of sample points at t=1
+    exp.N_1 = 400  # int: number of sample points at t=1
     exp.T_0 = 500  # int: number of parameter updates at initial t0
-    exp.T = 5  # int: number of parameter updates during annealing
-    exp.T_1 = 5001  # int: number of parameter updates at t=1
+    exp.T = 3  # int: number of parameter updates during annealing
+    exp.T_1 = 2000  # int: number of parameter updates at t=1
     exp.M = 1000  # int: number of sample points used to update temperature
     exp.annealing = True  # boo: decide if annealing is used
     exp.scheduler = 'AdaAnn'  # str: type of annealing scheduler used
