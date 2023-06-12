@@ -278,7 +278,7 @@ class linfa_test_suite(unittest.TestCase):
 
         # Define model
         cycleTime = 1.07
-        totalCycles = 15
+        totalCycles = 10
         forcing = np.loadtxt('../resource/data/inlet.flow')
         model = rcModel(cycleTime, totalCycles, forcing)  # RCR Model Defined
         exp.model = model
@@ -353,7 +353,7 @@ class linfa_test_suite(unittest.TestCase):
         exp.batch_size = 500  # int: Number of samples generated                  default 100
         exp.true_data_num = 2  # double: number of true model evaluated        default 2
         exp.n_iter = 25001  # int: Number of iterations                         default 25001
-        exp.lr = 0.005  # float: Learning rate                              default 0.003
+        exp.lr = 0.003  # float: Learning rate                              default 0.003
         exp.lr_decay = 0.9999  # float: Learning rate decay                        default 0.9999
         exp.log_interval = 10  # int: How often to show loss stat                  default 10
 
@@ -400,13 +400,11 @@ class linfa_test_suite(unittest.TestCase):
             if not os.path.isfile(exp.name + ".sur") or not os.path.isfile(exp.name + ".npz"):
                 print("Warning: Surrogate model files: {0}.npz and {0}.npz could not be found. ".format(exp.name))
                 exp.surrogate.gen_grid(gridnum=4)
-                exp.surrogate.pre_train(120000, 0.03, 0.9999, 500, store=True)
+                exp.surrogate.pre_train(50000, 0.03, 0.9999, 500, store=True)
         exp.surrogate.surrogate_load()
 
         # Define log density
         def log_density(x, model, surrogate, transform):
-
-            batch_size = list(x.size())[0]
 
             # Compute transformation log Jacobian
             adjust = transform.compute_log_jacob_func(x)
@@ -416,7 +414,6 @@ class linfa_test_suite(unittest.TestCase):
             else:
                 modelOut = model.solve_t(transform(x))
 
-            data_size = len(model.data[0])
             # Get the absolute values of the standard deviations
             stds = model.defOut * model.stdRatio
             Data = torch.tensor(model.data)
@@ -427,7 +424,7 @@ class linfa_test_suite(unittest.TestCase):
             for i in range(3):
                 ll3 += - 0.5 * torch.sum(((modelOut[:, i].unsqueeze(1) - Data[i, :].unsqueeze(0)) / stds[0, i]) ** 2, dim=1)
             negLL = -(ll1 + ll2 + ll3)
-            res = - negLL + adjust.flatten()
+            res = -negLL.reshape(x.size(0), 1) + adjust
             return res
 
         # Assign logdensity model
@@ -472,7 +469,7 @@ class linfa_test_suite(unittest.TestCase):
         exp.optimizer = 'Adam'  # str: type of optimizer used
         exp.lr_scheduler = 'StepLR'  # str: type of lr scheduler used
         exp.lr_step = 1000  # int: number of steps for lr step scheduler
-        exp.tol = 0.001  # float: tolerance for AdaAnn scheduler
+        exp.tol = 0.01# 0.001  # float: tolerance for AdaAnn scheduler
         exp.t0 = 0.01  # float: initial inverse temperature value
         exp.N = 100  # int: number of sample points during annealing
         exp.N_1 = 1000  # int: number of sample points at t=1

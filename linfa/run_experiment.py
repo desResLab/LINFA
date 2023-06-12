@@ -132,12 +132,21 @@ class experiment:
                 self.batch_size = self.N
                 
                 if t == self.t0:
+                    # print('')
+                    # print('--- Initial iterations at t0')
+                    # print('')
                     self.n_iter = self.T_0
                 if t == 1:
+                    # print('')
+                    # print('--- Final iterations at t=1')
+                    # print('')
                     self.batch_size = self.N_1
                     self.n_iter = self.T_1
 
                 while i < prev_i + self.n_iter:
+                    print(prev_i + self.n_iter)
+                    # print('--- VI NF at temperature t=%.3f' % (t))
+                    print(t)
                     self.train(nf, optimizer, i, loglist, sampling=True, update=self.run_nofas, t=t)
                     if t == 1:
                         scheduler.step()
@@ -145,6 +154,9 @@ class experiment:
                 prev_i = i
 
                 if self.scheduler == 'AdaAnn':
+                    print('')
+                    print('--- Updating temperature')
+                    print('')
                     z0 = nf.base_dist.sample([self.M])
                     zk, _ = nf(z0)
                     log_qk = self.model_logdensity(zk)
@@ -164,6 +176,7 @@ class experiment:
         # rt.surrogate.surrogate_save() # Used for saving the resulting surrogate model
 
     def train(self, nf, optimizer, iteration, log, sampling=True, update=True, t=1):
+
         # Train the normalizing flow
         nf.train()
 

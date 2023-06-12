@@ -54,6 +54,7 @@ class circuitModel():
     def __init__(self, numParam, numState, numAuxState, numOutputs,
                  parName, limits, defParam,
                  cycleTime, totalCycles, forcing=None):
+        
         # Time integration parameters
         self.cycleTime = cycleTime
         self.totalCycles = totalCycles
@@ -138,6 +139,7 @@ class rcModel(circuitModel):
         numAuxState = 4
         numOutputs = 3
         parName = ["R", "C"]
+        # self.stdRatio = 0.01
         limits = torch.Tensor([[100.0, 1500.0], [1.0e-5, 1.0e-2]])
         defParam = torch.Tensor([[1000.0, 0.00005]])
         #  Invoke Superclass Constructor
@@ -206,6 +208,7 @@ class rcrModel(circuitModel):
                          cycleTime, totalCycles, forcing)
         # self.surrogate = Surrogate("RCR", lambda x: self.solve_t(self.transform(x)), numParam, numOutputs,
         #                            torch.Tensor([[-7, 7], [-7, 7], [-7, 7]]), 20)
+        self.stdRatio = 0.05
 
     def evalDeriv_t(self, t, y, params):
         R1 = params[:, 0]
@@ -250,3 +253,9 @@ class rcrModel(circuitModel):
     #     else:
     #         modelOut = self.solve_t(self.transform(x))
     #     return - self.evalNegLL_t(modelOut).reshape(batch_size, 1) + adjust
+
+# GEN DATA
+if __name__ == '__main__':
+  
+  rc = rcModel()
+  rc.genDataFile(50, 'data')
