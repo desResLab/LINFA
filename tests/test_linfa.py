@@ -10,6 +10,9 @@ import math
 
 class linfa_test_suite(unittest.TestCase):
 
+    def phys_example(self):
+        pass
+
     def trivial_example(self, run_nofas=True, run_adaann=False):
 
         print('')
@@ -70,7 +73,8 @@ class linfa_test_suite(unittest.TestCase):
         exp.model = model
 
         # Get data
-        model.data = np.loadtxt('../resource/data/data_trivial.txt')
+        #model.data = np.loadtxt('../resource/data/data_trivial.txt')
+        model.data = np.loadtxt('resource/data/data_trivial.txt')
 
         # Define surrogate
         exp.surrogate = Surrogate(exp.name, lambda x: model.solve_t(trsf.forward(x)), 2, 2, [[0, 6], [0, 6]], 20)
