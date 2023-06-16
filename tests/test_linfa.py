@@ -16,7 +16,9 @@ class linfa_test_suite(unittest.TestCase):
         print('')
 
         # Import physics example
-        from linfa.models.TrivialModels import Trivial
+        from linfa.models.PhysModel import Phys
+
+        exp = experiment()
 
     def trivial_example(self, run_nofas=True, run_adaann=False):
 
