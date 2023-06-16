@@ -11,7 +11,12 @@ import math
 class linfa_test_suite(unittest.TestCase):
 
     def phys_example(self):
-        pass
+        print('')
+        print('--- Temporary TEST: Physics Example - NOFAS')
+        print('')
+
+        # Import physics example
+        from linfa.models.TrivialModels import Trivial
 
     def trivial_example(self, run_nofas=True, run_adaann=False):
 
