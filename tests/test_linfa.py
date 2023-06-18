@@ -73,7 +73,7 @@ class linfa_test_suite(unittest.TestCase):
         model.data = np.loadtxt('resource/data/data_trivial.txt')
 
         # Define surrogate
-        exp.surrogate = Surrogate(exp.name, lambda x: model.solve_t(trsf.forward(x)), 2, 2, [[0, 6], [0, 6]], 20)
+        exp.surrogate = Surrogate(exp.name, lambda x: model.solve_t(trsf.forward(x)), 3, 3, [[0, 2], [0, 10], [30, 80]], 20)
         if exp.run_nofas:
             if not os.path.isfile(exp.name + ".sur") or not os.path.isfile(exp.name + ".npz"):
                 print("Warning: Surrogate model files: {0}.npz and {0}.npz could not be found. ".format(exp.name))
