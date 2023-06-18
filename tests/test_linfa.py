@@ -10,7 +10,7 @@ import math
 
 class linfa_test_suite(unittest.TestCase):
 
-    def phys_example(self):
+    def phys_example(self, run_nofas=True, run_adaann=False):
         print('')
         print('--- Temporary TEST: Physics Example - NOFAS')
         print('')
@@ -19,6 +19,68 @@ class linfa_test_suite(unittest.TestCase):
         from linfa.models.PhysModel import Phys
 
         exp = experiment()
+        exp.name = "phys"
+        exp.flow_type = 'realnvp'  # str: Type of flow                                 default 'realnvp'
+        exp.n_blocks = 5  # int: Number of layers                             default 5
+        exp.hidden_size = 100  # int: Hidden layer size for MADE in each layer     default 100
+        exp.n_hidden = 1  # int: Number of hidden layers in each MADE         default 1
+        exp.activation_fn = 'relu'  # str: Actication function used                     default 'relu'
+        exp.input_order = 'sequential'  # str: Input order for create_mask                  default 'sequential'
+        exp.batch_norm_order = True  # boo: Order to decide if batch_norm is used        default True
+        exp.sampling_interval = 5000  # int: How often to sample from normalizing flow
+
+        exp.input_size = 3  # int: Dimensionality of input                      default 2
+        exp.batch_size = 200  # int: Number of samples generated                  default 100
+        exp.true_data_num = 2  # double: number of true model evaluated        default 2
+        exp.n_iter = 25001 # 25001  # int: Number of iterations                         default 25001
+        exp.lr = 0.002  # float: Learning rate                              default 0.003
+        exp.lr_decay = 0.9999  # float: Learning rate decay                        default 0.9999
+        exp.log_interval = 10  # int: How often to show loss stat   
+
+        exp.run_nofas = run_nofas
+        exp.annealing = run_adaann
+        exp.calibrate_interval = 1000  # int: How often to update surrogate model          default 1000
+        exp.budget = 64  # int: Total number of true model evaluation
+
+        exp.output_dir   = './results/' + exp.name
+        exp.results_file = 'results.txt'
+        exp.log_file     = 'log.txt'
+        exp.samples_file = 'samples.txt'
+        exp.seed         = random.randint(0, 10 ** 9)  # int: Random seed used
+        exp.n_sample     = 5000  # int: Total number of iterations
+        exp.no_cuda      = True
+
+        exp.optimizer    = 'RMSprop'
+        exp.lr_scheduler = 'ExponentialLR'
+
+        exp.device = torch.device('cuda:0' if torch.cuda.is_available() and not exp.no_cuda else 'cpu')
+        print('--- Running on device: '+ str(exp.device))
+        print('')
+
+        # Define transformation
+        # One list for each variable
+        trsf_info = [['identity',0,0,0,0],
+                     ['identity',0,0,0,0]]
+        trsf = Transformation(trsf_info)        
+        exp.transform = trsf
+
+        # Define model
+        model = Phys()
+        exp.model = model
+
+        # Get data
+        #model.data = np.loadtxt('../resource/data/data_trivial.txt')
+        model.data = np.loadtxt('resource/data/data_trivial.txt')
+
+        # Define surrogate
+        exp.surrogate = Surrogate(exp.name, lambda x: model.solve_t(trsf.forward(x)), 2, 2, [[0, 6], [0, 6]], 20)
+        if exp.run_nofas:
+            if not os.path.isfile(exp.name + ".sur") or not os.path.isfile(exp.name + ".npz"):
+                print("Warning: Surrogate model files: {0}.npz and {0}.npz could not be found. ".format(exp.name))
+                # 4 samples for each dimension: pre-grid size = 16
+                exp.surrogate.gen_grid(gridnum=4)
+                exp.surrogate.pre_train(40000, 0.03, 0.9999, 500, store=True)
+        exp.surrogate.surrogate_load()
 
     def trivial_example(self, run_nofas=True, run_adaann=False):
 
