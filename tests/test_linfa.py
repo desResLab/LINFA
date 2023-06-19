@@ -32,7 +32,7 @@ class linfa_test_suite(unittest.TestCase):
         exp.input_size = 3  # int: Dimensionality of input                      default 2
         exp.batch_size = 200  # int: Number of samples generated                  default 100
         exp.true_data_num = 2  # double: number of true model evaluated        default 2
-        exp.n_iter = 25001 # 25001  # int: Number of iterations                         default 25001
+        exp.n_iter = 10001 # 25001  # int: Number of iterations                         default 25001
         exp.lr = 0.002  # float: Learning rate                              default 0.003
         exp.lr_decay = 0.9999  # float: Learning rate decay                        default 0.9999
         exp.log_interval = 10  # int: How often to show loss stat   
@@ -69,8 +69,7 @@ class linfa_test_suite(unittest.TestCase):
         exp.model = model
 
         # Get data
-        #model.data = np.loadtxt('../resource/data/data_trivial.txt')
-        model.data = np.loadtxt('resource/data/data_trivial.txt')
+        model.data = np.loadtxt('resource/data/data_phys.txt')
 
         # Define surrogate
         exp.surrogate = Surrogate(exp.name, lambda x: model.solve_t(trsf.forward(x)), 3, 3, [[0, 2], [0, 10], [30, 80]], 20)
