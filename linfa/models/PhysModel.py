@@ -9,7 +9,7 @@ class Phys:
         self.RM = torch.Tensor([[1.0, 1.0],
                                 [1.0, -1.0]])
         self.gConst = 9.81
-        self.stdRatio = 0.05
+        self.stdRatio = 0.01
         self.data = None
 
     def genDataFile(self, dataSize = 50, dataFileName="source/data/data_phys.txt", store=True):

@@ -10,6 +10,7 @@ class Transformation(torch.nn.Module):
         self.funcs     = []
         self.log_jacob = []
         self.n = len(func_info)
+        # when to use what?
         for func, a, b, c, d in func_info:
             if func == "identity":
                 self.funcs.append(lambda x: x)
