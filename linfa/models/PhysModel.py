@@ -6,11 +6,20 @@ class Phys:
         # define parameter 
         # inputs[0] = 1, [1] = 5, [2] = 60
         self.defParam = torch.Tensor([[1.0, 5.0, 60.0]])
+        self.RM = torch.Tensor([[1.0, 1.0],
+                                [1.0, -1.0]])
+        self.gConst = 9.81
 
     def genDataFile(self):
         pass
 
     def solve_t(self, params):
         z1, z2, z3 = torch.chunk(params, chunks=3, dim=1)
-        x = torch.cat((z1 ** 3 / 10, torch.exp(z2 / 3)), 1)
-        return torch.matmul(x, self.RM)
+        z3 = z3 * (np.pi / 180)
+        # x1: maxHeight
+        # x2: finalLocation 
+        # x3: totalTime
+        x = torch.cat(((z2 ** 2) * (np.sin(z3) ** 2) / (2.0 * self.gConst), 
+                    z1 + ((z2 ** 2) * np.sin(2.0 * z3)) / self.gConst, 
+                    (2.0 * z2 * np.sin(z3)) / self.gConst), 1)
+        return x
