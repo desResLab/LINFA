@@ -20,8 +20,8 @@ class linfa_test_suite(unittest.TestCase):
 
         exp = experiment()
         exp.name = "phys"
-        exp.flow_type = 'realnvp'  # str: Type of flow                                 default 'realnvp'
-        #exp.flow_type = 'maf'  # str: Type of flow
+        # exp.flow_type = 'realnvp'  # str: Type of flow                                 default 'realnvp'
+        exp.flow_type = 'maf'  # str: Type of flow
         exp.n_blocks = 5  # int: Number of layers                             default 5
         exp.hidden_size = 100  # int: Hidden layer size for MADE in each layer     default 100
         exp.n_hidden = 1  # int: Number of hidden layers in each MADE         default 1
@@ -31,11 +31,11 @@ class linfa_test_suite(unittest.TestCase):
         exp.sampling_interval = 5000  # int: How often to sample from normalizing flow
 
         exp.input_size = 3  # int: Dimensionality of input                      default 2
-        exp.batch_size = 200  # int: Number of samples generated                  default 100
+        exp.batch_size = 250  # int: Number of samples generated                  default 100
         # what is this? why is this 2?
         exp.true_data_num = 2  # double: number of true model evaluated        default 2
         exp.n_iter = 15001 # 25001  # int: Number of iterations                         default 25001
-        exp.lr = 0.002  # float: Learning rate                              default 0.003
+        exp.lr = 0.005  # float: Learning rate                              default 0.003
         exp.lr_decay = 0.9999  # float: Learning rate decay                        default 0.9999
         exp.log_interval = 100  # int: How often to show loss stat   
 
@@ -71,6 +71,9 @@ class linfa_test_suite(unittest.TestCase):
         trsf_info = [['identity',0.0,0.0,0.0,0.0],
                 ['identity',0.0,0.0,0.0,0.0],
                 ['identity',0.0,0.0,0.0,0.0]]
+        # trsf_info = [['exp',-7.0,7.0,math.exp(-3.0),math.exp(0.0)],
+        #              ['exp',-7.0,7.0,math.exp(-3.0),math.exp(0.0)],
+        #              ['exp',-7.0,7.0,math.exp(-3.0),math.exp(0.0)]]
         trsf = Transformation(trsf_info)        
         exp.transform = trsf
 
@@ -84,9 +87,9 @@ class linfa_test_suite(unittest.TestCase):
         # Define surrogate
         exp.surrogate = Surrogate(exp.name, lambda x: model.solve_t(trsf.forward(x)), 3, 3, torch.Tensor([[0, 2], [0, 10], [30, 80]]), 20)
         # exp.surrogate = Surrogate(exp.name, lambda x: model.solve_t(trsf.forward(x)), 3, 3, 
-        #                           torch.Tensor([[0, 1], [0, 5], [50, 70]]), 20)
+        #                           torch.Tensor([[0, 1], [0, 5], [0, 1]]), 20)
         # exp.surrogate = Surrogate(exp.name, lambda x: model.solve_t(trsf.forward(x)), exp.input_size, 3, 
-        #                           torch.Tensor([[-8, 8], [-8, 8], [-8, 8]]), 20)
+        #                           torch.Tensor([[0, 8], [0, 8], [0, 8]]), 20)
         if exp.run_nofas:
             if not os.path.isfile(exp.name + ".sur") or not os.path.isfile(exp.name + ".npz"):
                 print("Warning: Surrogate model files: {0}.npz and {0}.npz could not be found. ".format(exp.name))
@@ -103,6 +106,9 @@ class linfa_test_suite(unittest.TestCase):
             adjust = transform.compute_log_jacob_func(x)
 
             batch_size = x.size(0)
+            # Get the absolute values of the standard deviations
+            # stds = model.defOut * model.stdRatio
+            # Data = torch.tensor(model.data)
             stds = torch.abs(model.solve_t(model.defParam)) * model.stdRatio
             Data = torch.tensor(model.data)
             if surrogate:
@@ -114,13 +120,17 @@ class linfa_test_suite(unittest.TestCase):
             ll1 = -0.5 * np.prod(model.data.shape) * np.log(2.0 * np.pi)
             ll2 = (-0.5 * model.data.shape[1] * torch.log(torch.prod(stds))).item()
             ll3 = 0.0
+            # for i in range(3):
+            #     ll3 += - 0.5 * torch.sum(((modelOut[:, i].unsqueeze(1) - Data[i, :].unsqueeze(0)) / stds[0, i]) ** 2, dim=1)
+            # negLL = -(ll1 + ll2 + ll3)
+            # res = -negLL.reshape(x.size(0), 1) + adjust
+            # return res
+            ## trivial
             for i in range(2):
               ll3 += - 0.5 * torch.sum(((modelOut[:, i].unsqueeze(1) - Data[i, :].unsqueeze(0)) / stds[0, i]) ** 2, dim=1)
 
             negLL = -(ll1 + ll2 + ll3)
 
-            # return -negLL.reshape(batch_size, 1) + adjust
-            # ADJUST SEMBRA ESSERE UN PROBLEMA!!!! MA CE LA POSTERIOR PREDICTIVE CHE NON E' OK...
             return -negLL + adjust
 
         # Assign log-density model
@@ -392,7 +402,7 @@ class linfa_test_suite(unittest.TestCase):
         # Define transformation
         # One list for each variable
         trsf_info = [['tanh',-7.0,7.0,100.0,1500.0],
-                     ['exp',-7.0,7.0,math.exp(-8.0),math.exp(-5.0)]]
+                     ['exp',-7.0,7.0,math.exp(-8.0),math.exp(-5.0)]] # where did this come from?
         trsf = Transformation(trsf_info)
         exp.transform = trsf
 
@@ -462,7 +472,8 @@ class linfa_test_suite(unittest.TestCase):
 
         exp = experiment()
         exp.name = "rcr"
-        exp.flow_type = 'maf'  # str: Type of flow                                 default 'realnvp'
+        exp.flow_type = 'realnvp'  # str: Type of flow                                 default 'realnvp'
+        #exp.flow_type = 'maf'  # str: Type of flow                                 default 'realnvp'
         exp.n_blocks = 15  # int: Number of layers                             default 5
         exp.hidden_size = 100  # int: Hidden layer size for MADE in each layer     default 100
         exp.n_hidden = 1  # int: Number of hidden layers in each MADE         default 1
@@ -508,12 +519,14 @@ class linfa_test_suite(unittest.TestCase):
         # Define model
         cycleTime = 1.07
         totalCycles = 10
-        forcing = np.loadtxt('../resource/data/inlet.flow')
+        forcing = np.loadtxt('resource/data/inlet.flow')
+        #forcing = np.loadtxt('../resource/data/inlet.flow')
         model = rcrModel(cycleTime, totalCycles, forcing)  # RCR Model Defined
         exp.model = model
 
         # Read data
-        model.data = np.loadtxt('../resource/data/data_rcr.txt')
+        # model.data = np.loadtxt('../resource/data/data_rcr.txt')
+        model.data = np.loadtxt('resource/data/data_rcr.txt')
 
         # Define surrogate
         exp.surrogate = Surrogate(exp.name, lambda x: model.solve_t(trsf.forward(x)), exp.input_size, 3,

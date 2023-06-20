@@ -27,7 +27,8 @@ class Transformation(torch.nn.Module):
                 self.log_jacob.append(lambda x: np.log(d - c) - np.log(b - a))
             elif func == "exp":
                 self.funcs.append(lambda x: torch.exp((x - a) / (b - a) * (np.log(d) - np.log(c)) + np.log(c)))
-                self.log_jacob.append(lambda x: (x - a) / (b - a) * (np.log(d) - np.log(c)) + np.log(c) + np.log(np.log(d) - np.log(c)) - np.log(b - a))
+                self.log_jacob.append(lambda x: (x - a) / (b - a) * (np.log(d) - np.log(c)) + np.log(c) + 
+                                      np.log(np.log(d) - np.log(c)) - np.log(b - a))
 
     def forward(self, z):
         """
