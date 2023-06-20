@@ -315,6 +315,7 @@ class linfa_test_suite(unittest.TestCase):
         exp.batch_size = 100  # int: Number of samples generated                  default 100
         exp.n_iter = 1000  # int: Number of iterations                         default 25001
         exp.lr = 0.005  # float: Learning rate                              default 0.003
+        self.lr_decay = 0.75
         exp.log_interval = 10  # int: How often to show loss stat                  default 10
         exp.run_nofas = run_nofas
         exp.annealing = run_adaann
