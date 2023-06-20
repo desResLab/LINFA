@@ -6,10 +6,10 @@ class Phys:
         # define parameter 
         # inputs[0] = 1, [1] = 5, [2] = 60
         self.defParam = torch.Tensor([[1.0, 5.0, 60.0]])
-        self.RM = torch.Tensor([[1.0, 1.0],
-                                [1.0, -1.0]])
+        # self.RM = torch.Tensor([[1.0, 1.0],
+        #                         [1.0, -1.0]])
         self.gConst = 9.81
-        self.stdRatio = 0.01
+        self.stdRatio = 0.05
         self.data = None
 
     def genDataFile(self, dataSize = 50, dataFileName="source/data/data_phys.txt", store=True):

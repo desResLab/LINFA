@@ -126,7 +126,7 @@ class linfa_test_suite(unittest.TestCase):
             # res = -negLL.reshape(x.size(0), 1) + adjust
             # return res
             ## trivial
-            for i in range(2):
+            for i in range(3):
               ll3 += - 0.5 * torch.sum(((modelOut[:, i].unsqueeze(1) - Data[i, :].unsqueeze(0)) / stds[0, i]) ** 2, dim=1)
 
             negLL = -(ll1 + ll2 + ll3)
