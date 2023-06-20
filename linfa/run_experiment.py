@@ -159,7 +159,7 @@ class experiment:
             raise ValueError('Unrecognized optimizer.')
 
         if self.lr_scheduler == 'StepLR':
-            scheduler = torch.optim.lr_scheduler.StepLR(optimizer, self.lr_step)
+            scheduler = torch.optim.lr_scheduler.StepLR(optimizer, self.lr_step, self.lr_decay)
         elif self.lr_scheduler == 'ExponentialLR':
             scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, self.lr_decay)
         else:
