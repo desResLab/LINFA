@@ -35,7 +35,7 @@ class linfa_test_suite(unittest.TestCase):
         # what is this? why is this 2?
         exp.true_data_num = 2  # double: number of true model evaluated        default 2
         exp.n_iter = 15001 # 25001  # int: Number of iterations                         default 25001
-        exp.lr = 0.005  # float: Learning rate                              default 0.003
+        exp.lr = 0.003  # float: Learning rate                              default 0.003
         exp.lr_decay = 0.9999  # float: Learning rate decay                        default 0.9999
         exp.log_interval = 100  # int: How often to show loss stat   
 
