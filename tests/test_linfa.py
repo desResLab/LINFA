@@ -7,6 +7,7 @@ import torch
 import random
 import numpy as np
 import math
+import pandas as pd
 
 class linfa_test_suite(unittest.TestCase):
 
@@ -65,12 +66,15 @@ class linfa_test_suite(unittest.TestCase):
         #              ['tanh',-8.0,8.0,0.0,10.0],
         #              ['tanh',-8.0,8.0,30.0,80.0]] 
         #  loss == nan; think this is because difference is small?
-        # trsf_info = [['linear',-8.0,8.0,0.0,2.0],
-        #         ['linear',-8.0,8.0,0.0,10.0],
-        #         ['linear',-8.0,8.0,30.0,80.0]]
+        # trsf_info = [['exp',-3, 3, 0.7, 1.4],
+        # ['exp',-3,3,4.0,8.0],
+        # ['linear',-3,3,40.0,80.0]]
+        # trsf_info = [['linear',-0.1, 0.1, 0.6, 1.6],
+        #         ['linear',-0.1,0.1,3.0,8.0],
+        #         ['linear',-0.1,0.1,30.0,80.0]]
         trsf_info = [['identity',0.0,0.0,0.0,0.0],
                 ['identity',0.0,0.0,0.0,0.0],
-                ['identity',0.0,0.0,0.0,0.0]]
+                ['linear',-3,3,30.0,80.0]]
         # trsf_info = [['exp',-7.0,7.0,math.exp(-3.0),math.exp(0.0)],
         #              ['exp',-7.0,7.0,math.exp(-3.0),math.exp(0.0)],
         #              ['exp',-7.0,7.0,math.exp(-3.0),math.exp(0.0)]]
@@ -83,13 +87,14 @@ class linfa_test_suite(unittest.TestCase):
 
         # Get data
         model.data = np.loadtxt('resource/data/data_phys.txt')
-
+        # exp.surrogate = False
+        # try to not use surrogate > use full
         # Define surrogate
-        exp.surrogate = Surrogate(exp.name, lambda x: model.solve_t(trsf.forward(x)), 3, 3, torch.Tensor([[0, 2], [0, 10], [30, 80]]), 20)
+        # exp.surrogate = Surrogate(exp.name, lambda x: model.solve_t(trsf.forward(x)), 3, 3, torch.Tensor([[0, 2], [0, 10], [30, 80]]), 20)
         # exp.surrogate = Surrogate(exp.name, lambda x: model.solve_t(trsf.forward(x)), 3, 3, 
         #                           torch.Tensor([[0, 1], [0, 5], [0, 1]]), 20)
-        # exp.surrogate = Surrogate(exp.name, lambda x: model.solve_t(trsf.forward(x)), exp.input_size, 3, 
-        #                           torch.Tensor([[0, 8], [0, 8], [0, 8]]), 20)
+        exp.surrogate = Surrogate(exp.name, lambda x: model.solve_t(trsf.forward(x)), exp.input_size, 3, 
+                                  torch.Tensor([[0, 2], [0, 10], [-3, 3]]), 20)
         if exp.run_nofas:
             if not os.path.isfile(exp.name + ".sur") or not os.path.isfile(exp.name + ".npz"):
                 print("Warning: Surrogate model files: {0}.npz and {0}.npz could not be found. ".format(exp.name))
@@ -120,18 +125,18 @@ class linfa_test_suite(unittest.TestCase):
             ll1 = -0.5 * np.prod(model.data.shape) * np.log(2.0 * np.pi)
             ll2 = (-0.5 * model.data.shape[1] * torch.log(torch.prod(stds))).item()
             ll3 = 0.0
-            # for i in range(3):
-            #     ll3 += - 0.5 * torch.sum(((modelOut[:, i].unsqueeze(1) - Data[i, :].unsqueeze(0)) / stds[0, i]) ** 2, dim=1)
-            # negLL = -(ll1 + ll2 + ll3)
-            # res = -negLL.reshape(x.size(0), 1) + adjust
-            # return res
-            ## trivial
             for i in range(3):
-              ll3 += - 0.5 * torch.sum(((modelOut[:, i].unsqueeze(1) - Data[i, :].unsqueeze(0)) / stds[0, i]) ** 2, dim=1)
-
+                ll3 += - 0.5 * torch.sum(((modelOut[:, i].unsqueeze(1) - Data[i, :].unsqueeze(0)) / stds[0, i]) ** 2, dim=1)
             negLL = -(ll1 + ll2 + ll3)
+            res = -negLL.reshape(x.size(0), 1) + adjust
+            return res
+            ## trivial
+            # for i in range(3):
+            #   ll3 += - 0.5 * torch.sum(((modelOut[:, i].unsqueeze(1) - Data[i, :].unsqueeze(0)) / stds[0, i]) ** 2, dim=1)
 
-            return -negLL + adjust
+            # negLL = -(ll1 + ll2 + ll3)
+
+            # return -negLL + adjust
 
         # Assign log-density model
         exp.model_logdensity = lambda x: log_density(x, model, exp.surrogate, trsf)
@@ -401,6 +406,7 @@ class linfa_test_suite(unittest.TestCase):
 
         # Define transformation
         # One list for each variable
+        ## check normalized rate
         trsf_info = [['tanh',-7.0,7.0,100.0,1500.0],
                      ['exp',-7.0,7.0,math.exp(-8.0),math.exp(-5.0)]] # where did this come from?
         trsf = Transformation(trsf_info)
@@ -626,7 +632,7 @@ class linfa_test_suite(unittest.TestCase):
         exp.device = torch.device('cuda:0' if torch.cuda.is_available() and not exp.no_cuda else 'cpu')
 
         # Model Setting
-        data_set = pd.read_csv('../resource/data/D1000.csv')
+        data_set = pd.read_csv('resource/data/D1000.csv')
         data = torch.tensor(data_set.values)
 
         # Define logdensity

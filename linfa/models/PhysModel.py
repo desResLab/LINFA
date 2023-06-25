@@ -29,4 +29,7 @@ class Phys:
         x = torch.cat(((z2 ** 2) * (np.sin(z3) ** 2) / (2.0 * self.gConst), 
                     z1 + ((z2 ** 2) * np.sin(2.0 * z3)) / self.gConst, 
                     (2.0 * z2 * np.sin(z3)) / self.gConst), 1)
+        # x = torch.cat(((z2 ** 2) * (torch.tensor.detach().np.sin(z3) ** 2) / (2.0 * self.gConst), 
+        #     z1 + ((z2 ** 2) * torch.tensor.detach().np.sin(2.0 * z3)) / self.gConst, 
+        #     (2.0 * z2 * torch.tensor.detach().np.sin(z3)) / self.gConst), 1)
         return x
