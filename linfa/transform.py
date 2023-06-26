@@ -1,7 +1,6 @@
-import os
+import math
 import torch
 import numpy as np
-import scipy as sp
 
 class Transformation(torch.nn.Module):
 
@@ -68,3 +67,50 @@ class Transformation(torch.nn.Module):
             jacob_res += log_jacob_func(zz)
 
         return jacob_res
+    
+def test_transform(tets_num):
+  
+  import matplotlib.pyplot as plt
+  
+  # Define the transformation params
+  if(tets_num == 0):
+    a =-7.0
+    b = 7.0
+    c = 100.0
+    d = 1500.0
+    trsf_info = [['tanh',a,b,c,d]]
+  elif(tets_num == 1):
+    a =-7.0
+    b = 7.0
+    c = math.exp(-8.0)
+    d = math.exp(-5.0)
+    trsf_info = [['exp',a,b,c,d]]
+
+  # Create transformation
+  trsf = Transformation(trsf_info)
+
+  # Create uniform parameterization in [a,b]
+  z_vals = torch.from_numpy(np.linspace(a,b,1000)).reshape((-1,1))
+
+  # Eval transformation
+  x_vals = trsf.forward(z_vals)
+  
+  # Eval Jacobian
+  x_grad = trsf.compute_log_jacob_func(z_vals)
+
+  # Plot the transformation
+  plt.subplot(1,2,1)
+  plt.title('Forward map')
+  plt.plot(z_vals.numpy(),x_vals.numpy(),'b-')  
+  plt.xlim([a,b])
+  plt.ylim([c,d])
+  plt.subplot(1,2,2)
+  plt.title('Jacobian')
+  plt.plot(z_vals.numpy(),x_grad.numpy(),'r-')
+  plt.xlim([a,b])
+  plt.show()
+
+# TEST TRANSFORMATION
+if __name__ == '__main__':
+
+  test_transform(0)
