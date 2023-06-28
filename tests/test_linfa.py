@@ -22,72 +22,69 @@ class linfa_test_suite(unittest.TestCase):
         import random
         import numpy as np
         import pandas as pd
+        from linfa.models.PhysModel import Phys
 
         # Experiment Setting
         exp = experiment()
         exp.name = "phys_nofasFree"
-        exp.flow_type = 'maf'  # str: Type of flow                                 default 'realnvp'
-        exp.n_blocks = 10  # int: Number of layers                             default 5
-        exp.hidden_size = 50  # int: Hidden layer size for MADE in each layer     default 100
+        exp.flow_type = 'maf'  # str: Type of flow
+        exp.n_blocks = 5  # int: Number of layers                             default 5
+        exp.hidden_size = 100  # int: Hidden layer size for MADE in each layer     default 100
         exp.n_hidden = 1  # int: Number of hidden layers in each MADE         default 1
         exp.activation_fn = 'relu'  # str: Actication function used                     default 'relu'
         exp.input_order = 'sequential'  # str: Input order for create_mask                  default 'sequential'
         exp.batch_norm_order = True  # boo: Order to decide if batch_norm is used        default True
-        exp.sampling_interval = 1000  # int: How often to sample from normalizing flow
+        exp.sampling_interval = 5000  # int: How often to sample from normalizing flow
 
-        exp.input_size = 10  # int: Dimensionality of input                      default 2
-        exp.batch_size = 100  # int: Number of samples generated                  default 100
-        exp.n_iter = 1000  # int: Number of iterations                         default 25001
-        exp.lr = 0.001  # float: Learning rate                              default 0.003
-        exp.log_interval = 10  # int: How often to show loss stat                  default 10
+        exp.input_size = 3  # int: Dimensionality of input                      default 2
+        exp.batch_size = 250  # int: Number of samples generated                  default 100
+        # what is this? why is this 2?
+        exp.true_data_num = 2  # double: number of true model evaluated        default 2
+        exp.n_iter = 15001 # 25001  # int: Number of iterations                         default 25001
+        exp.lr = 0.003  # float: Learning rate                              default 0.003
+        exp.lr_decay = 0.9999  # float: Learning rate decay                        default 0.9999
+        exp.log_interval = 100  # int: How often to show loss stat   
+
         exp.run_nofas = run_nofas
         exp.annealing = run_adaann
+        exp.calibrate_interval = 1000  # int: How often to update surrogate model          default 1000
+        exp.budget = 64  # int: Total number of true model evaluation
 
-        exp.optimizer = 'Adam'  # str: type of optimizer used
-        exp.lr_scheduler = 'StepLR'  # str: type of lr scheduler used
-        exp.lr_step = 1000  # int: number of steps for lr step scheduler
-        exp.tol = 0.01 # 0.001  # float: tolerance for AdaAnn scheduler
-        exp.t0 = 0.01  # float: initial inverse temperature value
-        exp.N = 100  # int: number of sample points during annealing
-        exp.N_1 = 1000  # int: number of sample points at t=1
-        exp.T_0 = 500  # int: number of parameter updates at initial t0
-        exp.T = 5  # int: number of parameter updates during annealing
-        exp.T_1 = 5001  # int: number of parameter updates at t=1
-        exp.M = 1000  # int: number of Monte Carlo sample points used to update temperature (evaluate denominator)
-        exp.annealing = True  # boo: decide if annealing is used
-        exp.scheduler = 'AdaAnn'  # str: type of annealing scheduler used
-
-        exp.output_dir = './results/' + exp.name
+        exp.output_dir   = './results/' + exp.name
         exp.results_file = 'results.txt'
-        exp.log_file = 'log.txt'
+        exp.log_file     = 'log.txt'
         exp.samples_file = 'samples.txt'
-        exp.seed = 35435  # int: Random seed used
-        exp.n_sample = 5000  # int: Total number of iterations
-        exp.no_cuda = True
+        exp.seed         = random.randint(0, 10 ** 9)  # int: Random seed used
+        exp.n_sample     = 5000  # int: Total number of iterations
+        exp.no_cuda      = True
+
+        exp.optimizer    = 'RMSprop'
+        exp.lr_scheduler = 'ExponentialLR'
 
         exp.device = torch.device('cuda:0' if torch.cuda.is_available() and not exp.no_cuda else 'cpu')
+        print('--- Running on device: '+ str(exp.device))
+        print('')
 
-        # Model Setting
-        data_set = pd.read_csv('resource/data/D1000.csv')
-        data = torch.tensor(data_set.values)
+        # Define transformation
+        trsf_info = [['identity',0.0,0.0,0.0,0.0],
+                ['identity',0.0,0.0,0.0,0.0],
+                ['linear',-3,3,30.0,80.0]]
+        trsf = Transformation(trsf_info)        
+        exp.transform = trsf
 
-        # Define logdensity > addann
-        # def log_density(params, d):
-        #     def targetPosterior(b, x):
-        #         return b[0] * torch.sin(np.pi * x[:, 0] * x[:, 1]) + b[1] ** 2 * (x[:, 2] - b[2]) ** 2 + \
-        #                                 x[:, 3] * b[3] + x[:,4] * b[4] + x[:, 5] * b[5] + x[:, 6] * b[6] + \
-        #                                 x[:, 7] * b[7] + x[:, 8] * b[8] + x[:, 9] * b[9]
+        # Define model
+        model = Phys()
+        exp.model = model
 
-        #     f = torch.zeros(len(params))
+        # Get data
+        model.data = np.loadtxt('resource/data/data_phys.txt')
 
-        #     for i in range(len(params)):
-        #         y_out = targetPosterior(params[i], d)
-        #         val = torch.linalg.norm(y_out - d[:, 10])
-        #         f[i] = -val ** 2 / 2
+        # Should be replaced
+        # exp.surrogate = Surrogate(exp.name, lambda x: model.solve_t(trsf.forward(x)), exp.input_size, 3, 
+        #                           torch.Tensor([[0, 2], [0, 10], [-3, 3]]), 20)
+        # exp.surrogate.surrogate_load()
 
-        #     return f
-
-                # Define log density
+        # Define log density
         def log_density(x, model, transform):
             # x contains the original, untransformed inputs
 
@@ -96,8 +93,6 @@ class linfa_test_suite(unittest.TestCase):
 
             batch_size = x.size(0)
             # Get the absolute values of the standard deviations
-            # stds = model.defOut * model.stdRatio
-            # Data = torch.tensor(model.data)
             stds = torch.abs(model.solve_t(model.defParam)) * model.stdRatio
             Data = torch.tensor(model.data)
             
@@ -115,7 +110,7 @@ class linfa_test_suite(unittest.TestCase):
             return res
         
         # Assign logdensity
-        exp.model_logdensity = lambda x: log_density(x, data)
+        exp.model_logdensity = lambda x: log_density(x, model, trsf)
 
         # Run VI
         exp.run()
@@ -174,7 +169,6 @@ class linfa_test_suite(unittest.TestCase):
         # trsf_info = [['tanh',-8.0,8.0,0.0,2.0],
         #              ['tanh',-8.0,8.0,0.0,10.0],
         #              ['tanh',-8.0,8.0,30.0,80.0]] 
-        #  loss == nan; think this is because difference is small?
         # trsf_info = [['exp',-3, 3, 0.7, 1.4],
         # ['exp',-3,3,4.0,8.0],
         # ['linear',-3,3,40.0,80.0]]
@@ -197,7 +191,6 @@ class linfa_test_suite(unittest.TestCase):
         # Get data
         model.data = np.loadtxt('resource/data/data_phys.txt')
         # exp.surrogate = False
-        # try to not use surrogate > use full
         # Define surrogate
         # exp.surrogate = Surrogate(exp.name, lambda x: model.solve_t(trsf.forward(x)), 3, 3, torch.Tensor([[0, 2], [0, 10], [30, 80]]), 20)
         # exp.surrogate = Surrogate(exp.name, lambda x: model.solve_t(trsf.forward(x)), 3, 3, 
@@ -209,7 +202,7 @@ class linfa_test_suite(unittest.TestCase):
                 print("Warning: Surrogate model files: {0}.npz and {0}.npz could not be found. ".format(exp.name))
                 # 4 samples for each dimension: pre-grid size = 16
                 exp.surrogate.gen_grid(gridnum=4)
-                exp.surrogate.pre_train(40000, 0.03, 0.9999, 500, store=True)
+                exp.surrogate.pre_train(120000, 0.03, 0.9999, 500, store=True)
         exp.surrogate.surrogate_load()
 
         # Define log density
@@ -323,7 +316,7 @@ class linfa_test_suite(unittest.TestCase):
                 print("Warning: Surrogate model files: {0}.npz and {0}.npz could not be found. ".format(exp.name))
                 # 4 samples for each dimension: pre-grid size = 16
                 exp.surrogate.gen_grid(gridnum=4)
-                exp.surrogate.pre_train(120000, 0.03, 0.9999, 500, store=True)
+                exp.surrogate.pre_train(200000, 0.03, 0.9999, 500, store=True)
         exp.surrogate.surrogate_load()
 
         # Define log density
