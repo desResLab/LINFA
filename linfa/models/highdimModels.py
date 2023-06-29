@@ -11,7 +11,7 @@ class Highdim:
         self.input_num = 5
         self.output_num = 4
         self.x0 = torch.Tensor([0.0838, 0.2290, 0.9133, 0.1524, 0.8258])
-        self.defParam = torch.Tensor([[15.6426, 0.2231, 1.2840, 0.0821, 5.7546]])
+        self.defParam = torch.Tensor([[2.75, -1.5, 0.25, -2.5, 1.75]])
         self.RM = torch.Tensor([[1, 0, 0, 0], [1, 1, 0, 0], [0, 1, 1, 0], [0, 0, 1, 1], [0, 0, 0, 1]]) / np.sqrt(2.0)
         self.defOut = self.solve_t(self.defParam)
         self.stdRatio = 0.01
@@ -19,7 +19,7 @@ class Highdim:
         # self.surrogate = Surrogate("highdim", lambda x: self.solve_t(self.transform(x)), self.input_num, self.output_num,
         #                            torch.Tensor([[-3, 3], [-3, 3], [-3, 3], [-3, 3], [-3, 3]]), 20)
 
-    def genDataFile(self, dataSize=50, dataFileName="source/data/data_highdim.txt", store=True):
+    def genDataFile(self, dataSize=50, dataFileName="../../resource/data/data_highdim.txt", store=True):
         def_out = self.defOut[0]
         self.data = def_out + self.stdRatio * torch.abs(def_out) * torch.normal(0, 1, size=(dataSize, self.output_num))
         self.data = self.data.t().detach().numpy()
@@ -27,7 +27,7 @@ class Highdim:
         return self.data
 
     def solve_t(self, params):
-        return torch.matmul((2 * torch.abs(2 * self.x0 - 1) + params) / (1 + params), self.RM)
+        return torch.matmul((2 * torch.abs(2 * self.x0 - 1) + torch.exp(params)) / (1 + torch.exp(params)), self.RM)
 
     # def evalNegLL_t(self, modelOut):
     #     data_size = len(self.data[0])
@@ -68,3 +68,9 @@ class Highdim:
     #     tmin = torch.max(tmin, dim=1, keepdim=True)[0]
     #     tmax = torch.min(tmax, dim=1, keepdim=True)[0]
     #     return x, torch.cat([tmin, tmax], dim=1)
+
+# GEN DATA
+if __name__ == '__main__':
+  
+  model = Highdim()
+  model.genDataFile(50)

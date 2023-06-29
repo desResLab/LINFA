@@ -102,7 +102,7 @@ class Surrogate:
 
     @pre_grid.setter
     def pre_grid(self, pre_grid):
-        """Assign the pregrid of surrogate model. 
+        """Assign the pregrid for the surrogate model. 
 
         f nofas is not enabled, this serves as the whole training grid.
         
@@ -131,7 +131,7 @@ class Surrogate:
             self.tsd = torch.std(self.pre_out, 0)
             self.grid_record = self.__pre_grid.clone()
 
-    def gen_grid(self, input_limits=None, gridnum=4, store=True):
+    def gen_grid(self, input_limits=None, grid_type='tensor', gridnum=4, store=True):
         """Generates a pre-grid.
         
         Args:
@@ -142,18 +142,37 @@ class Surrogate:
         Returns:
             torch.Tensor: Input values for the full tensor grid in *dim* dimensions stored in a matrix [gridnum ** dim, dim].
         """
-        meshpoints = []
-        if input_limits is not None:
-            self.limits = input_limits
-            print("Warning: Input limits recorded in surrogate.")
+        if (grid_type == 'tensor'):
+          
+            meshpoints = []
+            if input_limits is not None:
+                self.limits = input_limits
+                print("Warning: Input limits recorded in surrogate.")
 
-        for lim in self.limits: meshpoints.append(torch.linspace(lim[0], lim[1], steps=gridnum))
-        grid = torch.meshgrid(meshpoints)
-        grid = torch.cat([item.reshape(gridnum ** len(self.limits), 1) for item in grid], 1)
+            for lim in self.limits: meshpoints.append(torch.linspace(lim[0], lim[1], steps=gridnum))
+            grid = torch.meshgrid(meshpoints)
+            grid = torch.cat([item.reshape(gridnum ** len(self.limits), 1) for item in grid], 1)
+
+        elif (grid_type == 'sobol'):
+
+            # Generate sobol samples in [0,1]^d
+            soboleng = torch.quasirandom.SobolEngine(dimension=len(self.limits))
+            grid = soboleng.draw(gridnum)
+            for i,lim in enumerate(self.limits): 
+                grid[:,i] = lim[0] + (lim[1] - lim[0]) * grid[:,i]
+
+        else:
+
+            print('Invalid type for pre-grid generation')
+            exit(-1)
+
+        # Store pre-grid
         if store:
             self.pre_grid = grid
             self.grid_record = self.pre_grid.clone()
             self.surrogate_save()
+        
+        # Return grid
         return grid
 
     def surrogate_save(self):

@@ -10,7 +10,7 @@ import math
 
 class linfa_test_suite(unittest.TestCase):
 
-    def trivial_example(self, run_nofas=True, run_adaann=False):
+    def trivial_example(self):
 
         print('')
         print('--- TEST 1: TRIVIAL FUNCTION - NOFAS')
@@ -20,35 +20,35 @@ class linfa_test_suite(unittest.TestCase):
         from linfa.models.TrivialModels import Trivial
 
         exp = experiment()
-        exp.name = "trivial"
-        exp.flow_type = 'realnvp'  # str: Type of flow                                 default 'realnvp'
-        exp.n_blocks = 5  # int: Number of layers                             default 5
-        exp.hidden_size = 100  # int: Hidden layer size for MADE in each layer     default 100
-        exp.n_hidden = 1  # int: Number of hidden layers in each MADE         default 1
-        exp.activation_fn = 'relu'  # str: Actication function used                     default 'relu'
-        exp.input_order = 'sequential'  # str: Input order for create_mask                  default 'sequential'
-        exp.batch_norm_order = True  # boo: Order to decide if batch_norm is used        default True
-        exp.sampling_interval = 5000  # int: How often to sample from normalizing flow
+        exp.name              = "trivial"
+        exp.flow_type         = 'realnvp'     # str: Type of flow (default 'realnvp')
+        exp.n_blocks          = 5             # int: Number of layers (default 5)
+        exp.hidden_size       = 100           # int: Hidden layer size for MADE in each layer (default 100)
+        exp.n_hidden          = 1             # int: Number of hidden layers in each MADE (default 1)
+        exp.activation_fn     = 'relu'        # str: Actication function used (default 'relu')
+        exp.input_order       = 'sequential'  # str: Input order for create_mask (default 'sequential')
+        exp.batch_norm_order  = True          # bool: Order to decide if batch_norm is used        default True
+        exp.sampling_interval = 5000          # int: How often to sample from normalizing flow
 
-        exp.input_size = 2  # int: Dimensionality of input                      default 2
-        exp.batch_size = 200  # int: Number of samples generated                  default 100
-        exp.true_data_num = 2  # double: number of true model evaluated        default 2
-        exp.n_iter = 50001 # 25001  # int: Number of iterations                         default 25001
-        exp.lr = 0.002  # float: Learning rate                              default 0.003
-        exp.lr_decay = 0.9999  # float: Learning rate decay                        default 0.9999
-        exp.log_interval = 10  # int: How often to show loss stat                  default 10
+        exp.input_size    = 2       # int: Dimensionality of input (default 2)
+        exp.batch_size    = 200     # int: Number of samples generated (default 100)
+        exp.true_data_num = 2       # double: number of true model evaluated (default 2)
+        exp.n_iter        = 50001   # 25001  # int: Number of iterations (default 25001)
+        exp.lr            = 0.002   # float: Learning rate (default 0.003)
+        exp.lr_decay      = 0.9999  # float: Learning rate decay (default 0.9999)
+        exp.log_interval  = 10      # int: How often to show loss stat (default 10)
 
-        exp.run_nofas = run_nofas
-        exp.annealing = run_adaann
-        exp.calibrate_interval = 1000  # int: How often to update surrogate model          default 1000
-        exp.budget = 64  # int: Total number of true model evaluation
+        exp.run_nofas          = True
+        exp.annealing          = False
+        exp.calibrate_interval = 1000  # int: How often to update surrogate model (default 1000)
+        exp.budget             = 64    # int: Total number of true model evaluation
 
         exp.output_dir   = './results/' + exp.name
         exp.results_file = 'results.txt'
         exp.log_file     = 'log.txt'
         exp.samples_file = 'samples.txt'
         exp.seed         = random.randint(0, 10 ** 9)  # int: Random seed used
-        exp.n_sample     = 5000  # int: Total number of iterations
+        exp.n_sample     = 5000                        # int: Batch size to generate final results/plots
         exp.no_cuda      = True
 
         exp.optimizer    = 'RMSprop'
@@ -89,7 +89,7 @@ class linfa_test_suite(unittest.TestCase):
             # Compute transformation log Jacobian
             adjust = transform.compute_log_jacob_func(x)
 
-            batch_size = x.size(0)
+            # Eval model output
             stds = torch.abs(model.solve_t(model.defParam)) * model.stdRatio
             Data = torch.tensor(model.data)
             if surrogate:
@@ -103,12 +103,10 @@ class linfa_test_suite(unittest.TestCase):
             ll3 = 0.0
             for i in range(2):
               ll3 += - 0.5 * torch.sum(((modelOut[:, i].unsqueeze(1) - Data[i, :].unsqueeze(0)) / stds[0, i]) ** 2, dim=1)
-
             negLL = -(ll1 + ll2 + ll3)
 
-            # return -negLL.reshape(batch_size, 1) + adjust
-            # ADJUST SEMBRA ESSERE UN PROBLEMA!!!! MA CE LA POSTERIOR PREDICTIVE CHE NON E' OK...
-            return -negLL + adjust
+            # Return LL
+            return -negLL.reshape(x.size(0), 1) + adjust
 
         # Assign log-density model
         exp.model_logdensity = lambda x: log_density(x, model, exp.surrogate, trsf)
@@ -117,7 +115,7 @@ class linfa_test_suite(unittest.TestCase):
         exp.run()
 
 
-    def highdim_example(self, run_nofas=True, run_adaann=False):
+    def highdim_example(self):
 
         print('')
         print('--- TEST 2: HIGH DIMENSIONAL SOBOL FUNCTION - NOFAS')
@@ -127,48 +125,48 @@ class linfa_test_suite(unittest.TestCase):
         
         exp = experiment()
         exp.name = "highdim"
-        exp.flow_type = 'realnvp'  # str: Type of flow                                 default 'realnvp'
-        exp.n_blocks = 15  # int: Number of layers                             default 5
-        exp.hidden_size = 100  # int: Hidden layer size for MADE in each layer     default 100
-        exp.n_hidden = 1  # int: Number of hidden layers in each MADE         default 1
-        exp.activation_fn = 'relu'  # str: Actication function used                     default 'relu'
-        exp.input_order = 'sequential'  # str: Input order for create_mask                  default 'sequential'
-        exp.batch_norm_order = True  # boo: Order to decide if batch_norm is used        default True
-        exp.sampling_interval = 5000  # int: How often to sample from normalizing flow
+        exp.flow_type         = 'realnvp'     # str: Type of flow (default 'realnvp')
+        exp.n_blocks          = 15            # int: Number of layers (default 5)
+        exp.hidden_size       = 100           # int: Hidden layer size for MADE in each layer (default 100)
+        exp.n_hidden          = 1             # int: Number of hidden layers in each MADE (default 1)
+        exp.activation_fn     = 'relu'        # str: Actication function used (default 'relu')
+        exp.input_order       = 'sequential'  # str: Input order for create_mask (default 'sequential')
+        exp.batch_norm_order  = True          # bool: Order to decide if batch_norm is used (default True)
+        exp.sampling_interval = 5000          # int: How often to sample from normalizing flow
 
-        exp.input_size = 5  # int: Dimensionality of input                      default 2
-        exp.batch_size = 150  # int: Number of samples generated                  default 100
-        exp.true_data_num = 12  # double: number of true model evaluated        default 2
-        exp.n_iter = 25001  # int: Number of iterations                         default 25001
-        exp.lr = 0.003  # float: Learning rate                              default 0.003
-        exp.lr_decay = 0.9999  # float: Learning rate decay                        default 0.9999
-        exp.log_interval = 10  # int: How often to show loss stat                  default 10
+        exp.input_size    = 5       # int: Dimensionality of input (default 2)
+        exp.batch_size    = 250     # int: Number of samples generated (default 100)
+        exp.true_data_num = 12      # double: number of true model evaluated (default 2)
+        exp.n_iter        = 25001   # int: Number of iterations (default 25001)
+        exp.lr            = 0.003   # float: Learning rate (default 0.003)
+        exp.lr_decay      = 0.9999  # float: Learning rate decay (default 0.9999)
+        exp.log_interval  = 10      # int: How often to show loss stat (default 10)
 
-        exp.run_nofas = run_nofas
-        exp.annealing = run_adaann
-        exp.calibrate_interval = 250  # int: How often to update surrogate model          default 1000
-        exp.budget = 1023  # int: Total number of true model evaluation
+        exp.run_nofas          = True
+        exp.annealing          = False
+        exp.calibrate_interval = 200   # int: How often to update surrogate model (default 1000)
+        exp.budget             = 1023  # int: Total number of true model evaluation
 
-        exp.output_dir = './results/' + exp.name
+        exp.output_dir   = './results/' + exp.name
         exp.results_file = 'results.txt'
-        exp.log_file = 'log.txt'
+        exp.log_file     = 'log.txt'
         exp.samples_file = 'samples.txt'
-        exp.seed = random.randint(0, 10 ** 9)  # int: Random seed used
-        exp.n_sample = 5000  # int: Total number of iterations
-        exp.no_cuda = True
+        exp.seed         = random.randint(0, 10 ** 9)  # int: Random seed used
+        exp.n_sample     = 5000                        # int: Batch size to generate final results/plots
+        exp.no_cuda      = True
 
-        exp.optimizer = 'RMSprop'
+        exp.optimizer    = 'RMSprop'
         exp.lr_scheduler = 'ExponentialLR'
 
         exp.device = torch.device('cuda:0' if torch.cuda.is_available() and not exp.no_cuda else 'cpu')
 
         # Define transformation
         # One list for each variable
-        trsf_info = [['exp',-3,3,1,math.exp(1)],
-                     ['exp',-3,3,1,math.exp(1)],
-                     ['exp',-3,3,1,math.exp(1)],
-                     ['exp',-3,3,1,math.exp(1)],
-                     ['exp',-3,3,1,math.exp(1)]]
+        trsf_info = [['identity',0,0,0,0],
+                     ['identity',0,0,0,0],
+                     ['identity',0,0,0,0],
+                     ['identity',0,0,0,0],
+                     ['identity',0,0,0,0]]
         trsf = Transformation(trsf_info)
         exp.transform = trsf
 
@@ -181,17 +179,16 @@ class linfa_test_suite(unittest.TestCase):
 
         # Define the surrogate
         exp.surrogate = Surrogate(exp.name, lambda x: model.solve_t(trsf.forward(x)), model.input_num, model.output_num,
-                                  torch.Tensor([[-3, 3], [-3, 3], [-3, 3], [-3, 3], [-3, 3]]), 20)
+                                  torch.Tensor([[-3.0, 3.0], [-3.0, 3.0], [-3.0, 3.0], [-3.0, 3.0], [-3.0, 3.0]]), 20)
         if exp.run_nofas:
             if not os.path.isfile(exp.name + ".sur") or not os.path.isfile(exp.name + ".npz"):
                 print("Warning: Surrogate model files: {0}.npz and {0}.npz could not be found. ".format(exp.name))
-                exp.surrogate.gen_grid(gridnum=4)
-                exp.surrogate.pre_train(40000, 0.03, 0.9999, 500, store=True)
+                exp.surrogate.gen_grid(gridnum=3)
+                exp.surrogate.pre_train(100000, 0.03, 0.9999, 500, store=True)
         exp.surrogate.surrogate_load()
 
-        # Define the log density
+        # Define the log density        
         def log_density(x, model, surrogate, transform):
-            batch_size = x.size(0)
 
             # Compute transformation log Jacobian
             adjust = transform.compute_log_jacob_func(x)
@@ -201,19 +198,19 @@ class linfa_test_suite(unittest.TestCase):
               modelOut = surrogate.forward(x)
             else:
               modelOut = model.solve_t(transform(x))
-
-            data_size = len(model.data[0])
             stds = model.defOut * model.stdRatio
             Data = torch.tensor(model.data)
+
+            # Compute LL
             ll1 = -0.5 * np.prod(model.data.shape) * np.log(2.0 * np.pi)  # a number
             ll2 = (-0.5 * model.data.shape[1] * torch.log(torch.prod(stds))).item()  # a number
             ll3 = 0.0
             for i in range(4):
               ll3 += - 0.5 * torch.sum(((modelOut[:, i].unsqueeze(1) - Data[i, :].unsqueeze(0)) / stds[0, i]) ** 2, dim=1)
-
             negLL = -(ll1 + ll2 + ll3) 
-            res = - negLL + adjust.flatten()       
+            res = -negLL.reshape(x.size(0), 1) + adjust
             
+            # Return LL
             return res
         
         # Assign log-density model
@@ -223,7 +220,7 @@ class linfa_test_suite(unittest.TestCase):
         exp.run()
 
 
-    def rc_example(self, run_nofas=True, run_adaann=False):
+    def rc_example(self):
 
         print('')
         print('--- TEST 3: RC MODEL - NOFAS')
@@ -234,35 +231,35 @@ class linfa_test_suite(unittest.TestCase):
         
         exp = experiment()
         exp.name = "rc"
-        exp.flow_type = 'maf'  # str: Type of flow                                 default 'realnvp'
-        exp.n_blocks = 5  # int: Number of layers                             default 5
-        exp.hidden_size = 100  # int: Hidden layer size for MADE in each layer     default 100
-        exp.n_hidden = 1  # int: Number of hidden layers in each MADE         default 1
-        exp.activation_fn = 'relu'  # str: Actication function used                     default 'relu'
-        exp.input_order = 'sequential'  # str: Input order for create_mask                  default 'sequential'
-        exp.batch_norm_order = True  # boo: Order to decide if batch_norm is used        default True
-        exp.sampling_interval = 5000  # int: How often to sample from normalizing flow
+        exp.flow_type         = 'maf'         # str: Type of flow (default 'realnvp')
+        exp.n_blocks          = 5             # int: Number of layers (default 5)
+        exp.hidden_size       = 100           # int: Hidden layer size for MADE in each layer (default 100)
+        exp.n_hidden          = 1             # int: Number of hidden layers in each MADE (default 1)
+        exp.activation_fn     = 'relu'        # str: Actication function used (default 'relu')
+        exp.input_order       = 'sequential'  # str: Input order for create_mask (default 'sequential')
+        exp.batch_norm_order  = True          # bool: Order to decide if batch_norm is used (default True)
+        exp.sampling_interval = 5000          # int: How often to sample from normalizing flow
 
-        exp.input_size = 2  # int: Dimensionality of input                      default 2
-        exp.batch_size = 250  # int: Number of samples generated                  default 100
-        exp.true_data_num = 2  # double: number of true model evaluated        default 2
-        exp.n_iter = 25001  # int: Number of iterations                         default 25001
-        exp.lr = 0.005  # float: Learning rate                              default 0.003
-        exp.lr_decay = 0.9999  # float: Learning rate decay                        default 0.9999
-        exp.log_interval = 10  # int: How often to show loss stat                  default 10
+        exp.input_size    = 2       # int: Dimensionality of input (default 2)
+        exp.batch_size    = 250     # int: Number of samples generated (default 100)
+        exp.true_data_num = 2       # double: number of true model evaluated (default 2)
+        exp.n_iter        = 25001   # int: Number of iterations (default 25001)
+        exp.lr            = 0.005   # float: Learning rate (default 0.003)
+        exp.lr_decay      = 0.9999  # float: Learning rate decay (default 0.9999)
+        exp.log_interval  = 10      # int: How often to show loss stat (default 10)
 
-        exp.run_nofas = run_nofas
-        exp.annealing = run_adaann
-        exp.calibrate_interval = 1000  # int: How often to update surrogate model          default 1000
-        exp.budget = 64  # int: Total number of true model evaluation
+        exp.run_nofas          = True
+        exp.annealing          = False
+        exp.calibrate_interval = 1000  # int: How often to update surrogate model (default 1000)
+        exp.budget             = 64    # int: Total number of true model evaluation
 
-        exp.output_dir = './results/' + exp.name
+        exp.output_dir   = './results/' + exp.name
         exp.results_file = 'results.txt'
-        exp.log_file = 'log.txt'
+        exp.log_file     = 'log.txt'
         exp.samples_file = 'samples.txt'
-        exp.seed = random.randint(0, 10 ** 9)  # int: Random seed used
-        exp.n_sample = 5000  # int: Total number of iterations
-        exp.no_cuda = True
+        exp.seed         = random.randint(0, 10 ** 9)  # int: Random seed used
+        exp.n_sample     = 5000                        # int: Batch size to generate final results/plots
+        exp.no_cuda      = True
 
         exp.optimizer = 'RMSprop'
         exp.lr_scheduler = 'ExponentialLR'
@@ -272,7 +269,7 @@ class linfa_test_suite(unittest.TestCase):
         # Define transformation
         # One list for each variable
         trsf_info = [['tanh',-7.0,7.0,100.0,1500.0],
-                     ['exp',-7.0,7.0,math.exp(-8.0),math.exp(-5.0)]]
+                     ['exp',-7.0,7.0,1.0e-5,1.0e-2]]
         trsf = Transformation(trsf_info)
         exp.transform = trsf
 
@@ -319,8 +316,9 @@ class linfa_test_suite(unittest.TestCase):
             for i in range(3):
                 ll3 += - 0.5 * torch.sum(((modelOut[:, i].unsqueeze(1) - Data[i, :].unsqueeze(0)) / stds[0, i]) ** 2, dim=1)
             negLL = -(ll1 + ll2 + ll3)
-            # res = - negLL + adjust.flatten()
             res = -negLL.reshape(x.size(0), 1) + adjust
+            
+            # Return LL
             return res
 
         # Assign log-density
@@ -329,7 +327,7 @@ class linfa_test_suite(unittest.TestCase):
         # Run VI
         exp.run()
 
-    def rcr_example(self, run_nofas=True, run_adaann=False):
+    def rcr_example(self):
 
         print('')
         print('--- TEST 4: RCR MODEL - NOFAS')
@@ -340,34 +338,34 @@ class linfa_test_suite(unittest.TestCase):
 
         exp = experiment()
         exp.name = "rcr"
-        exp.flow_type = 'maf'  # str: Type of flow                                 default 'realnvp'
-        exp.n_blocks = 15  # int: Number of layers                             default 5
-        exp.hidden_size = 100  # int: Hidden layer size for MADE in each layer     default 100
-        exp.n_hidden = 1  # int: Number of hidden layers in each MADE         default 1
-        exp.activation_fn = 'relu'  # str: Actication function used                     default 'relu'
-        exp.input_order = 'sequential'  # str: Input order for create_mask                  default 'sequential'
-        exp.batch_norm_order = True  # boo: Order to decide if batch_norm is used        default True
-        exp.sampling_interval = 5000  # int: How often to sample from normalizing flow
+        exp.flow_type         = 'maf'         # str: Type of flow (default 'realnvp')
+        exp.n_blocks          = 15            # int: Number of layers (default 5)
+        exp.hidden_size       = 100           # int: Hidden layer size for MADE in each layer (default 100)
+        exp.n_hidden          = 1             # int: Number of hidden layers in each MADE (default 1)
+        exp.activation_fn     = 'relu'        # str: Actication function used (default 'relu')
+        exp.input_order       = 'sequential'  # str: Input order for create_mask (default 'sequential')
+        exp.batch_norm_order  = True          # bool: Order to decide if batch_norm is used (default True)
+        exp.sampling_interval = 5000          # int: How often to sample from normalizing flow
 
-        exp.input_size = 3  # int: Dimensionality of input                      default 2
-        exp.batch_size = 500  # int: Number of samples generated                  default 100
-        exp.true_data_num = 2  # double: number of true model evaluated        default 2
-        exp.n_iter = 25001  # int: Number of iterations                         default 25001
-        exp.lr = 0.003  # float: Learning rate                              default 0.003
-        exp.lr_decay = 0.9999  # float: Learning rate decay                        default 0.9999
-        exp.log_interval = 10  # int: How often to show loss stat                  default 10
+        exp.input_size    = 3       # int: Dimensionality of input (default 2)
+        exp.batch_size    = 500     # int: Number of samples generated (default 100)
+        exp.true_data_num = 2       # double: number of true model evaluated (default 2)
+        exp.n_iter        = 25001   # int: Number of iterations (default 25001)
+        exp.lr            = 0.003   # float: Learning rate (default 0.003)
+        exp.lr_decay      = 0.9999  # float: Learning rate decay (default 0.9999)
+        exp.log_interval  = 10      # int: How often to show loss stat (default 10)
 
-        exp.run_nofas = run_nofas
-        exp.annealing = run_adaann
-        exp.calibrate_interval = 300  # int: How often to update surrogate model          default 1000
-        exp.budget = 216  # int: Total number of true model evaluation
+        exp.run_nofas          = True
+        exp.annealing          = False
+        exp.calibrate_interval = 300  # int: How often to update surrogate model (default 1000)
+        exp.budget             = 216  # int: Total number of true model evaluation
 
         exp.output_dir = './results/' + exp.name
         exp.results_file = 'results.txt'
         exp.log_file = 'log.txt'
         exp.samples_file = 'samples.txt'
         exp.seed = random.randint(0, 10 ** 9)  # int: Random seed used
-        exp.n_sample = 5000  # int: Total number of iterations
+        exp.n_sample = 5000                    # int: Batch size to generate final results/plots
         exp.no_cuda = True
 
         exp.optimizer = 'RMSprop'
@@ -377,9 +375,9 @@ class linfa_test_suite(unittest.TestCase):
 
         # Define transformation
         # One list for each variable
-        trsf_info = [['tanh',-8.0,8.0,100.0,1500.0],
-                     ['tanh',-8.0,8.0,100.0,1500.0],
-                     ['exp',-8.0,8.0,math.exp(-8.0),math.exp(-5.0)]]
+        trsf_info = [['tanh',-7.0,7.0,100.0,1500.0],
+                     ['tanh',-7.0,7.0,100.0,1500.0],
+                     ['exp',-7.0,7.0,1.0e-5,1.0e-2]]
         trsf = Transformation(trsf_info)
         exp.transform = trsf
 
@@ -412,11 +410,12 @@ class linfa_test_suite(unittest.TestCase):
             if surrogate:
                 modelOut = surrogate.forward(x)
             else:
-                modelOut = model.solve_t(transform(x))
+                modelOut = model.solve_t(transform.forward(x))
 
             # Get the absolute values of the standard deviations
             stds = model.defOut * model.stdRatio
             Data = torch.tensor(model.data)
+            
             # Eval LL
             ll1 = -0.5 * np.prod(model.data.shape) * np.log(2.0 * np.pi)  # a number
             ll2 = (-0.5 * model.data.shape[1] * torch.log(torch.prod(stds))).item()  # a number
@@ -425,6 +424,8 @@ class linfa_test_suite(unittest.TestCase):
                 ll3 += - 0.5 * torch.sum(((modelOut[:, i].unsqueeze(1) - Data[i, :].unsqueeze(0)) / stds[0, i]) ** 2, dim=1)
             negLL = -(ll1 + ll2 + ll3)
             res = -negLL.reshape(x.size(0), 1) + adjust
+
+            # Return LL
             return res
 
         # Assign logdensity model
@@ -434,7 +435,7 @@ class linfa_test_suite(unittest.TestCase):
         exp.run()
 
 
-    def adaann_example(self, run_nofas=False, run_adaann=True):
+    def adaann_example(self):
 
         print('')
         print('--- TEST 5: FRIEDMAN 1 MODEL - ADAANN')
@@ -448,45 +449,46 @@ class linfa_test_suite(unittest.TestCase):
 
         # Experiment Setting
         exp = experiment()
-        exp.name = "adaann"
-        exp.flow_type = 'realnvp'  # str: Type of flow                                 default 'realnvp'
-        exp.n_blocks = 10  # int: Number of layers                             default 5
-        exp.hidden_size = 50  # int: Hidden layer size for MADE in each layer     default 100
-        exp.n_hidden = 1  # int: Number of hidden layers in each MADE         default 1
-        exp.activation_fn = 'relu'  # str: Actication function used                     default 'relu'
-        exp.input_order = 'sequential'  # str: Input order for create_mask                  default 'sequential'
-        exp.batch_norm_order = True  # boo: Order to decide if batch_norm is used        default True
-        exp.sampling_interval = 1000  # int: How often to sample from normalizing flow
+        exp.name              = "adaann_2"
+        exp.flow_type         = 'realnvp'     # str: Type of flow (default 'realnvp')
+        exp.n_blocks          = 10            # int: Number of layers (default 5)
+        exp.hidden_size       = 20            # int: Hidden layer size for MADE in each layer (default 100)
+        exp.n_hidden          = 1             # int: Number of hidden layers in each MADE (default 1)
+        exp.activation_fn     = 'relu'        # str: Actication function used (default 'relu')
+        exp.input_order       = 'sequential'  # str: Input order for create_mask (default 'sequential')
+        exp.batch_norm_order  = True          # bool: Order to decide if batch_norm is used (default True)
+        exp.sampling_interval = 1000          # int: How often to sample from normalizing flow
 
-        exp.input_size = 10  # int: Dimensionality of input                      default 2
-        exp.batch_size = 100  # int: Number of samples generated                  default 100
-        exp.n_iter = 1000  # int: Number of iterations                         default 25001
-        exp.lr = 0.001  # float: Learning rate                              default 0.003
-        exp.log_interval = 10  # int: How often to show loss stat                  default 10
-        exp.run_nofas = run_nofas
-        exp.annealing = run_adaann
+        exp.input_size   = 10     # int: Dimensionality of input (default 2)
+        exp.batch_size   = 100    # int: Number of samples generated (default 100)
+        exp.lr           = 0.005  # float: Learning rate (default 0.003)
+        # exp.lr_decay     = 0.75
+        exp.lr_decay     = 0.9
+        exp.log_interval = 10     # int: How often to show loss stat (default 10)
+        exp.run_nofas    = False
+        exp.annealing    = True
 
-        exp.optimizer = 'Adam'  # str: type of optimizer used
+        exp.optimizer    = 'Adam'    # str: type of optimizer used
         exp.lr_scheduler = 'StepLR'  # str: type of lr scheduler used
-        exp.lr_step = 1000  # int: number of steps for lr step scheduler
-        exp.tol = 0.01# 0.001  # float: tolerance for AdaAnn scheduler
-        exp.t0 = 0.01  # float: initial inverse temperature value
-        exp.N = 100  # int: number of sample points during annealing
-        exp.N_1 = 1000  # int: number of sample points at t=1
-        exp.T_0 = 500  # int: number of parameter updates at initial t0
-        exp.T = 5  # int: number of parameter updates during annealing
-        exp.T_1 = 5001  # int: number of parameter updates at t=1
-        exp.M = 1000  # int: number of Monte Carlo sample points used to update temperature (evaluate denominator)
-        exp.annealing = True  # boo: decide if annealing is used
-        exp.scheduler = 'AdaAnn'  # str: type of annealing scheduler used
+        exp.lr_step      = 500       # int: number of steps for lr step scheduler
+        exp.tol          = 0.4       # float: tolerance for AdaAnn scheduler
+        exp.t0           = 0.001     # float: initial inverse temperature value
+        exp.N            = 100       # int: number of sample points during annealing
+        exp.N_1          = 400       # int: number of sample points at t=1
+        exp.T_0          = 500       # int: number of parameter updates at initial t0
+        exp.T            = 3         # int: number of parameter updates during annealing
+        exp.T_1          = 10000     # int: number of parameter updates at t=1
+        exp.M            = 1000      # int: number of sample points used to update temperature
+        exp.scheduler    = 'AdaAnn'  # str: type of annealing scheduler used
 
-        exp.output_dir = './results/' + exp.name
+        exp.output_dir   = './results/' + exp.name
         exp.results_file = 'results.txt'
-        exp.log_file = 'log.txt'
+        exp.log_file     = 'log.txt'
         exp.samples_file = 'samples.txt'
-        exp.seed = 35435  # int: Random seed used
-        exp.n_sample = 5000  # int: Total number of iterations
-        exp.no_cuda = True
+        # exp.seed = 35435  # int: Random seed used
+        exp.seed         = random.randint(0, 10 ** 9)  # int: Random seed used
+        exp.n_sample     = 5000                        # int: Batch size to generate final results/plots
+        exp.no_cuda      = True
 
         exp.device = torch.device('cuda:0' if torch.cuda.is_available() and not exp.no_cuda else 'cpu')
 
@@ -494,12 +496,20 @@ class linfa_test_suite(unittest.TestCase):
         data_set = pd.read_csv('../resource/data/D1000.csv')
         data = torch.tensor(data_set.values)
 
-        # Define logdensity
         def log_density(params, d):
+
+            # Compute Model
+            # Modified bimodal version of the Friedman model
             def targetPosterior(b, x):
-                return b[0] * torch.sin(np.pi * x[:, 0] * x[:, 1]) + b[1] ** 2 * (x[:, 2] - b[2]) ** 2 + \
-                                        x[:, 3] * b[3] + x[:,4] * b[4] + x[:, 5] * b[5] + x[:, 6] * b[6] + \
-                                        x[:, 7] * b[7] + x[:, 8] * b[8] + x[:, 9] * b[9]
+                return b[0] * torch.sin(np.pi * x[:, 0] * x[:, 1]) + \
+                       (b[1] ** 2) * (x[:, 2] - b[2]) ** 2 + \
+                       x[:, 3] * b[3] + \
+                       x[:, 4] * b[4] + \
+                       x[:, 5] * b[5] + \
+                       x[:, 6] * b[6] + \
+                       x[:, 7] * b[7] + \
+                       x[:, 8] * b[8] + \
+                       x[:, 9] * b[9]
 
             f = torch.zeros(len(params))
 
@@ -509,11 +519,93 @@ class linfa_test_suite(unittest.TestCase):
                 f[i] = -val ** 2 / 2
 
             return f
-        
-        # Assign logdensity
-        exp.model_logdensity = lambda x: log_density(x, data)
 
-        # Run VI
+        exp.model_logdensity = lambda x: log_density(x, data)
+        exp.run()
+
+    
+    def rcr_nofas_adaann_example(self):
+
+        print('')
+        print('--- TEST 6: RCR MODEL - NOFAS and ADAANN')
+        print('')
+
+        from linfa.models.circuitModels import rcrModel
+        exp = experiment()
+        exp.name              = "rcr_nofas_adaann"
+        exp.flow_type         = 'maf'         # str: Type of flow (default 'realnvp')
+        exp.n_blocks          = 15            # int: Number of layers (default 5)
+        exp.hidden_size       = 100           # int: Hidden layer size for MADE in each layer (default 100)
+        exp.n_hidden          = 1             # int: Number of hidden layers in each MADE (default 1)
+        exp.activation_fn     = 'relu'        # str: Actication function used (default 'relu')
+        exp.input_order       = 'sequential'  # str: Input order for create_mask (default 'sequential')
+        exp.batch_norm_order  = True          # bool: Order to decide if batch_norm is used (default True)
+        exp.sampling_interval = 200           # int: How often to sample from normalizing flow
+    
+        exp.input_size = 3     # int: Dimensionality of input (default 2)
+        exp.batch_size = 500   # int: Number of samples generated (default 100)
+        exp.true_data_num = 2  # double: number of true model evaluated (default 2)
+        exp.n_iter = 25001     # int: Number of iterations (default 25001)
+        exp.lr = 0.003         # float: Learning rate (default 0.003)
+        exp.lr_decay = 0.9999  # float: Learning rate decay (default 0.9999)
+        exp.log_interval = 10  # int: How often to show loss stat (default 10)
+    
+        exp.run_nofas          = True
+        exp.annealing          = True
+        exp.calibrate_interval = 300  # int: How often to update surrogate model (default 1000)
+        exp.budget             = 216  # int: Total number of true model evaluation
+    
+        exp.output_dir   = './results/' + exp.name
+        exp.results_file = 'results.txt'
+        exp.log_file     = 'log.txt'
+        exp.samples_file = 'samples.txt'
+        exp.seed         = random.randint(0, 10 ** 9)  # int: Random seed used
+        exp.n_sample     = 5000                        # int: Batch size to generate final results/plots
+        exp.no_cuda      = True
+    
+        exp.optimizer    = 'RMSprop'
+        exp.lr_scheduler = 'ExponentialLR'
+        
+        exp.tol       = 0.01     # float: tolerance for AdaAnn scheduler
+        exp.t0        = 0.05     # float: initial inverse temperature value
+        exp.N         = 100      # int: number of sample points during annealing
+        exp.N_1       = 100      # int: number of sample points at t=1
+        exp.T_0       = 500      # int: number of parameter updates at initial t0
+        exp.T         = 5        # int: number of parameter updates during annealing
+        exp.T_1       = 5000     # int: number of parameter updates at t=1
+        exp.M         = 1000     # int: number of sample points used to update temperature
+        exp.scheduler = 'AdaAnn' # str: type of annealing scheduler used
+    
+        exp.device = torch.device('cuda:0' if torch.cuda.is_available() and not exp.no_cuda else 'cpu')
+    
+        # Model Setting
+        cycleTime = 1.07
+        totalCycles = 10
+        forcing = np.loadtxt('inlet.flow')
+        model = rcrModel(cycleTime, totalCycles, forcing)  # RCR Model Defined
+        model.data = np.loadtxt('data_rcr.txt')
+        exp.surrogate = Surrogate("RCR", lambda x: model.solve_t(model.transform(x)), exp.input_size, 3,
+                                  torch.Tensor([[-7, 7], [-7, 7], [-7, 7]]), 20)
+        if exp.run_nofas:
+            if not os.path.exists(exp.name + ".sur") or not os.path.exists(exp.name + ".npz"):
+                print("Warning: Surrogate model files: {0}.npz and {0}.npz are not detected. ".format(exp.name))
+                print("Training Surrogate ...")
+                exp.surrogate.gen_grid(gridnum=4)
+                exp.surrogate.pre_train(120000, 0.03, 0.9999, 500, store=True)
+        exp.surrogate.surrogate_load()
+    
+        # Define log density
+        def log_density(x, model, surrogate):
+            batch_size = x.size(0)
+            x1, x2, x3 = torch.chunk(x, chunks=3, dim=1)
+            adjust = torch.log(1.0 - torch.tanh(x1 / 7.0 * 3.0) ** 2) \
+                     + torch.log(1.0 - torch.tanh(x2 / 7.0 * 3.0) ** 2) \
+                     + x3 / 7 * 3
+    
+            modelOut = surrogate.forward(x)
+            return - model.evalNegLL_t(modelOut).reshape(batch_size, 1) + adjust
+    
+        exp.model_logdensity = lambda x: log_density(x, model, exp.surrogate)
         exp.run()
 
 if __name__ == '__main__':

@@ -105,7 +105,7 @@ class circuitModel():
                                                      max_step=self.cycleTime / 1000.0, t_eval=saveSteps,
                                                      batch_size=batch_size, aux_size=self.numAuxState)
         start = len(saveSteps) - (len(saveSteps[saveSteps > (self.totalCycles - 1) * self.cycleTime]) + 1)
-        stop = len(saveSteps)
+        stop  = len(saveSteps)
 
         return self.postProcess_t(odeSol_t, odeSol_y, odeSol_aux, start, stop)
 
@@ -257,5 +257,6 @@ class rcrModel(circuitModel):
 # GEN DATA
 if __name__ == '__main__':
   
-  rc = rcModel()
-  rc.genDataFile(50, 'data')
+  # model = rcModel()
+  model = rcrModel()
+  model.genDataFile(50, "../../resource/data/data_rcr.txt")

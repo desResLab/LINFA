@@ -19,7 +19,7 @@ class experiment:
         self.n_hidden = 1  # int: Number of hidden layers in each MADE         default 1
         self.activation_fn = 'relu'  # str: Actication function used                     default 'relu'
         self.input_order = 'sequential'  # str: Input order for create_mask                  default 'sequential'
-        self.batch_norm_order = True  # boo: Order to decide if batch_norm is used        default True
+        self.batch_norm_order = True  # bool: Order to decide if batch_norm is used        default True
         self.sampling_interval = 200  # int: How often to sample from normalizing flow
         self.store_nf_interval = 1000
 
@@ -144,9 +144,9 @@ class experiment:
                     self.n_iter = self.T_1
 
                 while i < prev_i + self.n_iter:
-                    print(prev_i + self.n_iter)
+                    # print(prev_i + self.n_iter)
                     # print('--- VI NF at temperature t=%.3f' % (t))
-                    print(t)
+                    # print(t)
                     self.train(nf, optimizer, i, loglist, sampling=True, update=self.run_nofas, t=t)
                     if t == 1:
                         scheduler.step()
@@ -154,9 +154,9 @@ class experiment:
                 prev_i = i
 
                 if self.scheduler == 'AdaAnn':
-                    print('')
-                    print('--- Updating temperature')
-                    print('')
+                    # print('')
+                    # print('--- Updating temperature')
+                    # print('')
                     z0 = nf.base_dist.sample([self.M])
                     zk, _ = nf(z0)
                     log_qk = self.model_logdensity(zk)
@@ -197,9 +197,13 @@ class experiment:
             np.savetxt(self.output_dir + '/' + self.name + '_samples_' + str(iteration), xkk.data.numpy(), newline="\n")
             # Save samples in the original space
             if not(self.transform is None):
-              np.savetxt(self.output_dir + '/' + self.name + '_params_' + str(iteration), self.transform.forward(xkk).data.numpy(), newline="\n")
+              xkk_samples = self.transform.forward(xkk).data.numpy()
+              np.savetxt(self.output_dir + '/' + self.name + '_params_' + str(iteration), xkk_samples, newline="\n")
             else:
+              xkk_samples = xkk.data.numpy()
               np.savetxt(self.output_dir + '/' + self.name + '_params_' + str(iteration), xkk.data.numpy(), newline="\n")
+            # Save marginal statistics
+            np.savetxt(self.output_dir + '/' + self.name + '_marginal_stats_' + str(iteration), np.concatenate((xkk_samples.mean(axis=0).reshape(-1,1),xkk_samples.std(axis=0).reshape(-1,1)),axis=1), newline="\n")
             # Save log density at the same samples
             np.savetxt(self.output_dir + '/' + self.name + '_logdensity_' + str(iteration), self.model_logdensity(xkk).data.numpy(), newline="\n")
             # Save model outputs at the samples - If a model is defined
@@ -219,7 +223,7 @@ class experiment:
             exit(-1)
 
         # updating surrogate model
-        if iteration % self.calibrate_interval == 0 and update and self.surrogate.grid_record.size(0) < self.budget:
+        if self.run_nofas and iteration % self.calibrate_interval == 0 and update and self.surrogate.grid_record.size(0) < self.budget:
             xk0 = xk[:self.true_data_num, :].data.clone()            
             # print("\n")
             # print(list(self.surrogate.grid_record.size())[0])

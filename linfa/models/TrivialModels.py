@@ -12,7 +12,7 @@ class Trivial:
         self.stdRatio = 0.05
         self.data = None
 
-    def genDataFile(self, dataSize=50, dataFileName="source/data/data_trivial.txt", store=True):
+    def genDataFile(self, dataSize=50, dataFileName="../../resource/data/data_trivial.txt", store=True):
         def_out = self.solve_t(self.defParam)[0]
         print(def_out)
         self.data = def_out + self.stdRatio * torch.abs(def_out) * torch.normal(0, 1, size=(dataSize, 2))
@@ -41,3 +41,9 @@ class Trivial:
 
     # def den_t(self, params, surrogate=True):
     #     return - self.evalNegLL_t(params, surrogate)
+
+# GEN DATA
+if __name__ == '__main__':
+  
+  model = Trivial()
+  model.genDataFile(50)
