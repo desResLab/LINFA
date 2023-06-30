@@ -25,23 +25,6 @@ class Trivial:
         x = torch.cat((z1 ** 3 / 10, torch.exp(z2 / 3)), 1)
         return torch.matmul(x, self.RM)
 
-    # def evalNegLL_t(self, params, surrogate=True):
-    #     stds = torch.abs(self.solve_t(self.defParam)) * self.stdRatio
-    #     if not surrogate:
-    #         modelOut = self.solve_t(params)
-    #     else:
-    #         modelOut = self.surrogate.forward(params)
-    #     Data = torch.tensor(self.data)
-    #     # Eval LL
-    #     ll1 = -0.5 * np.prod(self.data.shape) * np.log(2.0 * np.pi)
-    #     ll2 = (-0.5 * self.data.shape[1] * torch.log(torch.prod(stds))).item()
-    #     ll3 = - 0.5 * torch.sum(torch.sum((modelOut.unsqueeze(0) - Data.t().unsqueeze(1)) ** 2, dim=0) / stds[0] ** 2, dim=1, keepdim=True)
-    #     negLL = -(ll1 + ll2 + ll3)
-    #     return negLL
-
-    # def den_t(self, params, surrogate=True):
-    #     return - self.evalNegLL_t(params, surrogate)
-
 # GEN DATA
 if __name__ == '__main__':
   

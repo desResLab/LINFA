@@ -4,58 +4,62 @@ import numpy as np
 import scipy as sp
 from linfa.maf import MAF, RealNVP
 
-# from TrivialModels import circuitTrivial
-# from circuitModels import rcModel, rcrModel
-# from highdimModels import Highdim
-
 torch.set_default_tensor_type(torch.DoubleTensor)
 
 class experiment:
+    """Defines an instance of variational inference
+
+    This class is the core class of the LINFA library
+    and defines all the default hyperparameter values and 
+    and functions used for inference. 
+    """
     def __init__(self):
-        self.name = "Experiment"
-        self.flow_type = 'maf'  # str: Type of flow                                 default 'realnvp'
-        self.n_blocks = 15  # int: Number of layers                             default 5
-        self.hidden_size = 100  # int: Hidden layer size for MADE in each layer     default 100
-        self.n_hidden = 1  # int: Number of hidden layers in each MADE         default 1
-        self.activation_fn = 'relu'  # str: Actication function used                     default 'relu'
-        self.input_order = 'sequential'  # str: Input order for create_mask                  default 'sequential'
-        self.batch_norm_order = True  # bool: Uses decide if batch_norm is used        default True
-        self.save_interval = 200  # int: How often to sample from normalizing flow
-        self.store_nf_interval = 1000
+        self.name              = "Experiment"
+        self.flow_type         = 'maf'         #:str:  Type of flow ('maf' or 'realnvp')
+        self.n_blocks          = 15            #:int:  Number of layers
+        self.hidden_size       = 100           #:int:  Hidden layer size for MADE in each layer
+        self.n_hidden          = 1             #:int:  Number of hidden layers in each MADE
+        self.activation_fn     = 'relu'        #:str:  Actication function used (either 'relu','tanh' or 'sigmoid')
+        self.input_order       = 'sequential'  #:str:  Input order for create_mask (either 'sequential' or 'random')
+        self.batch_norm_order  = True          #:bool: Uses decide if batch_norm is used
+        self.save_interval     = 200           #:int:  Save interval for all results
+        self.store_nf_interval = 1000          #:int:  Save interval for normalizing flow parameters
 
-        self.input_size = 3  # int: Dimensionality of input                      default 2
-        self.batch_size = 500  # int: Number of samples generated                  default 100
-        self.true_data_num = 2  # double: number of true model evaluated        default 2
-        self.n_iter = 25001  # int: Number of iterations                         default 25001
-        self.lr = 0.003  # float: Learning rate                              default 0.003
-        self.lr_decay = 0.9999  # float: Learning rate decay                        default 0.9999
+        self.input_size    = 3      #:int:    Number of input parameters
+        self.batch_size    = 500    #:int:    Number of batch samples generated at every iteration from the base distribution
+        self.true_data_num = 2      #:double: Number of true model evaluated at each surrogate update
+        self.n_iter        = 25001  #:int:    Total number of iterations
+        self.lr            = 0.003  #:double: Learning rate
+        self.lr_decay      = 0.9999 #:double: Learning rate decay
 
-        self.run_nofas = True  # boo: decide if nofas is used
-        self.log_interval = 10  # int: How often to show loss stat                  default 10
-        self.calibrate_interval = 300  # int: How often to update surrogate model          default 1000
-        self.budget = 216  # int: Total number of true model evaluation
+        self.run_nofas          = True #:bool: Activate NoFAS and the use of a surrogate model
+        self.log_interval       = 10   #:int:  How often the loss statistics are printed
+        self.calibrate_interval = 300  #:int:  How often the surrogate model is updated
+        self.budget             = 216  #:int:  Maximum number of allowed evaluations of the true model
 
-        self.optimizer = 'Adam'  # str: type of optimizer used
-        self.lr_scheduler = 'StepLR'  # str: type of lr scheduler used
-        self.lr_step = 1000  # int: number of steps for lr step scheduler
-        self.tol = 0.001  # float: tolerance for AdaAnn scheduler
-        self.t0 = 0.01  # float: initial inverse temperature value
-        self.N = 100  # int: number of sample points during annealing
-        self.N_1 = 1000  # int: number of sample points at t=1
-        self.T_0 = 500  # int: number of parameter updates at initial t0
-        self.T = 5  # int: number of parameter updates during annealing
-        self.T_1 = 5001  # int: number of parameter updates at t=1
-        self.M = 1000  # int: number of sample points used to update temperature
-        self.annealing = True  # boo: decide if annealing is used
-        self.scheduler = 'AdaAnn'  # str: type of annealing scheduler used
-        self.linear_step = 0.0001  # float: step size for constant annealing scheduler
+        self.optimizer    = 'Adam'   #:str:    Type of optimizer used (either 'Adam' or 'RMSprop')
+        self.lr_scheduler = 'StepLR' #:str:    type of lr scheduler used (either 'StepLR' or 'ExponentialLR')
+        self.lr_step      = 1000     #:int:    Number of steps for StepLR learning rate scheduler 
+        self.tol          = 0.001    #:double: KL tolerance for AdaAnn scheduler
+        self.t0           = 0.01     #:double: Initial value for the inverse temperature
+        self.N            = 100      #:int:    Number of batch samples generated for $t<1$ at each iteration
+        self.N_1          = 1000     #:int:    number of batch samples generated for $t=1$ at each iteration
+        self.T_0          = 500      #:int:    Number of parameter updates at the initial inverse temperature $t_0$
+        self.T            = 5        #:int:    Number of parameter updates for each temperature for $t<1$
+        self.T_1          = 5001     #:int:    Number of parameter updates at $t=1$
+        self.M            = 1000     #:int:    Number of Monte Carlo  samples use to compute the denominator of the AdaAnn formula
+        self.annealing    = True     #:boo:    Flag to activate an annealing scheduler
+        self.scheduler    = 'AdaAnn' #:str:    Type of annealing scheduler (either 'AdaAnn' or 'Linear')
+        self.linear_step  = 0.0001   #:double: Fixed step size for the Linear annealing scheduler
 
-        self.output_dir = './results/' + self.name
-        self.log_file = 'log.txt'
-        self.seed = 35435  # int: Random seed used
-        self.n_sample = 5000  # int: Batch size use to print results at save_interval
+        self.output_dir = './results/' + self.name #:str: Name of the output folder
+        self.log_file   = 'log.txt'                #:str: File name where the log profile stats are written
+        self.seed       = 35435                    #:int: Random seed
+        self.n_sample   = 5000                     #:int: Number of batch samples used to print results at save_interval
 
-        self.no_cuda = True
+        self.no_cuda = True #:bool: Flag to use CPU
+
+        # Set device
         self.device = torch.device('cuda:0' if torch.cuda.is_available() and not self.no_cuda else 'cpu')
 
         # Local pointer to the main components for inference
@@ -63,14 +67,6 @@ class experiment:
         self.model            = None
         self.model_logdensity = None
         self.surrogate        = None
-
-    # @property
-    # def model_logdensity(self):
-    #     return self.__model_logdensity
-    #
-    # @model_logdensity.setter
-    # def model_logdensity(self, model_logdensity):
-    #     self.__model_logdensity = lambda z: model_logdensity(z) + self.transformation.compute_log_jacob_func(z)
 
     def run(self):
 
@@ -130,21 +126,12 @@ class experiment:
                 self.batch_size = self.N
                 
                 if t == self.t0:
-                    # print('')
-                    # print('--- Initial iterations at t0')
-                    # print('')
                     self.n_iter = self.T_0
                 if t == 1:
-                    # print('')
-                    # print('--- Final iterations at t=1')
-                    # print('')
                     self.batch_size = self.N_1
                     self.n_iter = self.T_1
 
                 while i < prev_i + self.n_iter:
-                    # print(prev_i + self.n_iter)
-                    # print('--- VI NF at temperature t=%.3f' % (t))
-                    # print(t)
                     self.train(nf, optimizer, i, loglist, sampling=True, update=self.run_nofas, t=t)
                     if t == 1:
                         scheduler.step()
@@ -152,9 +139,6 @@ class experiment:
                 prev_i = i
 
                 if self.scheduler == 'AdaAnn':
-                    # print('')
-                    # print('--- Updating temperature')
-                    # print('')
                     z0 = nf.base_dist.sample([self.M])
                     zk, _ = nf(z0)
                     log_qk = self.model_logdensity(zk)
@@ -233,10 +217,8 @@ class experiment:
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-        # print('VI NF: it: %7d | loss: %8.3e' % (iteration, loss.item()), end='\r')
         if iteration % self.log_interval == 0:
             print('VI NF (t=%5.3f): it: %7d | loss: %8.3e' % (t,iteration, loss.item()))
-            # log.append([iteration, loss.item()] + list(torch.std(xk, dim=0).detach().numpy()))
             log.append([t, iteration, loss.item()])
         
         # Save state of normalizing flow layers

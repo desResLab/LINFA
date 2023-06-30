@@ -109,27 +109,6 @@ class circuitModel():
 
         return self.postProcess_t(odeSol_t, odeSol_y, odeSol_aux, start, stop)
 
-    # def evalNegLL_t(self, modelOut):
-    #     # PyTorch - Evaluate Negative Log-Likelihood with multiple parameters.
-    #     data_size = len(self.data[0])
-    #     # Get the absolute values of the standard deviations
-    #     stds = self.defOut * self.stdRatio
-    #     Data = torch.tensor(self.data)
-    #     # Eval LL
-    #     ll1 = -0.5 * np.prod(self.data.shape) * np.log(2.0 * np.pi)  # a number
-    #     ll2 = (-0.5 * self.data.shape[1] * torch.log(torch.prod(stds))).item()  # a number
-    #     ll3 = 0.0
-    #     for i in range(3):
-    #         ll3 = ll3 - 0.5 * torch.sum(
-    #             ((modelOut[:, i].repeat(data_size, 1).t().float() - Data[i, :].float()) / stds[0, i]) ** 2, dim=1)
-    #     negLL = -(ll1 + ll2 + ll3)
-    #     return negLL
-
-    # def den_t(self, xx, surrogate=None):
-    #     # PyTorch - True Log Posterior of Model.
-    #     pass
-
-
 class rcModel(circuitModel):
 
     def __init__(self, cycleTime, totalCycles, forcing=None):
@@ -146,8 +125,6 @@ class rcModel(circuitModel):
         super().__init__(numParam, numState, numAuxState, numOutputs,
                          parName, limits, defParam,
                          cycleTime, totalCycles, forcing)
-        # self.surrogate = Surrogate("RC", lambda x: self.solve_t(self.transform(x)), numParam, numOutputs,
-        #                            torch.Tensor([[-7, 7], [-7, 7]]), 20)
 
     def evalDeriv_t(self, t, y, params):
         # Pytorch - Evaluate Derivative.
@@ -174,21 +151,6 @@ class rcModel(circuitModel):
                             trapz(t[start:stop], y[start:stop, :]) / float(self.cycleTime) / self.mmHgToBarye],
                            dim=1)
 
-    # def transform(self, x):
-    #     x1, x2 = torch.chunk(x, chunks=2, dim=1)
-    #     return torch.cat((torch.tanh(x1 / 7.0 * 3.0) * 700.0 + 800.0, torch.exp(x2 / 7.0 * 3.0 - 8.0)), 1)
-
-    # def den_t(self, x, surrogate=True):
-    #     batch_size = list(x.size())[0]
-    #     x1, x2 = torch.chunk(x, chunks=2, dim=1)
-    #     adjust = torch.log(1.0 - torch.tanh(x1 / 7.0 * 3.0) ** 2) + x2 / 7 * 3
-    #     if surrogate:
-    #         modelOut = self.surrogate.forward(x)
-    #     else:
-    #         modelOut = self.solve_t(self.transform(x))
-    #     return - self.evalNegLL_t(modelOut).reshape(batch_size, 1) + adjust
-
-
 class rcrModel(circuitModel):
 
     def __init__(self, cycleTime, totalCycles, forcing=None):
@@ -206,8 +168,6 @@ class rcrModel(circuitModel):
         super().__init__(numParam, numState, numAuxState, numOutputs,
                          parName, limits, defParam,
                          cycleTime, totalCycles, forcing)
-        # self.surrogate = Surrogate("RCR", lambda x: self.solve_t(self.transform(x)), numParam, numOutputs,
-        #                            torch.Tensor([[-7, 7], [-7, 7], [-7, 7]]), 20)
         self.stdRatio = 0.05
 
     def evalDeriv_t(self, t, y, params):
@@ -235,24 +195,6 @@ class rcrModel(circuitModel):
                             torch.max(aux[start:stop, 1, :], 0)[0] / self.mmHgToBarye,
                             trapz(t[start:stop], aux[start:stop, 1, :]) / float(self.cycleTime) / self.mmHgToBarye],
                            dim=1)
-
-    # def transform(self, x):
-    #     x1, x2, x3 = torch.chunk(x, chunks=3, dim=1)
-    #     return torch.cat((torch.tanh(x1 / 7.0 * 3.0) * 700.0 + 800.0,
-    #                       torch.tanh(x2 / 7.0 * 3.0) * 700.0 + 800.0,
-    #                       torch.exp(x3 / 7.0 * 3.0 - 8.0)), 1)
-
-    # def den_t(self, x, surrogate=True):
-    #     batch_size = list(x.size())[0]
-    #     x1, x2, x3 = torch.chunk(x, chunks=3, dim=1)
-    #     adjust = torch.log(1.0 - torch.tanh(x1 / 7.0 * 3.0) ** 2) \
-    #              + torch.log(1.0 - torch.tanh(x2 / 7.0 * 3.0) ** 2) \
-    #              + x3 / 7 * 3
-    #     if surrogate:
-    #         modelOut = self.surrogate.forward(x)
-    #     else:
-    #         modelOut = self.solve_t(self.transform(x))
-    #     return - self.evalNegLL_t(modelOut).reshape(batch_size, 1) + adjust
 
 # GEN DATA
 if __name__ == '__main__':
