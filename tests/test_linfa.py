@@ -28,7 +28,7 @@ class linfa_test_suite(unittest.TestCase):
         exp.activation_fn     = 'relu'        # str: Actication function used (default 'relu')
         exp.input_order       = 'sequential'  # str: Input order for create_mask (default 'sequential')
         exp.batch_norm_order  = True          # bool: Order to decide if batch_norm is used        default True
-        exp.sampling_interval = 5000          # int: How often to sample from normalizing flow
+        exp.save_interval = 5000          # int: How often to sample from normalizing flow
 
         exp.input_size    = 2       # int: Dimensionality of input (default 2)
         exp.batch_size    = 200     # int: Number of samples generated (default 100)
@@ -44,9 +44,7 @@ class linfa_test_suite(unittest.TestCase):
         exp.budget             = 64    # int: Total number of true model evaluation
 
         exp.output_dir   = './results/' + exp.name
-        exp.results_file = 'results.txt'
         exp.log_file     = 'log.txt'
-        exp.samples_file = 'samples.txt'
         exp.seed         = random.randint(0, 10 ** 9)  # int: Random seed used
         exp.n_sample     = 5000                        # int: Batch size to generate final results/plots
         exp.no_cuda      = True
@@ -132,7 +130,7 @@ class linfa_test_suite(unittest.TestCase):
         exp.activation_fn     = 'relu'        # str: Actication function used (default 'relu')
         exp.input_order       = 'sequential'  # str: Input order for create_mask (default 'sequential')
         exp.batch_norm_order  = True          # bool: Order to decide if batch_norm is used (default True)
-        exp.sampling_interval = 5000          # int: How often to sample from normalizing flow
+        exp.save_interval = 5000          # int: How often to sample from normalizing flow
 
         exp.input_size    = 5       # int: Dimensionality of input (default 2)
         exp.batch_size    = 250     # int: Number of samples generated (default 100)
@@ -148,9 +146,7 @@ class linfa_test_suite(unittest.TestCase):
         exp.budget             = 1023  # int: Total number of true model evaluation
 
         exp.output_dir   = './results/' + exp.name
-        exp.results_file = 'results.txt'
         exp.log_file     = 'log.txt'
-        exp.samples_file = 'samples.txt'
         exp.seed         = random.randint(0, 10 ** 9)  # int: Random seed used
         exp.n_sample     = 5000                        # int: Batch size to generate final results/plots
         exp.no_cuda      = True
@@ -238,11 +234,11 @@ class linfa_test_suite(unittest.TestCase):
         exp.activation_fn     = 'relu'        # str: Actication function used (default 'relu')
         exp.input_order       = 'sequential'  # str: Input order for create_mask (default 'sequential')
         exp.batch_norm_order  = True          # bool: Order to decide if batch_norm is used (default True)
-        exp.sampling_interval = 5000          # int: How often to sample from normalizing flow
+        exp.save_interval = 5000          # int: How often to sample from normalizing flow
 
         exp.input_size    = 2       # int: Dimensionality of input (default 2)
         exp.batch_size    = 250     # int: Number of samples generated (default 100)
-        exp.true_data_num = 2       # double: number of true model evaluated (default 2)
+        exp.true_data_num = 2       # int: number of true model evaluated (default 2)
         exp.n_iter        = 25001   # int: Number of iterations (default 25001)
         exp.lr            = 0.005   # float: Learning rate (default 0.003)
         exp.lr_decay      = 0.9999  # float: Learning rate decay (default 0.9999)
@@ -254,9 +250,7 @@ class linfa_test_suite(unittest.TestCase):
         exp.budget             = 64    # int: Total number of true model evaluation
 
         exp.output_dir   = './results/' + exp.name
-        exp.results_file = 'results.txt'
         exp.log_file     = 'log.txt'
-        exp.samples_file = 'samples.txt'
         exp.seed         = random.randint(0, 10 ** 9)  # int: Random seed used
         exp.n_sample     = 5000                        # int: Batch size to generate final results/plots
         exp.no_cuda      = True
@@ -345,7 +339,7 @@ class linfa_test_suite(unittest.TestCase):
         exp.activation_fn     = 'relu'        # str: Actication function used (default 'relu')
         exp.input_order       = 'sequential'  # str: Input order for create_mask (default 'sequential')
         exp.batch_norm_order  = True          # bool: Order to decide if batch_norm is used (default True)
-        exp.sampling_interval = 5000          # int: How often to sample from normalizing flow
+        exp.save_interval = 5000          # int: How often to sample from normalizing flow
 
         exp.input_size    = 3       # int: Dimensionality of input (default 2)
         exp.batch_size    = 500     # int: Number of samples generated (default 100)
@@ -361,9 +355,7 @@ class linfa_test_suite(unittest.TestCase):
         exp.budget             = 216  # int: Total number of true model evaluation
 
         exp.output_dir = './results/' + exp.name
-        exp.results_file = 'results.txt'
         exp.log_file = 'log.txt'
-        exp.samples_file = 'samples.txt'
         exp.seed = random.randint(0, 10 ** 9)  # int: Random seed used
         exp.n_sample = 5000                    # int: Batch size to generate final results/plots
         exp.no_cuda = True
@@ -457,7 +449,7 @@ class linfa_test_suite(unittest.TestCase):
         exp.activation_fn     = 'relu'        # str: Actication function used (default 'relu')
         exp.input_order       = 'sequential'  # str: Input order for create_mask (default 'sequential')
         exp.batch_norm_order  = True          # bool: Order to decide if batch_norm is used (default True)
-        exp.sampling_interval = 1000          # int: How often to sample from normalizing flow
+        exp.save_interval = 1000          # int: How often to sample from normalizing flow
 
         exp.input_size   = 10     # int: Dimensionality of input (default 2)
         exp.batch_size   = 100    # int: Number of samples generated (default 100)
@@ -482,9 +474,7 @@ class linfa_test_suite(unittest.TestCase):
         exp.scheduler    = 'AdaAnn'  # str: type of annealing scheduler used
 
         exp.output_dir   = './results/' + exp.name
-        exp.results_file = 'results.txt'
         exp.log_file     = 'log.txt'
-        exp.samples_file = 'samples.txt'
         # exp.seed = 35435  # int: Random seed used
         exp.seed         = random.randint(0, 10 ** 9)  # int: Random seed used
         exp.n_sample     = 5000                        # int: Batch size to generate final results/plots
@@ -540,7 +530,7 @@ class linfa_test_suite(unittest.TestCase):
         exp.activation_fn     = 'relu'        # str: Actication function used (default 'relu')
         exp.input_order       = 'sequential'  # str: Input order for create_mask (default 'sequential')
         exp.batch_norm_order  = True          # bool: Order to decide if batch_norm is used (default True)
-        exp.sampling_interval = 200           # int: How often to sample from normalizing flow
+        exp.save_interval = 200           # int: How often to sample from normalizing flow
     
         exp.input_size = 3     # int: Dimensionality of input (default 2)
         exp.batch_size = 500   # int: Number of samples generated (default 100)
@@ -556,9 +546,7 @@ class linfa_test_suite(unittest.TestCase):
         exp.budget             = 216  # int: Total number of true model evaluation
     
         exp.output_dir   = './results/' + exp.name
-        exp.results_file = 'results.txt'
         exp.log_file     = 'log.txt'
-        exp.samples_file = 'samples.txt'
         exp.seed         = random.randint(0, 10 ** 9)  # int: Random seed used
         exp.n_sample     = 5000                        # int: Batch size to generate final results/plots
         exp.no_cuda      = True

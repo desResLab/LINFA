@@ -19,8 +19,8 @@ class experiment:
         self.n_hidden = 1  # int: Number of hidden layers in each MADE         default 1
         self.activation_fn = 'relu'  # str: Actication function used                     default 'relu'
         self.input_order = 'sequential'  # str: Input order for create_mask                  default 'sequential'
-        self.batch_norm_order = True  # bool: Order to decide if batch_norm is used        default True
-        self.sampling_interval = 200  # int: How often to sample from normalizing flow
+        self.batch_norm_order = True  # bool: Uses decide if batch_norm is used        default True
+        self.save_interval = 200  # int: How often to sample from normalizing flow
         self.store_nf_interval = 1000
 
         self.input_size = 3  # int: Dimensionality of input                      default 2
@@ -51,11 +51,9 @@ class experiment:
         self.linear_step = 0.0001  # float: step size for constant annealing scheduler
 
         self.output_dir = './results/' + self.name
-        self.results_file = 'results.txt'
         self.log_file = 'log.txt'
-        self.samples_file = 'samples.txt'
         self.seed = 35435  # int: Random seed used
-        self.n_sample = 5000  # int: Total number of iterations
+        self.n_sample = 5000  # int: Batch size use to print results at save_interval
 
         self.no_cuda = True
         self.device = torch.device('cuda:0' if torch.cuda.is_available() and not self.no_cuda else 'cpu')
@@ -184,7 +182,7 @@ class experiment:
         xk, sum_log_abs_det_jacobians = nf(x0)
 
         # generate and save samples evaluation
-        if sampling and iteration % self.sampling_interval == 0:
+        if sampling and iteration % self.save_interval == 0:
             print('--- Saving results at iteration '+str(iteration))
             x00 = nf.base_dist.sample([self.n_sample])
             xkk, _ = nf(x00)
