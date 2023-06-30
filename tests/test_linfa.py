@@ -11,7 +11,7 @@ import pandas as pd
 
 class linfa_test_suite(unittest.TestCase):
     # surrogate = nan
-    def phys_example_noNofs(self, run_nofas=False, run_adaann=False):
+    def phys_example_noNofas(self, run_nofas=False, run_adaann=False):
 
         print('')
         print('--- Temporary TEST: Physics Example - without NOFAS')
@@ -80,6 +80,7 @@ class linfa_test_suite(unittest.TestCase):
         model.data = np.loadtxt('resource/data/data_phys.txt')
 
         # Should be replaced
+        exp.surrogate = None
         # exp.surrogate = Surrogate(exp.name, lambda x: model.solve_t(trsf.forward(x)), exp.input_size, 3, 
         #                           torch.Tensor([[0, 2], [0, 10], [-3, 3]]), 20)
         # exp.surrogate.surrogate_load()
@@ -94,10 +95,12 @@ class linfa_test_suite(unittest.TestCase):
             batch_size = x.size(0)
             # Get the absolute values of the standard deviations
             stds = torch.abs(model.solve_t(model.defParam)) * model.stdRatio
+            # stds = torch.abs(model.solve_self(model.defParam)) * model.stdRatio
             Data = torch.tensor(model.data)
             
             # without surrogate
             modelOut = model.solve_t(transform.forward(x))
+            # modelOut = model.solve_self(transform.forward(x))
               
             # Eval LL
             ll1 = -0.5 * np.prod(model.data.shape) * np.log(2.0 * np.pi)
@@ -202,7 +205,7 @@ class linfa_test_suite(unittest.TestCase):
                 print("Warning: Surrogate model files: {0}.npz and {0}.npz could not be found. ".format(exp.name))
                 # 4 samples for each dimension: pre-grid size = 16
                 exp.surrogate.gen_grid(gridnum=4)
-                exp.surrogate.pre_train(120000, 0.03, 0.9999, 500, store=True)
+                exp.surrogate.pre_train(40000, 0.03, 0.9999, 500, store=True)
         exp.surrogate.surrogate_load()
 
         # Define log density
@@ -316,7 +319,7 @@ class linfa_test_suite(unittest.TestCase):
                 print("Warning: Surrogate model files: {0}.npz and {0}.npz could not be found. ".format(exp.name))
                 # 4 samples for each dimension: pre-grid size = 16
                 exp.surrogate.gen_grid(gridnum=4)
-                exp.surrogate.pre_train(200000, 0.03, 0.9999, 500, store=True)
+                exp.surrogate.pre_train(40000, 0.03, 0.9999, 500, store=True)
         exp.surrogate.surrogate_load()
 
         # Define log density

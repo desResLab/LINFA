@@ -211,6 +211,7 @@ class experiment:
                 np.savetxt(self.output_dir + '/' + self.name + '_outputs_' + str(iteration), (self.surrogate.forward(xkk) + noise).data.numpy(), newline="\n")
               else:
                 np.savetxt(self.output_dir + '/' + self.name + '_outputs_' + str(iteration), (self.model.solve_t(self.transform.forward(xkk)) + noise).data.numpy(), newline="\n")
+                # np.savetxt(self.output_dir + '/' + self.name + '_outputs_' + str(iteration), (self.model.solve_self(self.transform.forward(xkk)) + noise).data.numpy(), newline="\n")
 
         if torch.any(torch.isnan(xk)):
             print("Error: samples xk are nan at iteration " + str(iteration))
@@ -219,12 +220,13 @@ class experiment:
             exit(-1)
 
         # updating surrogate model
-        if iteration % self.calibrate_interval == 0 and update and self.surrogate.grid_record.size(0) < self.budget:
-            xk0 = xk[:self.true_data_num, :].data.clone()            
-            # print("\n")
-            # print(list(self.surrogate.grid_record.size())[0])
-            # print(xk0)
-            self.surrogate.update(xk0, max_iters=6000)
+        if not(self.surrogate is None):
+            if iteration % self.calibrate_interval == 0 and update and self.surrogate.grid_record.size(0) < self.budget:
+                xk0 = xk[:self.true_data_num, :].data.clone()            
+                # print("\n")
+                # print(list(self.surrogate.grid_record.size())[0])
+                # print(xk0)
+                self.surrogate.update(xk0, max_iters=6000)
 
         # Free energy bound
         loss = (- torch.sum(sum_log_abs_det_jacobians, 1) - t * self.model_logdensity(xk)).mean()
