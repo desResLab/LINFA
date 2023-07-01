@@ -30,8 +30,7 @@ Background theory and examples for LINFA are discussed in the two papers:
 ### Requirements
 
 * PyTorch 1.13.1
-* Numpy 1.21.6
-* sphinxcontrib-bibtex
+* Numpy 1.22
 
 ### Numerical Benchmarks
 
