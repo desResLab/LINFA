@@ -35,8 +35,8 @@ dev = ["black", "bumpver", "isort", "pip-tools", "pytest"]
 Homepage = "https://github.com/desResLab/LINFA"
 
 [tool.bumpver]
-current_version = "0.0.0"
-version_pattern = "MAJOR.MINOR.PATCH"
+current_version = "0.0.1"
+version_pattern = "MAJOR.MINOR.PATCH[PYTAGNUM]"
 commit_message = "bump version {old_version} -> {new_version}"
 commit = true
 tag = true
