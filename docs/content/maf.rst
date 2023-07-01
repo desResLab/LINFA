@@ -1,5 +1,5 @@
-maf module
-==========
+Normalizing Flow Module
+=======================
 
 .. automodule:: maf
    :members:

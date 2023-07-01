@@ -1,7 +1,7 @@
-NoFAS module
+NoFAS Module
 ============
 
-.. automodule:: NoFAS
+.. automodule:: nofas
    :members:
    :undoc-members:
    :show-inheritance:

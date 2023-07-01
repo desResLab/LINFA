@@ -19,8 +19,8 @@ sys.path.insert(0, os.path.abspath('../linfa'))
 # -- Project information -----------------------------------------------------
 
 project = 'linfa'
-copyright = '2023, Yu Wang, Emma R. Cobian, Fang Liu, Jonathan D. Hauenstein, Daniele E. Schiavazzi'
-author = 'Yu Wang, Emma R. Cobian, Fang Liu, Jonathan D. Hauenstein, Daniele E. Schiavazzi'
+copyright = '2023, Yu Wang, Emma R. Cobian, Jubilee Lee, Fang Liu, Jonathan D. Hauenstein, Daniele E. Schiavazzi'
+author = 'Yu Wang, Emma R. Cobian, Jubilee Lee, Fang Liu, Jonathan D. Hauenstein, Daniele E. Schiavazzi'
 
 # The full version, including alpha/beta/rc tags
 release = '0.0'
@@ -38,6 +38,10 @@ extensions = ['sphinx.ext.autodoc',
               'sphinx_rtd_theme',
               'sphinxcontrib.bibtex']
 
+numfig = True
+
+bibtex_bibfiles = ['content/linfa.bib']
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
@@ -51,7 +55,6 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-#
 html_theme = 'sphinx_rtd_theme'
 
 # Add any paths that contain custom static files (such as style sheets) here,

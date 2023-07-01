@@ -1,11 +1,9 @@
-linfa
-=====
+Modules for the LINFA library
+=============================
 
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 2
 
-   NoFAS
-   eval_post
-   example
+   nofas
    maf
    run_experiment

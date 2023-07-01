@@ -33,12 +33,13 @@ jobs:
 
     - name: Run tests
       run: |
-        python -m unittest tests/test_linfa.py
-      # python -m unittest tests/test_linfa.py linfa_test_suite.trivial_example
-      # python -m unittest tests/test_linfa.py linfa_test_suite.highdim_example
-      # python -m unittest tests/test_linfa.py linfa_test_suite.rc_example
-      # python -m unittest tests/test_linfa.py linfa_test_suite.rcr_example
-      # python -m unittest tests/test_linfa.py linfa_test_suite.adaann_example
+        cd tests 
+        it=10 python3 -m unittest test_linfa.linfa_test_suite.trivial_example
+        it=10 python3 -m unittest test_linfa.linfa_test_suite.highdim_example
+        it=10 python3 -m unittest test_linfa.linfa_test_suite.rc_example
+        it=10 python3 -m unittest test_linfa.linfa_test_suite.rcr_example
+        it=10 python3 -m unittest test_linfa.linfa_test_suite.adaann_example
+        cd ..
 
     - name: Publish to PyPI
       # if: startsWith(github.ref, 'refs/tags')

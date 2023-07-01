@@ -7,10 +7,9 @@ import copy
 
 torch.set_default_tensor_type(torch.DoubleTensor)
 
-
-# --------------------
+# ------------------------
 # Model layers and helpers
-# --------------------
+# ------------------------
 
 def create_masks(input_size, hidden_size, n_hidden, input_order='sequential', input_degrees=None):
     # MADE paper sec 4:
@@ -196,9 +195,9 @@ class FlowSequential(nn.Sequential):
         return u, sum_log_abs_det_jacobians
 
 
-# --------------------
+# ------
 # Models
-# --------------------
+# ------
 
 class MADE(nn.Module):
     def __init__(self, input_size, hidden_size, n_hidden, cond_label_size=None, activation='relu',
@@ -226,7 +225,7 @@ class MADE(nn.Module):
             activation_fn = nn.ReLU()
         elif activation == 'tanh':
             activation_fn = nn.Tanh()
-        elif activation == 'custom':
+        elif activation == 'sigmoid':
             activation_fn = nn.Sigmoid()
         else:
             raise ValueError('Check activation function.')

@@ -3,18 +3,21 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to linfa's documentation!
-=================================
+LINFA library documentation
+===========================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :caption: Contents:
 
    content/intro
    content/background
+   content/num_examples
+   content/linfa_options
    content/modules
+   content/biblio
 
-Indices and tables
+Indices and Tables
 ==================
 
 * :ref:`genindex`

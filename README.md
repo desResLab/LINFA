@@ -4,10 +4,9 @@
 
 ## LINFA
 
-LINFA is a library for variational inference with normalizing flow and adaptive annealing. It combines the 
+LINFA is a library for variational inference with normalizing flow and adaptive annealing. It is designed to accommodate computationally expensive models and difficult-to-sample posterior distributions with dependent parameters.
 
-In particular, masked autoregressive flow (MAF) and RealNVP are used in the code, which are 
-implemented by [Kamen Bliznashki](https://github.com/kamenbliznashki/normalizing_flows). 
+The code for the masked autoencoders for density estimation (MADE), masked autoregressive flow (MAF) and real non volume-preserving transformation (RealNVP) is based on the implementation provided by [Kamen Bliznashki](https://github.com/kamenbliznashki/normalizing_flows). 
 
 
 ### Documentation 
@@ -27,48 +26,50 @@ Background theory and examples for LINFA are discussed in the two papers:
 * Numpy 1.19.2
 * Scipy 1.6.1
 
-### Available numerical benchmarks
+### Numerical Benchmarks
 
 LINFA includes five numerical benchmarks:
 
 * Trivial example.
 * High dimensional example (Sobol' function).
-* Two-element Windkessel model (a.k.a RC model).
-* Three-element Windkessel model (a.k.a RCR model).
+* Two-element Windkessel model (a.k.a. RC model).
+* Three-element Windkessel model (a.k.a. RCR model).
 * Friedman 1 dataset example.
 
-The implementation of the lumped parameter network models (RC and RCR models) follows the code from [the Schiavazzi Lab at the University of Notre Dame](https://github.com/desResLab/supplMatHarrod20).
+The implementation of the lumped parameter network models (RC and RCR models) follows closely from the code developed by [the Schiavazzi Lab at the University of Notre Dame](https://github.com/desResLab/supplMatHarrod20).
 
+To run the tests type
+```sh
+cd tests
+python -m unittest test_linfa.py linfa_test_suite.NAME_example
+```
+where `NAME` need to be replaced by
+* `trivial` for the trivial example (Ex 1).
+* `highdim` for the high-dimensional example (Ex 2).
+* `rc` for the RC model (Ex 3).
+* `rcr` for the RCR model (Ex 4).
+* `adaann` for the Friedman model example (Ex 5).
 
-To run the trivial example (Ex 1) type:
+At regular intervals set by the parameter `experiment.save_interval` LINFA writes a few results files. The sub-string `NAME` refers to the experiment name specified in the `experiment.name` variable, and `IT` indicates the iteration at which the file is written. The results files are
+
+* `log.txt` contains the log profile information, i.e.
+  * Iteration number.
+  * Annealing temperature at each iteration.
+  * Loss function at each iteration.
+* `NAME_grid_IT` contains the inputs where the true model was evaluated. 
+* `NAME_params_IT` contains the batch of input parameters $\boldsymbol{z}_{K}$ in the physical space generated at iteration `IT`. 
+* `NAME_samples_IT` contains the batch of normalized parameters (parameter values before the coordinate transformation) generated at iteration `IT`.
+* `NAME_logdensity_IT` contains the value of the log posterior density corresponding to each parameter realization. 
+* `NAME_outputs_IT` contains the true model (or surrogate model) outputs for each batch sample at iteration `IT`.
+* `NAME_IT.nf` contains a backup of the normalizing flow parameters at iteration `IT`.
+
+A post processing script is also available to plot all results. To run it type
 
 ```sh
-# python -m unittest tests/test_linfa.py linfa_test_suite.trivial_example
+cd tests
+python plot_test_res.py -n NAME -i IT
 ```
-
-To run the high-dimensional example (Ex 2) type:
-
-```sh
-# python -m unittest tests/test_linfa.py linfa_test_suite.highdim_example
-```
-
-To run the RC model (Ex 3) type:
-
-```sh
-# python -m unittest tests/test_linfa.py linfa_test_suite.rc_example
-```
-
-To run the RCR model (Ex 4) type:
-
-```sh
-# python -m unittest tests/test_linfa.py linfa_test_suite.rcr_example
-```
-
-To run the Friedman model example (Ex 5) type:
-
-```sh
-# python -m unittest tests/test_linfa.py linfa_test_suite.adaann_example
-```
+where `NAME` and `IT` are again the experiment name and iteration number corresponding to the result file of interest. 
 
 ### Usage
 
@@ -81,14 +82,15 @@ To use LINFA with your model you need to specify the following components:
 
 In addition you need to specify a list of options as discussed in the (documentation)[].
 
+### Tutorial
+
+A (documentation)[] is also available which will guide you through the definition of each of the quantities and function required by LINFA. 
+
 ### Citation
 
-Did you use LINFA? Cite us using:
-
-COMPLETE WHEN ON ARCHIVE!!!
-
+Did you use LINFA? Please cite our paper using:
 ```
-@misc{linfa,
+@misc{TO BE FINALIZED!!!,
       title={LINFA: a Python library for variational inference with normalizing flow and annealing}, 
       author={Yu Wang, Emma R. Cobian, Fang Liu, Jonathan D. Hauenstein, Daniele E. Schiavazzi},
       year={2022},

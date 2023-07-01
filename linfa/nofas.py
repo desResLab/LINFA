@@ -6,20 +6,19 @@ from os import path
 
 torch.set_default_tensor_type(torch.DoubleTensor)
 
-
 class FNN(nn.Module):
     """Fully Connected Neural Network"""
 
-    def __init__(self, input_size, output_size):
+    def __init__(self, input_size, output_size, device):
         """
         Args:
             input_size (int): Input size for FNN
             output_size (int): Output size for FNN
         """
         super().__init__()
-        self.fc1 = nn.Linear(input_size, 64)
-        self.fc2 = nn.Linear(64, 32)
-        self.fc3 = nn.Linear(32, output_size)
+        self.fc1 = nn.Linear(input_size, 64).to(device)
+        self.fc2 = nn.Linear(64, 32).to(device)
+        self.fc3 = nn.Linear(32, output_size).to(device)
 
     def forward(self, x):
         """
@@ -49,7 +48,8 @@ class Surrogate:
             surrogate (None or torch.nn.Module): the implementation of surrogate model used. Default: FNN
 
     """
-    def __init__(self, model_name, model_func, input_size, output_size, limits=None, memory_len=20, surrogate=None):
+    def __init__(self, model_name, model_func, input_size, output_size, limits=None, memory_len=20, surrogate=None, device='cpu'):
+        self.device = device
         self.input_size = input_size
         self.output_size = output_size
         self.model_name = model_name
@@ -61,15 +61,16 @@ class Surrogate:
         self.tsd = None
         self.limits = limits
         self.pre_grid = None
-        self.surrogate = FNN(input_size, output_size) if surrogate is None else surrogate
+        self.surrogate = FNN(input_size, output_size, self.device) if surrogate is None else surrogate
         self.beta_0 = 0.5
-        self.beta_1 = 0.1
+        self.beta_1 = 0.1        
 
         self.memory_grid = []
         self.memory_out = []
         self.memory_len = memory_len
-        self.weights = torch.Tensor([np.exp(-self.beta_1 * i) for i in range(memory_len)])
+        self.weights = torch.Tensor([np.exp(-self.beta_1 * i) for i in range(memory_len)]).to(self.device)
         self.grid_record = None
+        
 
     @property
     def limits(self):
@@ -103,7 +104,7 @@ class Surrogate:
 
     @pre_grid.setter
     def pre_grid(self, pre_grid):
-        """Assign the pregrid of surrogate model. 
+        """Assign the pregrid for the surrogate model. 
 
         f nofas is not enabled, this serves as the whole training grid.
         
@@ -124,15 +125,16 @@ class Surrogate:
                 print("Warning: " + self.model_name + ".npz does not found, please generate pre-grid.")
                 print("Suggestion: Use Surrogate.gen_grid(input_limits=None, grid_num=5, store=True)")
         else:
-            self.__pre_grid = torch.Tensor(pre_grid)
+            self.__pre_grid = torch.Tensor(pre_grid).to(self.device)
             self.m = torch.mean(self.pre_grid, 0)
             self.sd = torch.std(self.pre_grid, 0)
+            # Evaluate model at pre-grid
             self.pre_out = self.mf(self.pre_grid)
             self.tm = torch.mean(self.pre_out, 0)
             self.tsd = torch.std(self.pre_out, 0)
             self.grid_record = self.__pre_grid.clone()
 
-    def gen_grid(self, input_limits=None, gridnum=4, store=True):
+    def gen_grid(self, input_limits=None, grid_type='tensor', gridnum=4, store=True):
         """Generates a pre-grid.
         
         Args:
@@ -143,18 +145,37 @@ class Surrogate:
         Returns:
             torch.Tensor: Input values for the full tensor grid in *dim* dimensions stored in a matrix [gridnum ** dim, dim].
         """
-        meshpoints = []
-        if input_limits is not None:
-            self.limits = input_limits
-            print("Warning: Input limits recorded in surrogate.")
+        if (grid_type == 'tensor'):
+          
+            meshpoints = []
+            if input_limits is not None:
+                self.limits = input_limits
+                print("Warning: Input limits recorded in surrogate.")
 
-        for lim in self.limits: meshpoints.append(torch.linspace(lim[0], lim[1], steps=gridnum))
-        grid = torch.meshgrid(meshpoints)
-        grid = torch.cat([item.reshape(gridnum ** len(self.limits), 1) for item in grid], 1)
+            for lim in self.limits: meshpoints.append(torch.linspace(lim[0], lim[1], steps=gridnum))
+            grid = torch.meshgrid(meshpoints)
+            grid = torch.cat([item.reshape(gridnum ** len(self.limits), 1) for item in grid], 1)
+
+        elif (grid_type == 'sobol'):
+
+            # Generate sobol samples in [0,1]^d
+            soboleng = torch.quasirandom.SobolEngine(dimension=len(self.limits))
+            grid = soboleng.draw(gridnum)
+            for i,lim in enumerate(self.limits): 
+                grid[:,i] = lim[0] + (lim[1] - lim[0]) * grid[:,i]
+
+        else:
+
+            print('Invalid type for pre-grid generation')
+            exit(-1)
+
+        # Store pre-grid
         if store:
             self.pre_grid = grid
             self.grid_record = self.pre_grid.clone()
             self.surrogate_save()
+        
+        # Return grid
         return grid
 
     def surrogate_save(self):
@@ -165,8 +186,8 @@ class Surrogate:
 
         """
         torch.save(self.surrogate.state_dict(), self.model_name + '.sur')
-        np.savez(self.model_name, limits=self.limits, pre_grid=self.pre_grid,
-                 grid_record=self.grid_record)
+        np.savez(self.model_name, limits=self.limits, pre_grid=self.pre_grid.clone().cpu().numpy(),
+                 grid_record=self.grid_record.clone().cpu().numpy())
 
     def surrogate_load(self):
         """Load surrogate model from [self.name].sur and [self.name].npz
@@ -199,13 +220,15 @@ class Surrogate:
         Returns:
             None
         """
+        print('')
+        print('--- Pre-training surrogate model')
+        print('')
         grid = (self.pre_grid - self.m) / self.sd
         out = (self.pre_out - self.tm) / self.tsd
         optimizer = torch.optim.RMSprop(self.surrogate.parameters(), lr=lr)
         scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, lr_exp)
         for i in range(max_iters):
-            self.surrogate.train()
-            scheduler.step()
+            self.surrogate.train()            
             y = self.surrogate(grid)
             loss = torch.sum((y - out) ** 2) / y.size(0)
             if reg:
@@ -216,12 +239,16 @@ class Surrogate:
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+            scheduler.step()
 
             if i % record_interval == 0:
                 if reg:
-                    print('iter {}\t loss {}\t reg_loss {}'.format(i, loss, reg_loss))
+                    print('SUR: PRE: it: %7d | loss: %8.3e | reg_loss: %8.3e' % (i, loss, reg_loss))
                 else:
-                    print('iter {}   loss {}'.format(i, loss))
+                    print('SUR: PRE: it: %7d | loss: %8.3e' % (i, loss))
+        print('')
+        print('--- Surrogate model pre-train complete')
+        print('')
         if store:
             self.surrogate_save()
 
@@ -232,56 +259,70 @@ class Surrogate:
         
         Args:
             x (torch.Tensor): Input feature that needs true model output.
-            max_iters (int): Maximal number of iteration. Default 10000.
-            lr (double): Learning rate for RMSprop. Default 0.01
+            max_iters (int): Maximum number of iteration. Default 10000.
+            lr (double): Learning rate for RMSprop. Default 0.01.
             lr_exp (double): Decay factor of exponential scheduler.
             record_interval (int): The number of iterations to print loss information.
             store (bool): If ture, self.surrogate_save() will be called.
-            tol (double): Optimization will be terminated if loss < tol ** 2
-            reg (bool): If ture, L1 regularizaiton will be used with parameter 0.1
+            tol (double): Optimization will be terminated if loss < tol ** 2.
+            reg (bool): If ture, L1 regularizaiton will be used with parameter 0.1.
 
         Returns:
             None
         """
-        self.grid_record = torch.cat((self.grid_record, x), dim=0)
+        self.grid_record = torch.cat((self.grid_record.to(self.device), x), dim=0)
         s = torch.std(x, dim=0)
-        thresh = 0.1
+        thresh = torch.tensor(0.1).to(self.device)
         if torch.any(s < thresh):
             p = x[:, s < thresh]
-            x[:, s < thresh] += torch.normal(0, 1, size=tuple(p.size())) * thresh
-        print("Std: ", s)
-        print("Std after: ", torch.std(x, dim=0))
+            x[:, s < thresh] += torch.normal(0, 1, size=tuple(p.size())).to(self.device) * thresh
+        s_aft = torch.std(x, dim=0)            
+        
+        # Print the std for each dimension before and after inflation    
+        print('')
+        print('--- Updating surrogate model')
+        print('')
+        print('Std before inflation -> Std after inflation')
+        for loopA in range(s.size(0)):
+          print("%8.3e -> %8.3e" % (s[loopA],s_aft[loopA]))
+        print('')          
+
         if len(self.memory_grid) >= self.memory_len:
             self.memory_grid.pop()
             self.memory_out.pop()
         self.memory_grid.insert(0, (x - self.m) / self.sd)
         self.memory_out.insert(0, (self.mf(x) - self.tm) / self.tsd)
         sizes = [list(self.pre_grid.size())[0]] + [list(item.size())[0] for item in self.memory_grid]
-        # print(sizes)
+
         optimizer = torch.optim.RMSprop(self.surrogate.parameters(), lr=lr)
         scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, lr_exp)
         for i in range(max_iters):
-            self.surrogate.train()
-            scheduler.step()
+            self.surrogate.train()            
             y = self.surrogate(torch.cat(((self.pre_grid - self.m) / self.sd, *self.memory_grid), dim=0))
             out = torch.cat(((self.pre_out - self.tm) / self.tsd, *self.memory_out), dim=0)
             raw_loss = torch.stack([item.mean() for item in torch.split(torch.sum((y - out) ** 2, dim=1), sizes)])
-            loss = raw_loss[0] * 2 * self.beta_0 * self.weights[:len(self.memory_grid)].sum() + torch.sum(
-                raw_loss[1:] * self.weights[:len(self.memory_grid)]) * (1 - self.beta_0) * 2
+            loss = raw_loss[0] * 2 * self.beta_0 * self.weights[:len(self.memory_grid)].sum() + \
+                   torch.sum(raw_loss[1:] * self.weights[:len(self.memory_grid)]) * (1 - self.beta_0) * 2
 
             # loss = raw_loss[0] * self.weights[:len(self.memory_grid)].sum() + torch.sum(
             #     raw_loss[1:] * self.weights[:len(self.memory_grid)])
+
             if reg:
                 for param in self.surrogate.parameters():
                     loss += torch.abs(param).sum() * 0.1
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+            scheduler.step()
 
             if i % record_interval == 0:
-                print('Updating: {}\t loss {}'.format(i, loss), end='\r')
+                # print('Updating: {}\t loss {}'.format(i, loss), end='\r')
+                print('SUR: UPD: it: %7d | loss: %8.3e' % (i, loss))
             if loss < tol ** 2: break
-        print('                                                        ', end='\r')
+        # print('                                                        ', end='\r')
+        print('')
+        print('--- Surrogate model updated')
+        print('')                  
         if store:
             self.surrogate_save()
 
