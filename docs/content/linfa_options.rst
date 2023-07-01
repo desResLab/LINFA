@@ -2,7 +2,7 @@ LINFA options
 =============
 
 .. list-table:: General parameters
-   :widths: 25 25 50
+   :widths: 25 25 25
    :header-rows: 1
 
    * - Option
@@ -31,19 +31,25 @@ LINFA options
 
    * - ``activation_fn``
      - ``str``
-     - Activation function for MADE network used by MAF (default: ``'relu'``)
+     - | Activation function for MADE network 
+       | used by MAF (default: ``'relu'``)
 
    * - ``input_order``
      - ``str``
-     - Input order for MADE mask creation (default: ``'sequential'`` or ``'random'``)
+     - | Input order for MADE mask creation 
+       | (default: ``'sequential'`` or ``'random'``)
 
    * - ``batch_norm_order``
      - ``bool``
-     - Adds batchnorm layer after each MAF or RealNVP layer (default ``True``)
+     - | Adds batchnorm layer after each MAF or 
+       | RealNVP layer (default ``True``)
 
    * - ``save_interval``
      - ``int``
-     - How often to save results from the normalizing flow iterations. Saved results include posterior samples, loss profile, samples from the posterior predictive distribution with observations and marginal statistics.
+     - | How often to save results from the normalizing flow iterations. 
+       | Saved results include posterior samples, loss profile, 
+       | samples from the posterior predictive distribution with 
+       | observations and marginal statistics
 
    * - ``input_size``
      - ``int``
@@ -51,11 +57,13 @@ LINFA options
 
    * - ``batch_size``
      - ``int``
-     - Number of samples from the basic distribution generated at each iteration (default ``100``)
+     - | Number of samples from the basic distribution 
+       | generated at each iteration (default ``100``)
 
    * - ``true_data_num``
      - ``int``
-     - Number of additional true model evaluations at each surrogate model update (default ``2``)
+     - | Number of additional true model evaluations at 
+       | each surrogate model update (default ``2``)
 
    * - ``n_iter``
      - ``int``
@@ -84,15 +92,18 @@ LINFA options
 
    * - ``lr_scheduler``
      - ``string``
-     - Type of learning rate scheduler (``'StepLR'`` or ``'ExponentialLR'``)
+     - | Type of learning rate scheduler 
+       | (``'StepLR'`` or ``'ExponentialLR'``)
 
    * - ``lr_step``
      - ``int``
-     - Number of steps before learning rate reduction for the step scheduler
+     - | Number of steps before learning rate 
+       | reduction for the step scheduler
 
    * - ``log_interval``
      - ``int``
-     - Number of iterations between successive loss printouts (default ``10``)
+     - | Number of iterations between successive 
+       | loss printouts (default ``10``)
 
 
 .. list-table:: Output parameters
@@ -105,11 +116,13 @@ LINFA options
 
    * - ``output_dir``
      - ``string``
-     - Name of output folder where results files are written
+     - | Name of output folder where 
+       | results files are written
 
    * - ``log_file``
      - ``string``
-     - Name of the log file which stores the iteration number, annealing temperature and value of the loss function at each iteration
+     - | Name of the log file which stores the iteration number, 
+       | annealing temperature and value of the loss function at each iteration
 
    * - ``seed``
      - ``int``
@@ -126,11 +139,13 @@ LINFA options
 
    * - ``n_sample``
      - ``int``
-     - Batch size used to generate results after ``save_interval`` iterations
+     - | Batch size used to generate results 
+       | after ``save_interval`` iterations
 
    * - ``calibrate_interval``
      - ``int``
-     - Number of NF iteration between successive updates of the surrogate model (default ``1000``)
+     - | Number of NF iteration between successive 
+       | updates of the surrogate model (default ``1000``)
 
    * - ``budget``
      - ``int``
@@ -147,15 +162,20 @@ LINFA options
 
    * - ``annealing``
      - ``bool``
-     - Flag to activate the annealing scheduler. If this is ``False``, the target posterior distribution is left unchanged during the iterations
+     - | Flag to activate the annealing scheduler. 
+       | If this is ``False``, the target posterior 
+       | distribution is left unchanged during 
+       | the iterations
 
    * - ``scheduler``
      - ``string``
-     - Type of annealing scheduler (default ``'AdaAnn'`` or ``'fixed'``)
+     - | Type of annealing scheduler 
+       | (default ``'AdaAnn'`` or ``'fixed'``)
 
    * - ``tol``
      - ``float``
-     - KL tolerance. It is kept constant during inference and used in the numerator of equation :eq:`equ:adaann`.
+     - | KL tolerance. It is kept constant during inference and used 
+       | in the numerator of equation :eq:`equ:adaann`.
 
    * - ``t0``
      - ``float``
@@ -167,23 +187,25 @@ LINFA options
 
    * - ``N_1``
      - ``int``
-     - Number of batch samples at $t=1$.
+     - Number of batch samples at :math:`t=1`.
 
    * - ``T_0``
      - ``int``
-     - Number of initial parameter updates at $t_0$.
+     - Number of initial parameter updates at :math:`t_0`.
 
    * - ``T``
      - ``int``
-     - Number of parameter updates after each temperature update. During such updates the temperature is kept fixed\\
+     - | Number of parameter updates after each temperature update. 
+       | During such updates the temperature is kept fixed.
 
    * - ``T_1``
      - ``int``
-     - Number of parameter updates at $t=1$
+     - Number of parameter updates at :math:`t=1`
 
    * - ``M``
      - ``int``
-     - Number of Monte Carlo samples used to evaluate the denominator in equation~\eqref{equ:adaann}\\
+     - | Number of Monte Carlo samples used to evaluate 
+       | the denominator in equation :eq:`equ:adaann`
 
 
 .. list-table:: Device parameters

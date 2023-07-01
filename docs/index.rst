@@ -15,6 +15,7 @@ LINFA library documentation
    content/num_examples
    content/linfa_options
    content/modules
+   content/biblio
 
 Indices and Tables
 ==================

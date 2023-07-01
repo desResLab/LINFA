@@ -38,6 +38,7 @@ extensions = ['sphinx.ext.autodoc',
               'sphinx_rtd_theme',
               'sphinxcontrib.bibtex']
 
+numfig = True
 
 bibtex_bibfiles = ['content/linfa.bib']
 
