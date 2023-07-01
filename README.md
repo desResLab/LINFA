@@ -18,7 +18,7 @@ pip install linfa-vi
 
 ### Documentation 
 
-The documentation can be found on [readmydocs]()
+The documentation can be found on [readthedocs](linfa-vi.rtfd.io)
 
 ### References
 
@@ -86,7 +86,7 @@ To use LINFA with your model you need to specify the following components:
 * A log-likelihood model.
 * An optional transformation. 
 
-In addition you need to specify a list of options as discussed in the (documentation)[].
+In addition you need to specify a list of options as discussed in the [documentation](linfa-vi.rtfd.io).
 
 ### Tutorial
 
