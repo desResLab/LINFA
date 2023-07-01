@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "linfa_vi"
-version = "0.0.0"
+version = "1.0.0"
 description = "A Python library for inference with normalizing flow and annealing"
 readme = "README.md"
 authors = [{ name = "resDesLab ", email = "daniele.schiavazzi@gmail.com" }]
@@ -33,24 +33,3 @@ dev = ["black", "bumpver", "isort", "pip-tools", "pytest"]
 
 [project.urls]
 Homepage = "https://github.com/desResLab/LINFA"
-
-[tool.bumpver]
-current_version = "0.0.0"
-version_pattern = "MAJOR.MINOR.PATCH[PYTAGNUM]"
-commit_message = "bump version {old_version} -> {new_version}"
-commit = true
-tag = true
-push = true
-
-[tool.bumpver.file_patterns]
-"pyproject.toml" = [
-    'current_version = "{version}"',
-    'version = "{version}"',
-]
-"README.md" = [
-    "linfa {version}",
-    "LINFA {version}",
-    "linfa {pep440_version}",
-    "LINFA {pep440_version}",
-]
-
