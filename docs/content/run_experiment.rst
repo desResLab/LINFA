@@ -1,5 +1,5 @@
-run\_experiment module
-======================
+Experiment Class
+================
 
 .. automodule:: run_experiment
    :members:

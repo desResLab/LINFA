@@ -7,7 +7,6 @@ import copy
 
 torch.set_default_tensor_type(torch.DoubleTensor)
 
-
 # ------------------------
 # Model layers and helpers
 # ------------------------
@@ -226,7 +225,7 @@ class MADE(nn.Module):
             activation_fn = nn.ReLU()
         elif activation == 'tanh':
             activation_fn = nn.Tanh()
-        elif activation == 'custom':
+        elif activation == 'sigmoid':
             activation_fn = nn.Sigmoid()
         else:
             raise ValueError('Check activation function.')

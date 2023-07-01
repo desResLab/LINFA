@@ -69,6 +69,9 @@ class experiment:
         self.surrogate        = None
 
     def run(self):
+        """Runs instance of inference inference problem        
+
+        """
 
         # Check is surrogate exists
         if self.run_nofas:
@@ -86,6 +89,10 @@ class experiment:
         # setup device
         torch.manual_seed(self.seed)
         if self.device.type == 'cuda': torch.cuda.manual_seed(self.seed)
+
+        print('')
+        print('--- Running on device: '+ str(self.device))
+        print('')
 
         # model
         if self.flow_type == 'maf':
@@ -117,7 +124,7 @@ class experiment:
             prev_i = 1
             tvals = []
             t = self.t0
-            dt = 0
+            dt = 0.0
             loglist = []
             while t < 1:
                 t = min(1, t + dt)
@@ -132,7 +139,7 @@ class experiment:
                     self.n_iter = self.T_1
 
                 while i < prev_i + self.n_iter:
-                    self.train(nf, optimizer, i, loglist, sampling=True, update=self.run_nofas, t=t)
+                    self.train(nf, optimizer, i, loglist, sampling=True, t=t)
                     if t == 1:
                         scheduler.step()
                     i += 1
@@ -143,25 +150,42 @@ class experiment:
                     zk, _ = nf(z0)
                     log_qk = self.model_logdensity(zk)
                     dt = self.tol / torch.sqrt(log_qk.var())
-                    dt = dt.detach().numpy()
+                    dt = dt.detach()# .numpy()
 
                 if self.scheduler == 'Linear':
                     dt = self.linear_step
         else:
             loglist = []
             for i in range(1, self.n_iter+1):                
-                self.train(nf, optimizer, i, loglist, sampling=True, update=True)
+                self.train(nf, optimizer, i, loglist, sampling=True)
                 scheduler.step()
 
         print('')
         print('--- Simulation completed!')
         # rt.surrogate.surrogate_save() # Used for saving the resulting surrogate model
 
-    def train(self, nf, optimizer, iteration, log, sampling=True, update=True, t=1):
+    def train(self, nf, optimizer, iteration, log, sampling=True, t=1):
+        """Parameter update for normalizing flow and surrogate model
 
-        # Train the normalizing flow
+        This is the function where the ELBO loss function is evaluated, 
+        the results are saved and the surrogate model is updated.
+        
+        Args:
+            nf (instance of normalizing flow): the normalizing flow architecture used for variational inference
+            optimizer (instance of PyTorch optimizer): the selected PyTorch optimizer
+            iteration (int): current iteration number
+            log (list of lists): stores a log of [iteration, annealing temperature, loss value]
+            sampling (bool): Flag indicating the sampling stage
+            t (double): current inverse temperature for annealing scheduler
+
+        Returns:
+            None
+        """
+
+        # Set the normalizing flow in training mode
         nf.train()
 
+        # Evaluate the Jacobian terms in  loss function
         x0 = nf.base_dist.sample([self.batch_size])
         xk, sum_log_abs_det_jacobians = nf(x0)
 
@@ -172,31 +196,31 @@ class experiment:
             xkk, _ = nf(x00)
             # Save surrogate grid
             if not(self.surrogate is None):
-              np.savetxt(self.output_dir + '/' + self.name + '_grid_' + str(iteration), self.surrogate.grid_record.detach().numpy(), newline="\n")
+              np.savetxt(self.output_dir + '/' + self.name + '_grid_' + str(iteration), self.surrogate.grid_record.clone().cpu().numpy(), newline="\n")
             # Save log profile
             np.savetxt(self.output_dir + '/' + self.log_file, np.array(log), newline="\n")
             # Save transformed samples          
-            np.savetxt(self.output_dir + '/' + self.name + '_samples_' + str(iteration), xkk.data.numpy(), newline="\n")
+            np.savetxt(self.output_dir + '/' + self.name + '_samples_' + str(iteration), xkk.data.clone().cpu().numpy(), newline="\n")
             # Save samples in the original space
             if not(self.transform is None):
-              xkk_samples = self.transform.forward(xkk).data.numpy()
+              xkk_samples = self.transform.forward(xkk).data.cpu().numpy()
               np.savetxt(self.output_dir + '/' + self.name + '_params_' + str(iteration), xkk_samples, newline="\n")
             else:
-              xkk_samples = xkk.data.numpy()
-              np.savetxt(self.output_dir + '/' + self.name + '_params_' + str(iteration), xkk.data.numpy(), newline="\n")
+              xkk_samples = xkk.data.cpu().numpy()
+              np.savetxt(self.output_dir + '/' + self.name + '_params_' + str(iteration), xkk_samples, newline="\n")
             # Save marginal statistics
             np.savetxt(self.output_dir + '/' + self.name + '_marginal_stats_' + str(iteration), np.concatenate((xkk_samples.mean(axis=0).reshape(-1,1),xkk_samples.std(axis=0).reshape(-1,1)),axis=1), newline="\n")
             # Save log density at the same samples
-            np.savetxt(self.output_dir + '/' + self.name + '_logdensity_' + str(iteration), self.model_logdensity(xkk).data.numpy(), newline="\n")
+            np.savetxt(self.output_dir + '/' + self.name + '_logdensity_' + str(iteration), self.model_logdensity(xkk).data.cpu().numpy(), newline="\n")
             # Save model outputs at the samples - If a model is defined
             if not(self.transform is None):
-              stds = torch.abs(self.model.solve_t(self.model.defParam)) * self.model.stdRatio
-              o00 = torch.randn(x00.size(0), self.model.data.shape[0])
+              stds = torch.abs(self.model.solve_t(self.model.defParam)).to(self.device) * self.model.stdRatio
+              o00 = torch.randn(x00.size(0), self.model.data.shape[0]).to(self.device)
               noise = o00*stds.repeat(o00.size(0),1)
               if self.surrogate:
-                np.savetxt(self.output_dir + '/' + self.name + '_outputs_' + str(iteration), (self.surrogate.forward(xkk) + noise).data.numpy(), newline="\n")
+                np.savetxt(self.output_dir + '/' + self.name + '_outputs_' + str(iteration), (self.surrogate.forward(xkk) + noise).data.cpu().numpy(), newline="\n")
               else:
-                np.savetxt(self.output_dir + '/' + self.name + '_outputs_' + str(iteration), (self.model.solve_t(self.transform.forward(xkk)) + noise).data.numpy(), newline="\n")
+                np.savetxt(self.output_dir + '/' + self.name + '_outputs_' + str(iteration), (self.model.solve_t(self.transform.forward(xkk)) + noise).data.cpu().numpy(), newline="\n")
 
         if torch.any(torch.isnan(xk)):
             print("Error: samples xk are nan at iteration " + str(iteration))
@@ -205,7 +229,7 @@ class experiment:
             exit(-1)
 
         # updating surrogate model
-        if self.run_nofas and iteration % self.calibrate_interval == 0 and update and self.surrogate.grid_record.size(0) < self.budget:
+        if self.run_nofas and iteration % self.calibrate_interval == 0 and self.surrogate.grid_record.size(0) < self.budget:
             xk0 = xk[:self.true_data_num, :].data.clone()            
             # print("\n")
             # print(list(self.surrogate.grid_record.size())[0])

@@ -9,16 +9,16 @@ torch.set_default_tensor_type(torch.DoubleTensor)
 class FNN(nn.Module):
     """Fully Connected Neural Network"""
 
-    def __init__(self, input_size, output_size):
+    def __init__(self, input_size, output_size, device):
         """
         Args:
             input_size (int): Input size for FNN
             output_size (int): Output size for FNN
         """
         super().__init__()
-        self.fc1 = nn.Linear(input_size, 64)
-        self.fc2 = nn.Linear(64, 32)
-        self.fc3 = nn.Linear(32, output_size)
+        self.fc1 = nn.Linear(input_size, 64).to(device)
+        self.fc2 = nn.Linear(64, 32).to(device)
+        self.fc3 = nn.Linear(32, output_size).to(device)
 
     def forward(self, x):
         """
@@ -48,7 +48,8 @@ class Surrogate:
             surrogate (None or torch.nn.Module): the implementation of surrogate model used. Default: FNN
 
     """
-    def __init__(self, model_name, model_func, input_size, output_size, limits=None, memory_len=20, surrogate=None):
+    def __init__(self, model_name, model_func, input_size, output_size, limits=None, memory_len=20, surrogate=None, device='cpu'):
+        self.device = device
         self.input_size = input_size
         self.output_size = output_size
         self.model_name = model_name
@@ -60,15 +61,16 @@ class Surrogate:
         self.tsd = None
         self.limits = limits
         self.pre_grid = None
-        self.surrogate = FNN(input_size, output_size) if surrogate is None else surrogate
+        self.surrogate = FNN(input_size, output_size, self.device) if surrogate is None else surrogate
         self.beta_0 = 0.5
-        self.beta_1 = 0.1
+        self.beta_1 = 0.1        
 
         self.memory_grid = []
         self.memory_out = []
         self.memory_len = memory_len
-        self.weights = torch.Tensor([np.exp(-self.beta_1 * i) for i in range(memory_len)])
+        self.weights = torch.Tensor([np.exp(-self.beta_1 * i) for i in range(memory_len)]).to(self.device)
         self.grid_record = None
+        
 
     @property
     def limits(self):
@@ -123,9 +125,10 @@ class Surrogate:
                 print("Warning: " + self.model_name + ".npz does not found, please generate pre-grid.")
                 print("Suggestion: Use Surrogate.gen_grid(input_limits=None, grid_num=5, store=True)")
         else:
-            self.__pre_grid = torch.Tensor(pre_grid)
+            self.__pre_grid = torch.Tensor(pre_grid).to(self.device)
             self.m = torch.mean(self.pre_grid, 0)
             self.sd = torch.std(self.pre_grid, 0)
+            # Evaluate model at pre-grid
             self.pre_out = self.mf(self.pre_grid)
             self.tm = torch.mean(self.pre_out, 0)
             self.tsd = torch.std(self.pre_out, 0)
@@ -183,8 +186,8 @@ class Surrogate:
 
         """
         torch.save(self.surrogate.state_dict(), self.model_name + '.sur')
-        np.savez(self.model_name, limits=self.limits, pre_grid=self.pre_grid,
-                 grid_record=self.grid_record)
+        np.savez(self.model_name, limits=self.limits, pre_grid=self.pre_grid.clone().cpu().numpy(),
+                 grid_record=self.grid_record.clone().cpu().numpy())
 
     def surrogate_load(self):
         """Load surrogate model from [self.name].sur and [self.name].npz
@@ -267,12 +270,12 @@ class Surrogate:
         Returns:
             None
         """
-        self.grid_record = torch.cat((self.grid_record, x), dim=0)
+        self.grid_record = torch.cat((self.grid_record.to(self.device), x), dim=0)
         s = torch.std(x, dim=0)
-        thresh = 0.1
+        thresh = torch.tensor(0.1).to(self.device)
         if torch.any(s < thresh):
             p = x[:, s < thresh]
-            x[:, s < thresh] += torch.normal(0, 1, size=tuple(p.size())) * thresh
+            x[:, s < thresh] += torch.normal(0, 1, size=tuple(p.size())).to(self.device) * thresh
         s_aft = torch.std(x, dim=0)            
         
         # Print the std for each dimension before and after inflation    
@@ -298,8 +301,8 @@ class Surrogate:
             y = self.surrogate(torch.cat(((self.pre_grid - self.m) / self.sd, *self.memory_grid), dim=0))
             out = torch.cat(((self.pre_out - self.tm) / self.tsd, *self.memory_out), dim=0)
             raw_loss = torch.stack([item.mean() for item in torch.split(torch.sum((y - out) ** 2, dim=1), sizes)])
-            loss = raw_loss[0] * 2 * self.beta_0 * self.weights[:len(self.memory_grid)].sum() + torch.sum(
-                raw_loss[1:] * self.weights[:len(self.memory_grid)]) * (1 - self.beta_0) * 2
+            loss = raw_loss[0] * 2 * self.beta_0 * self.weights[:len(self.memory_grid)].sum() + \
+                   torch.sum(raw_loss[1:] * self.weights[:len(self.memory_grid)]) * (1 - self.beta_0) * 2
 
             # loss = raw_loss[0] * self.weights[:len(self.memory_grid)].sum() + torch.sum(
             #     raw_loss[1:] * self.weights[:len(self.memory_grid)])

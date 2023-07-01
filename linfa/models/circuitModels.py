@@ -1,18 +1,16 @@
 import numpy as np
 import torch
 
-# from FNN_surrogate_nested import Surrogate
-
 torch.set_default_tensor_type(torch.DoubleTensor)
 
-def solve_ivp_s(func, t0, t_bound, y0, max_step, t_eval, batch_size, aux_size):
+def solve_ivp_s(func, t0, t_bound, y0, max_step, t_eval, batch_size, aux_size, device='cpu'):
     # PyTorch - Reimplementing scipy.integrate.solve_ivp (Runge-Kuta Method solving ODE) - Output compared and tested.
     n = int((t_bound - t0) / max_step)
     t = t0
     y = y0.double()
-    y_rec = torch.zeros(len(t_eval), batch_size)
-    aux_rec = torch.zeros(len(t_eval), aux_size, batch_size)
-    t_rec = torch.zeros(len(t_eval))
+    y_rec = torch.zeros(len(t_eval), batch_size).to(device)
+    aux_rec = torch.zeros(len(t_eval), aux_size, batch_size).to(device)
+    t_rec = torch.zeros(len(t_eval)).to(device)
     i = 0
     for _ in range(n):
         res, aux = func(t, y)
@@ -53,8 +51,10 @@ class circuitModel():
 
     def __init__(self, numParam, numState, numAuxState, numOutputs,
                  parName, limits, defParam,
-                 cycleTime, totalCycles, forcing=None):
+                 cycleTime, totalCycles, forcing=None, device='cpu'):
         
+        # Assign device
+        self.device = device
         # Time integration parameters
         self.cycleTime = cycleTime
         self.totalCycles = totalCycles
@@ -97,13 +97,13 @@ class circuitModel():
     def solve_t(self, params, y0=None):
         # Pytorch - Reimplementing solve: Support Multiple parameters
         batch_size = list(params.size())[0]
-        if y0 is None: y0 = 55.0 * self.mmHgToBarye * torch.ones(batch_size)
+        if y0 is None: y0 = 55.0 * self.mmHgToBarye * torch.ones(batch_size).to(self.device)
         t_bound = self.totalCycles * self.cycleTime
         saveSteps = np.linspace(0.0, t_bound, 201, endpoint=True)
         odeSol_t, odeSol_y, odeSol_aux = solve_ivp_s(lambda t, y: self.evalDeriv_t(t, y, params.double()), 0.0, t_bound,
-                                                     y0 * torch.ones(batch_size).double(),
+                                                     y0 * torch.ones(batch_size).to(self.device),
                                                      max_step=self.cycleTime / 1000.0, t_eval=saveSteps,
-                                                     batch_size=batch_size, aux_size=self.numAuxState)
+                                                     batch_size=batch_size, aux_size=self.numAuxState, device=self.device)
         start = len(saveSteps) - (len(saveSteps[saveSteps > (self.totalCycles - 1) * self.cycleTime]) + 1)
         stop  = len(saveSteps)
 
@@ -111,26 +111,25 @@ class circuitModel():
 
 class rcModel(circuitModel):
 
-    def __init__(self, cycleTime, totalCycles, forcing=None):
+    def __init__(self, cycleTime, totalCycles, forcing=None, device='cpu'):
         # Init parameters
         numParam = 2
         numState = 1
         numAuxState = 4
         numOutputs = 3
         parName = ["R", "C"]
-        # self.stdRatio = 0.01
-        limits = torch.Tensor([[100.0, 1500.0], [1.0e-5, 1.0e-2]])
-        defParam = torch.Tensor([[1000.0, 0.00005]])
+        limits = torch.Tensor([[100.0, 1500.0], [1.0e-5, 1.0e-2]]).to(device)
+        defParam = torch.Tensor([[1000.0, 0.00005]]).to(device)
         #  Invoke Superclass Constructor
         super().__init__(numParam, numState, numAuxState, numOutputs,
                          parName, limits, defParam,
-                         cycleTime, totalCycles, forcing)
+                         cycleTime, totalCycles, forcing, device=device)
 
     def evalDeriv_t(self, t, y, params):
         # Pytorch - Evaluate Derivative.
         R = params[:, 0]
         C = params[:, 1]
-        Pd = 55 * self.mmHgToBarye
+        Pd = torch.tensor(55 * self.mmHgToBarye).to(self.device)
         P1 = y
 
         # Interpolate forcing
@@ -153,7 +152,7 @@ class rcModel(circuitModel):
 
 class rcrModel(circuitModel):
 
-    def __init__(self, cycleTime, totalCycles, forcing=None):
+    def __init__(self, cycleTime, totalCycles, forcing=None, device='cpu'):
         # Init parameters
         numParam = 3
         numState = 1
@@ -162,19 +161,19 @@ class rcrModel(circuitModel):
         parName = ["R1", "R2", "C"]
         limits = torch.Tensor([[100.0, 1500.0],
                                [100.0, 1500.0],
-                               [1.0e-5, 1.0e-2]])
-        defParam = torch.Tensor([[1000.0, 1000.0, 0.00005]])
+                               [1.0e-5, 1.0e-2]]).to(device)
+        defParam = torch.Tensor([[1000.0, 1000.0, 0.00005]]).to(device)
         #  Invoke Superclass Constructor
         super().__init__(numParam, numState, numAuxState, numOutputs,
                          parName, limits, defParam,
-                         cycleTime, totalCycles, forcing)
+                         cycleTime, totalCycles, forcing, device=device)
         self.stdRatio = 0.05
 
     def evalDeriv_t(self, t, y, params):
         R1 = params[:, 0]
         R2 = params[:, 1]
         C = params[:, 2]
-        Pd = 55 * self.mmHgToBarye * torch.ones(params.shape[0])
+        Pd = 55 * self.mmHgToBarye * torch.ones(params.shape[0]).to(self.device)
         P1 = y
 
         # Interpolate forcing

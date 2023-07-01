@@ -1,5 +1,5 @@
 import unittest
-import os
+import os,sys,argparse
 from linfa.run_experiment import experiment
 from linfa.transform import Transformation
 from linfa.nofas import Surrogate
@@ -11,6 +11,11 @@ import math
 class linfa_test_suite(unittest.TestCase):
 
     def trivial_example(self):
+
+        if "it" in os.environ:
+          max_it  = int(os.environ["it"])
+        else:
+          max_it  = 25001
 
         print('')
         print('--- TEST 1: TRIVIAL FUNCTION - NOFAS')
@@ -27,13 +32,14 @@ class linfa_test_suite(unittest.TestCase):
         exp.n_hidden          = 1             # int: Number of hidden layers in each MADE (default 1)
         exp.activation_fn     = 'relu'        # str: Actication function used (default 'relu')
         exp.input_order       = 'sequential'  # str: Input order for create_mask (default 'sequential')
-        exp.batch_norm_order  = True          # bool: Order to decide if batch_norm is used        default True
+        exp.batch_norm_order  = True          # bool: Order to decide if batch_norm is used
         exp.save_interval = 5000          # int: How often to sample from normalizing flow
 
         exp.input_size    = 2       # int: Dimensionality of input (default 2)
         exp.batch_size    = 200     # int: Number of samples generated (default 100)
         exp.true_data_num = 2       # double: number of true model evaluated (default 2)
-        exp.n_iter        = 50001   # 25001  # int: Number of iterations (default 25001)
+        # exp.n_iter      = 25001
+        exp.n_iter        = max_it  # int: Number of iterations (default 25001)
         exp.lr            = 0.002   # float: Learning rate (default 0.003)
         exp.lr_decay      = 0.9999  # float: Learning rate decay (default 0.9999)
         exp.log_interval  = 10      # int: How often to show loss stat (default 10)
@@ -47,14 +53,12 @@ class linfa_test_suite(unittest.TestCase):
         exp.log_file     = 'log.txt'
         exp.seed         = random.randint(0, 10 ** 9)  # int: Random seed used
         exp.n_sample     = 5000                        # int: Batch size to generate final results/plots
-        exp.no_cuda      = True
+        exp.no_cuda      = False
 
         exp.optimizer    = 'RMSprop'
         exp.lr_scheduler = 'ExponentialLR'
 
         exp.device = torch.device('cuda:0' if torch.cuda.is_available() and not exp.no_cuda else 'cpu')
-        print('--- Running on device: '+ str(exp.device))
-        print('')
 
         # Define transformation
         # One list for each variable
@@ -64,14 +68,14 @@ class linfa_test_suite(unittest.TestCase):
         exp.transform = trsf
 
         # Define model
-        model = Trivial()
+        model = Trivial(device=exp.device)
         exp.model = model
 
         # Get data
         model.data = np.loadtxt('../resource/data/data_trivial.txt')
 
         # Define surrogate
-        exp.surrogate = Surrogate(exp.name, lambda x: model.solve_t(trsf.forward(x)), 2, 2, [[0, 6], [0, 6]], 20)
+        exp.surrogate = Surrogate(exp.name, lambda x: model.solve_t(trsf.forward(x)), 2, 2, [[0, 6], [0, 6]], 20, device=exp.device)
         if exp.run_nofas:
             if not os.path.isfile(exp.name + ".sur") or not os.path.isfile(exp.name + ".npz"):
                 print("Warning: Surrogate model files: {0}.npz and {0}.npz could not be found. ".format(exp.name))
@@ -89,7 +93,7 @@ class linfa_test_suite(unittest.TestCase):
 
             # Eval model output
             stds = torch.abs(model.solve_t(model.defParam)) * model.stdRatio
-            Data = torch.tensor(model.data)
+            Data = torch.tensor(model.data).to(exp.device)
             if surrogate:
               modelOut = exp.surrogate.forward(x)
             else:
@@ -115,6 +119,11 @@ class linfa_test_suite(unittest.TestCase):
 
     def highdim_example(self):
 
+        if "it" in os.environ:
+          max_it  = int(os.environ["it"])
+        else:
+          max_it  = 25001
+
         print('')
         print('--- TEST 2: HIGH DIMENSIONAL SOBOL FUNCTION - NOFAS')
         print('')
@@ -130,12 +139,13 @@ class linfa_test_suite(unittest.TestCase):
         exp.activation_fn     = 'relu'        # str: Actication function used (default 'relu')
         exp.input_order       = 'sequential'  # str: Input order for create_mask (default 'sequential')
         exp.batch_norm_order  = True          # bool: Order to decide if batch_norm is used (default True)
-        exp.save_interval = 5000          # int: How often to sample from normalizing flow
+        exp.save_interval     = 5000          # int: How often to sample from normalizing flow
 
         exp.input_size    = 5       # int: Dimensionality of input (default 2)
         exp.batch_size    = 250     # int: Number of samples generated (default 100)
         exp.true_data_num = 12      # double: number of true model evaluated (default 2)
-        exp.n_iter        = 25001   # int: Number of iterations (default 25001)
+        # exp.n_iter      = 25001
+        exp.n_iter        = max_it  # int: Number of iterations (default 25001)
         exp.lr            = 0.003   # float: Learning rate (default 0.003)
         exp.lr_decay      = 0.9999  # float: Learning rate decay (default 0.9999)
         exp.log_interval  = 10      # int: How often to show loss stat (default 10)
@@ -149,7 +159,7 @@ class linfa_test_suite(unittest.TestCase):
         exp.log_file     = 'log.txt'
         exp.seed         = random.randint(0, 10 ** 9)  # int: Random seed used
         exp.n_sample     = 5000                        # int: Batch size to generate final results/plots
-        exp.no_cuda      = True
+        exp.no_cuda      = False
 
         exp.optimizer    = 'RMSprop'
         exp.lr_scheduler = 'ExponentialLR'
@@ -167,7 +177,7 @@ class linfa_test_suite(unittest.TestCase):
         exp.transform = trsf
 
         # Define the model
-        model = Highdim()
+        model = Highdim(exp.device)
         exp.model = model
 
         # Read data
@@ -175,7 +185,7 @@ class linfa_test_suite(unittest.TestCase):
 
         # Define the surrogate
         exp.surrogate = Surrogate(exp.name, lambda x: model.solve_t(trsf.forward(x)), model.input_num, model.output_num,
-                                  torch.Tensor([[-3.0, 3.0], [-3.0, 3.0], [-3.0, 3.0], [-3.0, 3.0], [-3.0, 3.0]]), 20)
+                                  torch.Tensor([[-3.0, 3.0], [-3.0, 3.0], [-3.0, 3.0], [-3.0, 3.0], [-3.0, 3.0]]), 20, device=exp.device)
         if exp.run_nofas:
             if not os.path.isfile(exp.name + ".sur") or not os.path.isfile(exp.name + ".npz"):
                 print("Warning: Surrogate model files: {0}.npz and {0}.npz could not be found. ".format(exp.name))
@@ -195,7 +205,7 @@ class linfa_test_suite(unittest.TestCase):
             else:
               modelOut = model.solve_t(transform(x))
             stds = model.defOut * model.stdRatio
-            Data = torch.tensor(model.data)
+            Data = torch.tensor(model.data).to(exp.device)
 
             # Compute LL
             ll1 = -0.5 * np.prod(model.data.shape) * np.log(2.0 * np.pi)  # a number
@@ -218,6 +228,11 @@ class linfa_test_suite(unittest.TestCase):
 
     def rc_example(self):
 
+        if "it" in os.environ:
+          max_it  = int(os.environ["it"])
+        else:
+          max_it  = 25001
+
         print('')
         print('--- TEST 3: RC MODEL - NOFAS')
         print('')
@@ -239,7 +254,8 @@ class linfa_test_suite(unittest.TestCase):
         exp.input_size    = 2       # int: Dimensionality of input (default 2)
         exp.batch_size    = 250     # int: Number of samples generated (default 100)
         exp.true_data_num = 2       # int: number of true model evaluated (default 2)
-        exp.n_iter        = 25001   # int: Number of iterations (default 25001)
+        # exp.n_iter        = 25001   # int: Number of iterations (default 25001)
+        exp.n_iter        = max_it
         exp.lr            = 0.005   # float: Learning rate (default 0.003)
         exp.lr_decay      = 0.9999  # float: Learning rate decay (default 0.9999)
         exp.log_interval  = 10      # int: How often to show loss stat (default 10)
@@ -253,7 +269,7 @@ class linfa_test_suite(unittest.TestCase):
         exp.log_file     = 'log.txt'
         exp.seed         = random.randint(0, 10 ** 9)  # int: Random seed used
         exp.n_sample     = 5000                        # int: Batch size to generate final results/plots
-        exp.no_cuda      = True
+        exp.no_cuda      = False
 
         exp.optimizer = 'RMSprop'
         exp.lr_scheduler = 'ExponentialLR'
@@ -271,7 +287,7 @@ class linfa_test_suite(unittest.TestCase):
         cycleTime = 1.07
         totalCycles = 10
         forcing = np.loadtxt('../resource/data/inlet.flow')
-        model = rcModel(cycleTime, totalCycles, forcing)  # RCR Model Defined
+        model = rcModel(cycleTime, totalCycles, forcing, device=exp.device)  # RCR Model Defined
         exp.model = model
 
         # Read Data
@@ -279,7 +295,7 @@ class linfa_test_suite(unittest.TestCase):
 
         # Define surrogate model
         exp.surrogate = Surrogate(exp.name, lambda x: model.solve_t(trsf.forward(x)), exp.input_size, 3,
-                                  torch.Tensor([[-7, 7], [-7, 7]]), 20)
+                                  torch.Tensor([[-7, 7], [-7, 7]]), 20, device=exp.device)
         if exp.run_nofas:
             if not os.path.isfile(exp.name + ".sur") or not os.path.isfile(exp.name + ".npz"):
                 print("Warning: Surrogate model files: {0}.npz and {0}.npz could not be found. ".format(exp.name))
@@ -298,10 +314,9 @@ class linfa_test_suite(unittest.TestCase):
             else:
                 modelOut = model.solve_t(transform.forward(x))
 
-            data_size = len(model.data[0])
             # Get the absolute values of the standard deviations
             stds = model.defOut * model.stdRatio
-            Data = torch.tensor(model.data)
+            Data = torch.tensor(model.data).to(exp.device)
             
             # Eval Gaussian LL
             ll1 = -0.5 * np.prod(model.data.shape) * np.log(2.0 * np.pi)  # a number
@@ -322,6 +337,11 @@ class linfa_test_suite(unittest.TestCase):
         exp.run()
 
     def rcr_example(self):
+
+        if "it" in os.environ:
+          max_it  = int(os.environ["it"])
+        else:
+          max_it  = 25001
 
         print('')
         print('--- TEST 4: RCR MODEL - NOFAS')
@@ -344,7 +364,8 @@ class linfa_test_suite(unittest.TestCase):
         exp.input_size    = 3       # int: Dimensionality of input (default 2)
         exp.batch_size    = 500     # int: Number of samples generated (default 100)
         exp.true_data_num = 2       # double: number of true model evaluated (default 2)
-        exp.n_iter        = 25001   # int: Number of iterations (default 25001)
+        # exp.n_iter        = 25001   # int: Number of iterations (default 25001)
+        exp.n_iter        = max_it
         exp.lr            = 0.003   # float: Learning rate (default 0.003)
         exp.lr_decay      = 0.9999  # float: Learning rate decay (default 0.9999)
         exp.log_interval  = 10      # int: How often to show loss stat (default 10)
@@ -358,7 +379,7 @@ class linfa_test_suite(unittest.TestCase):
         exp.log_file = 'log.txt'
         exp.seed = random.randint(0, 10 ** 9)  # int: Random seed used
         exp.n_sample = 5000                    # int: Batch size to generate final results/plots
-        exp.no_cuda = True
+        exp.no_cuda = False
 
         exp.optimizer = 'RMSprop'
         exp.lr_scheduler = 'ExponentialLR'
@@ -377,7 +398,7 @@ class linfa_test_suite(unittest.TestCase):
         cycleTime = 1.07
         totalCycles = 10
         forcing = np.loadtxt('../resource/data/inlet.flow')
-        model = rcrModel(cycleTime, totalCycles, forcing)  # RCR Model Defined
+        model = rcrModel(cycleTime, totalCycles, forcing, device=exp.device)  # RCR Model Defined
         exp.model = model
 
         # Read data
@@ -385,7 +406,7 @@ class linfa_test_suite(unittest.TestCase):
 
         # Define surrogate
         exp.surrogate = Surrogate(exp.name, lambda x: model.solve_t(trsf.forward(x)), exp.input_size, 3,
-                                  torch.Tensor([[-7, 7], [-7, 7], [-7, 7]]), 20)
+                                  torch.Tensor([[-7, 7], [-7, 7], [-7, 7]]), 20, device=exp.device)
         if exp.run_nofas:
             if not os.path.isfile(exp.name + ".sur") or not os.path.isfile(exp.name + ".npz"):
                 print("Warning: Surrogate model files: {0}.npz and {0}.npz could not be found. ".format(exp.name))
@@ -406,7 +427,7 @@ class linfa_test_suite(unittest.TestCase):
 
             # Get the absolute values of the standard deviations
             stds = model.defOut * model.stdRatio
-            Data = torch.tensor(model.data)
+            Data = torch.tensor(model.data).to(exp.device)
             
             # Eval LL
             ll1 = -0.5 * np.prod(model.data.shape) * np.log(2.0 * np.pi)  # a number
@@ -429,6 +450,18 @@ class linfa_test_suite(unittest.TestCase):
 
     def adaann_example(self):
 
+        if "it" in os.environ:
+          run_T_1  = int(os.environ["it"])
+          run_T    = 1
+          run_T_0  = 1
+          run_t0   = 0.99          
+        else:
+          run_T_1  = 10000
+          run_T    = 3
+          run_T_0  = 500
+          run_t0   = 0.001          
+
+
         print('')
         print('--- TEST 5: FRIEDMAN 1 MODEL - ADAANN')
         print('')
@@ -441,7 +474,7 @@ class linfa_test_suite(unittest.TestCase):
 
         # Experiment Setting
         exp = experiment()
-        exp.name              = "adaann_2"
+        exp.name              = "adaann"
         exp.flow_type         = 'realnvp'     # str: Type of flow (default 'realnvp')
         exp.n_blocks          = 10            # int: Number of layers (default 5)
         exp.hidden_size       = 20            # int: Hidden layer size for MADE in each layer (default 100)
@@ -464,12 +497,16 @@ class linfa_test_suite(unittest.TestCase):
         exp.lr_scheduler = 'StepLR'  # str: type of lr scheduler used
         exp.lr_step      = 500       # int: number of steps for lr step scheduler
         exp.tol          = 0.4       # float: tolerance for AdaAnn scheduler
-        exp.t0           = 0.001     # float: initial inverse temperature value
+        # exp.t0           = 0.001     # float: initial inverse temperature value
+        exp.t0           = run_t0
         exp.N            = 100       # int: number of sample points during annealing
         exp.N_1          = 400       # int: number of sample points at t=1
-        exp.T_0          = 500       # int: number of parameter updates at initial t0
-        exp.T            = 3         # int: number of parameter updates during annealing
-        exp.T_1          = 10000     # int: number of parameter updates at t=1
+        # exp.T_0          = 500       # int: number of parameter updates at initial t0
+        # exp.T            = 3         # int: number of parameter updates during annealing
+        # exp.T_1          = 10000     # int: number of parameter updates at t=1
+        exp.T_0          = run_T_0
+        exp.T            = run_T
+        exp.T_1          = run_T_1
         exp.M            = 1000      # int: number of sample points used to update temperature
         exp.scheduler    = 'AdaAnn'  # str: type of annealing scheduler used
 
@@ -478,13 +515,13 @@ class linfa_test_suite(unittest.TestCase):
         # exp.seed = 35435  # int: Random seed used
         exp.seed         = random.randint(0, 10 ** 9)  # int: Random seed used
         exp.n_sample     = 5000                        # int: Batch size to generate final results/plots
-        exp.no_cuda      = True
+        exp.no_cuda      = False
 
         exp.device = torch.device('cuda:0' if torch.cuda.is_available() and not exp.no_cuda else 'cpu')
 
         # Model Setting
         data_set = pd.read_csv('../resource/data/D1000.csv')
-        data = torch.tensor(data_set.values)
+        data = torch.tensor(data_set.values).to(exp.device)
 
         def log_density(params, d):
 
@@ -501,7 +538,7 @@ class linfa_test_suite(unittest.TestCase):
                        x[:, 8] * b[8] + \
                        x[:, 9] * b[9]
 
-            f = torch.zeros(len(params))
+            f = torch.zeros(len(params)).to(exp.device)
 
             for i in range(len(params)):
                 y_out = targetPosterior(params[i], d)
@@ -513,7 +550,6 @@ class linfa_test_suite(unittest.TestCase):
         exp.model_logdensity = lambda x: log_density(x, data)
         exp.run()
 
-    
     # def rcr_nofas_adaann_example(self):
 
     #     print('')
@@ -596,6 +632,6 @@ class linfa_test_suite(unittest.TestCase):
     #     exp.model_logdensity = lambda x: log_density(x, model, exp.surrogate)
     #     exp.run()
 
-if __name__ == '__main__':
-  # Execute tests
-  unittest.main()
+if __name__ == '__main__':    
+  
+    unittest.main()

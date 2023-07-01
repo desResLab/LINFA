@@ -4,11 +4,11 @@ import torch
 torch.set_default_tensor_type(torch.DoubleTensor)
 
 class Trivial:
-    def __init__(self):
+    def __init__(self,device='cpu'):
         # Init parameters
-        self.defParam = torch.Tensor([[3.0, 5.0]])
+        self.defParam = torch.Tensor([[3.0, 5.0]]).to(device)
         self.RM = torch.Tensor([[1.0, 1.0],
-                                [1.0, -1.0]])
+                                [1.0, -1.0]]).to(device)
         self.stdRatio = 0.05
         self.data = None
 
