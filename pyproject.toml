@@ -18,9 +18,9 @@ classifiers = [
 ]
 keywords = ["variational inference", "normalizig flow", "adaptive annealing", "physics-based modeling"]
 dependencies = [
-    "torch==1.7.0",
-    "numpy==1.19.2",
-    "scipy==1.6.1",
+    "torch==1.13.1",
+    "numpy==1.22",
+    "scipy==1.7.3",
     'tomli; python_version < "3.11"',    
 ]
 requires-python = ">=3.7"
@@ -32,7 +32,7 @@ packages = ["linfa"]
 dev = ["black", "bumpver", "isort", "pip-tools", "pytest"]
 
 [project.urls]
-Homepage = "https://github.com/realpython/reader"
+Homepage = "https://github.com/desResLab/LINFA"
 
 [tool.bumpver]
 current_version = "2023.1001-alpha"
