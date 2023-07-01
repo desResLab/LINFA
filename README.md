@@ -1,6 +1,6 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) 
  ![example workflow](https://github.com/desResLab/LINFA/actions/workflows/test_publish_pypi.yml/badge.svg) 
-[![Documentation Status](https://readthedocs.org/projects/mrina/badge/?version=latest)](https://mrina.readthedocs.io/en/latest/?badge=latest)
+[![Documentation Status](https://readthedocs.org/projects/linfa-vi/badge/?version=latest)](https://linfa-vi.readthedocs.io/en/latest/?badge=latest)
 
 ## LINFA
 
@@ -29,9 +29,9 @@ Background theory and examples for LINFA are discussed in the two papers:
 
 ### Requirements
 
-* PyTorch 1.4.0
-* Numpy 1.19.2
-* Scipy 1.6.1
+* PyTorch 1.13.1
+* Numpy 1.21.6
+* sphinxcontrib-bibtex
 
 ### Numerical Benchmarks
 
