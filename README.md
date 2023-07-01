@@ -8,6 +8,13 @@ LINFA is a library for variational inference with normalizing flow and adaptive 
 
 The code for the masked autoencoders for density estimation (MADE), masked autoregressive flow (MAF) and real non volume-preserving transformation (RealNVP) is based on the implementation provided by [Kamen Bliznashki](https://github.com/kamenbliznashki/normalizing_flows). 
 
+### Installation
+
+To install LINFA type
+
+```
+pip install linfa-vi
+```
 
 ### Documentation 
 
