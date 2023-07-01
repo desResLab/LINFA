@@ -1,7 +1,6 @@
 import os
 import torch
 import numpy as np
-import scipy as sp
 from linfa.maf import MAF, RealNVP
 
 torch.set_default_tensor_type(torch.DoubleTensor)
@@ -14,7 +13,10 @@ class experiment:
     and functions used for inference. 
     """
     def __init__(self):
+
+        # NF ARCHITECTURE parameters
         self.name              = "Experiment"
+        self.input_size        = 3             #:int:  Number of input parameters
         self.flow_type         = 'maf'         #:str:  Type of flow ('maf' or 'realnvp')
         self.n_blocks          = 15            #:int:  Number of layers
         self.hidden_size       = 100           #:int:  Hidden layer size for MADE in each layer
@@ -22,24 +24,29 @@ class experiment:
         self.activation_fn     = 'relu'        #:str:  Actication function used (either 'relu','tanh' or 'sigmoid')
         self.input_order       = 'sequential'  #:str:  Input order for create_mask (either 'sequential' or 'random')
         self.batch_norm_order  = True          #:bool: Uses decide if batch_norm is used
-        self.save_interval     = 200           #:int:  Save interval for all results
-        self.store_nf_interval = 1000          #:int:  Save interval for normalizing flow parameters
 
-        self.input_size    = 3      #:int:    Number of input parameters
-        self.batch_size    = 500    #:int:    Number of batch samples generated at every iteration from the base distribution
-        self.true_data_num = 2      #:double: Number of true model evaluated at each surrogate update
-        self.n_iter        = 25001  #:int:    Total number of iterations
-        self.lr            = 0.003  #:double: Learning rate
-        self.lr_decay      = 0.9999 #:double: Learning rate decay
+        # NOFAS parameters
+        self.run_nofas          = True  #:bool:   Activate NoFAS and the use of a surrogate model
+        self.log_interval       = 10    #:int:    How often the loss statistics are printed
+        self.calibrate_interval = 300   #:int:    How often the surrogate model is updated
+        self.true_data_num      = 2     #:double: Number of true model evaluated at each surrogate update
+        self.budget             = 216   #:int:    Maximum number of allowed evaluations of the true model
+        self.surr_pre_it        = 40000 #:int:    Number of pre-training iterations for surrogate model
+        self.surr_upd_it        = 6000  #:int:    Number of iterations for the surrogate model update
 
-        self.run_nofas          = True #:bool: Activate NoFAS and the use of a surrogate model
-        self.log_interval       = 10   #:int:  How often the loss statistics are printed
-        self.calibrate_interval = 300  #:int:  How often the surrogate model is updated
-        self.budget             = 216  #:int:  Maximum number of allowed evaluations of the true model
-
+        # OPTIMIZER parameters
         self.optimizer    = 'Adam'   #:str:    Type of optimizer used (either 'Adam' or 'RMSprop')
+        self.lr           = 0.003    #:double: Learning rate
+        self.lr_decay     = 0.9999   #:double: Learning rate decay
         self.lr_scheduler = 'StepLR' #:str:    type of lr scheduler used (either 'StepLR' or 'ExponentialLR')
         self.lr_step      = 1000     #:int:    Number of steps for StepLR learning rate scheduler 
+        self.batch_size   = 500      #:int:    Number of batch samples generated at every iteration from the base distribution        
+        self.n_iter       = 25001    #:int:    Total number of iterations
+
+        # ANNEALING parameters
+        self.annealing    = True     #:bool:   Flag to activate an annealing scheduler
+        self.scheduler    = 'AdaAnn' #:str:    Type of annealing scheduler (either 'AdaAnn' or 'Linear')
+        # AdaAnn
         self.tol          = 0.001    #:double: KL tolerance for AdaAnn scheduler
         self.t0           = 0.01     #:double: Initial value for the inverse temperature
         self.N            = 100      #:int:    Number of batch samples generated for $t<1$ at each iteration
@@ -47,16 +54,19 @@ class experiment:
         self.T_0          = 500      #:int:    Number of parameter updates at the initial inverse temperature $t_0$
         self.T            = 5        #:int:    Number of parameter updates for each temperature for $t<1$
         self.T_1          = 5001     #:int:    Number of parameter updates at $t=1$
-        self.M            = 1000     #:int:    Number of Monte Carlo  samples use to compute the denominator of the AdaAnn formula
-        self.annealing    = True     #:boo:    Flag to activate an annealing scheduler
-        self.scheduler    = 'AdaAnn' #:str:    Type of annealing scheduler (either 'AdaAnn' or 'Linear')
+        self.M            = 1000     #:int:    Number of Monte Carlo  samples use to compute the denominator of the AdaAnn formula        
+        # Linear scheduler
         self.linear_step  = 0.0001   #:double: Fixed step size for the Linear annealing scheduler
 
-        self.output_dir = './results/' + self.name #:str: Name of the output folder
-        self.log_file   = 'log.txt'                #:str: File name where the log profile stats are written
-        self.seed       = 35435                    #:int: Random seed
-        self.n_sample   = 5000                     #:int: Number of batch samples used to print results at save_interval
+        # OUTPUT parameters
+        self.output_dir        = './results/' + self.name #:str: Name of the output folder
+        self.log_file          = 'log.txt'                #:str: File name where the log profile stats are written
+        self.seed              = 35435                    #:int: Random seed
+        self.n_sample          = 5000                     #:int: Number of batch samples used to print results at save_interval
+        self.save_interval     = 200                      #:int: Save interval for all results
+        self.store_nf_interval = 1000                     #:int: Save interval for normalizing flow parameters
 
+        # DEVICE parameters
         self.no_cuda = True #:bool: Flag to use CPU
 
         # Set device
@@ -234,7 +244,7 @@ class experiment:
             # print("\n")
             # print(list(self.surrogate.grid_record.size())[0])
             # print(xk0)
-            self.surrogate.update(xk0, max_iters=6000)
+            self.surrogate.update(xk0, max_iters=self.surr_upd_it)
 
         # Free energy bound
         loss = (- torch.sum(sum_log_abs_det_jacobians, 1) - t * self.model_logdensity(xk)).mean()

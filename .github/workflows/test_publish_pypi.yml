@@ -36,11 +36,11 @@ jobs:
     - name: Run tests
       run: |
         cd tests 
-        it=10 python3 -m unittest test_linfa.linfa_test_suite.trivial_example
-        it=10 python3 -m unittest test_linfa.linfa_test_suite.highdim_example
-        it=10 python3 -m unittest test_linfa.linfa_test_suite.rc_example
-        it=10 python3 -m unittest test_linfa.linfa_test_suite.rcr_example
-        it=10 python3 -m unittest test_linfa.linfa_test_suite.adaann_example
+        it=100 python3 -m unittest test_linfa.linfa_test_suite.trivial_example
+        it=100 python3 -m unittest test_linfa.linfa_test_suite.highdim_example
+        it=100 python3 -m unittest test_linfa.linfa_test_suite.rc_example
+        it=100 python3 -m unittest test_linfa.linfa_test_suite.rcr_example
+        it=100 python3 -m unittest test_linfa.linfa_test_suite.adaann_example
         cd ..
 
     - name: Publish to PyPI

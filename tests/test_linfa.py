@@ -1,12 +1,11 @@
 import unittest
-import os,sys,argparse
+import os
 from linfa.run_experiment import experiment
 from linfa.transform import Transformation
 from linfa.nofas import Surrogate
 import torch
 import random
 import numpy as np
-import math
 
 class linfa_test_suite(unittest.TestCase):
 
@@ -14,8 +13,10 @@ class linfa_test_suite(unittest.TestCase):
 
         if "it" in os.environ:
           max_it  = int(os.environ["it"])
+          max_pre = 1000
         else:
           max_it  = 25001
+          max_pre = 40000
 
         print('')
         print('--- TEST 1: TRIVIAL FUNCTION - NOFAS')
@@ -45,6 +46,8 @@ class linfa_test_suite(unittest.TestCase):
         exp.log_interval  = 10      # int: How often to show loss stat (default 10)
 
         exp.run_nofas          = True
+        exp.surr_pre_it        = max_pre #:int: Number of pre-training iterations for surrogate model
+        exp.surr_upd_it        = 6000  #:int: Number of iterations for the surrogate model update
         exp.annealing          = False
         exp.calibrate_interval = 1000  # int: How often to update surrogate model (default 1000)
         exp.budget             = 64    # int: Total number of true model evaluation
@@ -81,7 +84,7 @@ class linfa_test_suite(unittest.TestCase):
                 print("Warning: Surrogate model files: {0}.npz and {0}.npz could not be found. ".format(exp.name))
                 # 4 samples for each dimension: pre-grid size = 16
                 exp.surrogate.gen_grid(gridnum=4)
-                exp.surrogate.pre_train(40000, 0.03, 0.9999, 500, store=True)
+                exp.surrogate.pre_train(exp.surr_pre_it, 0.03, 0.9999, 500, store=True)
         exp.surrogate.surrogate_load()
 
         # Define log density
@@ -121,8 +124,10 @@ class linfa_test_suite(unittest.TestCase):
 
         if "it" in os.environ:
           max_it  = int(os.environ["it"])
+          max_pre = 1000
         else:
           max_it  = 25001
+          max_pre = 100000
 
         print('')
         print('--- TEST 2: HIGH DIMENSIONAL SOBOL FUNCTION - NOFAS')
@@ -151,6 +156,9 @@ class linfa_test_suite(unittest.TestCase):
         exp.log_interval  = 10      # int: How often to show loss stat (default 10)
 
         exp.run_nofas          = True
+        self.surr_pre_it       = max_pre #:int: Number of pre-training iterations for surrogate model
+        self.surr_upd_it       = 6000   #:int: Number of iterations for the surrogate model update
+
         exp.annealing          = False
         exp.calibrate_interval = 200   # int: How often to update surrogate model (default 1000)
         exp.budget             = 1023  # int: Total number of true model evaluation
@@ -190,7 +198,7 @@ class linfa_test_suite(unittest.TestCase):
             if not os.path.isfile(exp.name + ".sur") or not os.path.isfile(exp.name + ".npz"):
                 print("Warning: Surrogate model files: {0}.npz and {0}.npz could not be found. ".format(exp.name))
                 exp.surrogate.gen_grid(gridnum=3)
-                exp.surrogate.pre_train(100000, 0.03, 0.9999, 500, store=True)
+                exp.surrogate.pre_train(self.surr_pre_it, 0.03, 0.9999, 500, store=True)
         exp.surrogate.surrogate_load()
 
         # Define the log density        
@@ -230,8 +238,10 @@ class linfa_test_suite(unittest.TestCase):
 
         if "it" in os.environ:
           max_it  = int(os.environ["it"])
+          max_pre = 1000
         else:
           max_it  = 25001
+          max_pre = 40000
 
         print('')
         print('--- TEST 3: RC MODEL - NOFAS')
@@ -261,6 +271,9 @@ class linfa_test_suite(unittest.TestCase):
         exp.log_interval  = 10      # int: How often to show loss stat (default 10)
 
         exp.run_nofas          = True
+        self.surr_pre_it       = max_pre #:int: Number of pre-training iterations for surrogate model
+        self.surr_upd_it       = 6000  #:int: Number of iterations for the surrogate model update
+
         exp.annealing          = False
         exp.calibrate_interval = 1000  # int: How often to update surrogate model (default 1000)
         exp.budget             = 64    # int: Total number of true model evaluation
@@ -300,7 +313,7 @@ class linfa_test_suite(unittest.TestCase):
             if not os.path.isfile(exp.name + ".sur") or not os.path.isfile(exp.name + ".npz"):
                 print("Warning: Surrogate model files: {0}.npz and {0}.npz could not be found. ".format(exp.name))
                 exp.surrogate.gen_grid(gridnum=4)
-                exp.surrogate.pre_train(40000, 0.03, 0.9999, 500, store=True)
+                exp.surrogate.pre_train(self.surr_pre_it, 0.03, 0.9999, 500, store=True)
         exp.surrogate.surrogate_load()
 
         # Define log density
@@ -340,8 +353,10 @@ class linfa_test_suite(unittest.TestCase):
 
         if "it" in os.environ:
           max_it  = int(os.environ["it"])
+          max_pre = 1000
         else:
           max_it  = 25001
+          max_pre = 50000
 
         print('')
         print('--- TEST 4: RCR MODEL - NOFAS')
@@ -371,6 +386,9 @@ class linfa_test_suite(unittest.TestCase):
         exp.log_interval  = 10      # int: How often to show loss stat (default 10)
 
         exp.run_nofas          = True
+        self.surr_pre_it       = max_pre #:int: Number of pre-training iterations for surrogate model
+        self.surr_upd_it       = 6000  #:int: Number of iterations for the surrogate model update
+
         exp.annealing          = False
         exp.calibrate_interval = 300  # int: How often to update surrogate model (default 1000)
         exp.budget             = 216  # int: Total number of true model evaluation
@@ -411,7 +429,7 @@ class linfa_test_suite(unittest.TestCase):
             if not os.path.isfile(exp.name + ".sur") or not os.path.isfile(exp.name + ".npz"):
                 print("Warning: Surrogate model files: {0}.npz and {0}.npz could not be found. ".format(exp.name))
                 exp.surrogate.gen_grid(gridnum=4)
-                exp.surrogate.pre_train(50000, 0.03, 0.9999, 500, store=True)
+                exp.surrogate.pre_train(self.surr_pre_it, 0.03, 0.9999, 500, store=True)
         exp.surrogate.surrogate_load()
 
         # Define log density
@@ -461,16 +479,11 @@ class linfa_test_suite(unittest.TestCase):
           run_T_0  = 500
           run_t0   = 0.001          
 
-
         print('')
         print('--- TEST 5: FRIEDMAN 1 MODEL - ADAANN')
         print('')
 
         from linfa.run_experiment import experiment
-        import torch
-        import random
-        import numpy as np
-        import pandas as pd
 
         # Experiment Setting
         exp = experiment()
@@ -520,8 +533,8 @@ class linfa_test_suite(unittest.TestCase):
         exp.device = torch.device('cuda:0' if torch.cuda.is_available() and not exp.no_cuda else 'cpu')
 
         # Model Setting
-        data_set = pd.read_csv('../resource/data/D1000.csv')
-        data = torch.tensor(data_set.values).to(exp.device)
+        data_set = np.loadtxt('../resource/data/D1000.csv',delimiter=',',skiprows=1)
+        data = torch.tensor(data_set).to(exp.device)
 
         def log_density(params, d):
 
