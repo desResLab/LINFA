@@ -57,7 +57,7 @@ At regular intervals set by the parameter `experiment.save_interval` LINFA write
   * Annealing temperature at each iteration.
   * Loss function at each iteration.
 * `NAME_grid_IT` contains the inputs where the true model was evaluated. 
-* `NAME_params_IT` contains the batch of input parameters $\bm{z}_{K}$ in the physical space generated at iteration `IT`. 
+* `NAME_params_IT` contains the batch of input parameters $\boldsymbol{z}_{K}$ in the physical space generated at iteration `IT`. 
 * `NAME_samples_IT` contains the batch of normalized parameters (parameter values before the coordinate transformation) generated at iteration `IT`.
 * `NAME_logdensity_IT` contains the value of the log posterior density corresponding to each parameter realization. 
 * `NAME_outputs_IT` contains the true model (or surrogate model) outputs for each batch sample at iteration `IT`.
