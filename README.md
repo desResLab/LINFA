@@ -31,6 +31,7 @@ Background theory and examples for LINFA are discussed in the two papers:
 
 * PyTorch 1.13.1
 * Numpy 1.22
+* Matplotlib 3.6 (only plot functionalities `linfa.plot_res`)
 
 ### Numerical Benchmarks
 
@@ -46,8 +47,7 @@ The implementation of the lumped parameter network models (RC and RCR models) fo
 
 To run the tests type
 ```sh
-cd tests
-python -m unittest test_linfa.py linfa_test_suite.NAME_example
+python -m unittest linfa.tests.test_linfa.linfa_test_suite.NAME_example
 ```
 where `NAME` need to be replaced by
 * `trivial` for the trivial example (Ex 1).
@@ -72,8 +72,7 @@ At regular intervals set by the parameter `experiment.save_interval` LINFA write
 A post processing script is also available to plot all results. To run it type
 
 ```sh
-cd tests
-python plot_test_res.py -n NAME -i IT
+python linfa.plot_res -n NAME -i IT
 ```
 where `NAME` and `IT` are again the experiment name and iteration number corresponding to the result file of interest. 
 

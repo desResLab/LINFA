@@ -20,6 +20,7 @@ keywords = ["variational inference", "normalizig flow", "adaptive annealing", "p
 dependencies = [
     "torch==1.13.1",
     "numpy==1.19.5",
+    "matplotlib==3.6",
     'tomli; python_version < "3.11"',    
 ]
 requires-python = ">=3.7"
