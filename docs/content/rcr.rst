@@ -16,13 +16,12 @@ Synthetic observations are generated from :math:`N(\boldsymbol\mu, \boldsymbol\S
 
 The results are presented in :numref:`fig_rcr_res`. The posterior samples obtained through NoFAS capture well the non-linear correlation among the parameters and generate a fairly accurate posterior predictive distribution that overlaps with the observations. Additional details can be found in :cite:p:`wang2022variational`.
 
-.. _fig_rcr_res:
-
 .. figure:: imgs/rcr/log_plot_rcr-1.png
 .. figure:: imgs/rcr/data_plot_rcr_25000_0_1-1.png
 .. figure:: imgs/rcr/data_plot_rcr_25000_0_2-1.png
 .. figure:: imgs/rcr/params_plot_rcr_25000_0_1-1.png
 .. figure:: imgs/rcr/params_plot_rcr_25000_0_2-1.png
 .. figure:: imgs/rcr/params_plot_rcr_25000_1_2-1.png
+   :name: fig_rcr_res
 
    Results from the RCR model. Loss profile (top), posterior predictive distribution (center) and posterior samples (bottom).

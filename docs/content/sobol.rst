@@ -26,13 +26,12 @@ This is also confirmed by the fact that the curve segment :math:`\gamma(t) = g^{
 
 Results are shown in :numref:`fig_highdim`.
 
-.. _fig_highdim:
-
 .. figure:: imgs/highdim/log_plot-1.png
 .. figure:: imgs/highdim/data_plot_highdim_25000_0_2-1.png
 .. figure:: imgs/highdim/data_plot_highdim_25000_2_3-1.png
 .. figure:: imgs/highdim/params_plot_highdim_25000_0_1-1.png
 .. figure:: imgs/highdim/params_plot_highdim_25000_1_2-1.png
 .. figure:: imgs/highdim/params_plot_highdim_25000_3_4-1.png
+   :name: fig_highdim
 
    Results from the high-dimensional model. Loss profile and representative plots for the posterior samples and posterior predictive distribution are shown.

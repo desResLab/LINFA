@@ -16,10 +16,9 @@ where :math:`\boldsymbol{x}_{0} \sim \mathcal{N}(0,\boldsymbol I_2)` and :math:`
 
 Results in terms of loss profile, variational approximation and posterior predictive distribution are shown in :numref:`fig_trivial`.
 
-.. _fig_trivial:
-
 .. figure:: imgs/trivial/log_plot_trivial-1.png
 .. figure:: imgs/trivial/target_plot_trivial-1.png
 .. figure:: imgs/trivial/sample_plot_trivial-1.png
+   :name: fig_trivial
 
    Results from the trivial model. Loss profile (top), posterior samples (center) and posterior predictive distribution (bottom).
