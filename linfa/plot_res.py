@@ -77,6 +77,19 @@ if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='.')
 
   # folder name
+  parser.add_argument('-f', '--folder',
+                      action=None,
+                      # nargs='+',
+                      const=None,
+                      default='./tests/results/',
+                      type=str,
+                      required=False,
+                      help='Folder with experiment results',
+                      metavar='',
+                      dest='folder_name')
+
+
+  # folder name
   parser.add_argument('-n', '--name',
                       action=None,
                       # nargs='+',
@@ -105,7 +118,7 @@ if __name__ == '__main__':
   args = parser.parse_args()
 
   # Set file name/path
-  out_dir     = './results/' + args.exp_name + '/'
+  out_dir     = args.folder_name + args.exp_name + '/'
   log_file    = out_dir + 'log.txt'
   sample_file = out_dir + args.exp_name + '_samples_'    + str(args.step_num)
   param_file  = out_dir + args.exp_name + '_params_'     + str(args.step_num)

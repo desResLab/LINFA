@@ -33,6 +33,8 @@ class experiment:
         self.budget             = 216   #:int:    Maximum number of allowed evaluations of the true model
         self.surr_pre_it        = 40000 #:int:    Number of pre-training iterations for surrogate model
         self.surr_upd_it        = 6000  #:int:    Number of iterations for the surrogate model update
+        self.surr_folder        = "./"  #:str:    Folder where the surrogate model is stored
+        self.use_new_surr       = True #:bool:   Start by pre-training a new surrogate and ignore existing surrogates
 
         # OPTIMIZER parameters
         self.optimizer    = 'Adam'   #:str:    Type of optimizer used (either 'Adam' or 'RMSprop')
@@ -59,12 +61,13 @@ class experiment:
         self.linear_step  = 0.0001   #:double: Fixed step size for the Linear annealing scheduler
 
         # OUTPUT parameters
-        self.output_dir        = './results/' + self.name #:str: Name of the output folder
-        self.log_file          = 'log.txt'                #:str: File name where the log profile stats are written
-        self.seed              = 35435                    #:int: Random seed
-        self.n_sample          = 5000                     #:int: Number of batch samples used to print results at save_interval
-        self.save_interval     = 200                      #:int: Save interval for all results
-        self.store_nf_interval = 1000                     #:int: Save interval for normalizing flow parameters
+        self.output_dir          = './results/' + self.name #:str: Name of the output folder
+        self.log_file            = 'log.txt'                #:str: File name where the log profile stats are written
+        self.seed                = 35435                    #:int: Random seed
+        self.n_sample            = 5000                     #:int: Number of batch samples used to print results at save_interval
+        self.save_interval       = 200                      #:int: Save interval for all results
+        self.store_nf_interval   = 1000                     #:int: Save interval for normalizing flow parameters
+        self.store_surr_interval = None                     #:int: Save interval for surrogate model (None for no save)
 
         # DEVICE parameters
         self.no_cuda = True #:bool: Flag to use CPU
@@ -171,8 +174,7 @@ class experiment:
                 scheduler.step()
 
         print('')
-        print('--- Simulation completed!')
-        # rt.surrogate.surrogate_save() # Used for saving the resulting surrogate model
+        print('--- Simulation completed!')        
 
     def train(self, nf, optimizer, iteration, log, sampling=True, t=1):
         """Parameter update for normalizing flow and surrogate model
@@ -258,3 +260,6 @@ class experiment:
         # Save state of normalizing flow layers
         if self.store_nf_interval > 0 and iteration % self.store_nf_interval == 0:
             torch.save(nf.state_dict(), self.output_dir + '/' + self.name + "_" + str(iteration) + ".nf")
+
+        if not(self.store_surr_interval is None) and self.store_surr_interval > 0 and iteration % self.store_surr_interval == 0:
+            self.surrogate.surrogate_save() # Save surrogate model

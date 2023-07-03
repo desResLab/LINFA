@@ -51,6 +51,8 @@ class linfa_test_suite(unittest.TestCase):
         exp.annealing          = False
         exp.calibrate_interval = 1000  # int: How often to update surrogate model (default 1000)
         exp.budget             = 64    # int: Total number of true model evaluation
+        exp.surr_folder        = "./"
+        exp.use_new_surr       = True
 
         exp.output_dir   = './results/' + exp.name
         exp.log_file     = 'log.txt'
@@ -75,16 +77,19 @@ class linfa_test_suite(unittest.TestCase):
         exp.model = model
 
         # Get data
-        model.data = np.loadtxt('../resource/data/data_trivial.txt')
+        model.data = np.loadtxt('./resource/data/data_trivial.txt')
 
         # Define surrogate
-        exp.surrogate = Surrogate(exp.name, lambda x: model.solve_t(trsf.forward(x)), 2, 2, [[0, 6], [0, 6]], 20, device=exp.device)
-        if exp.run_nofas:
-            if not os.path.isfile(exp.name + ".sur") or not os.path.isfile(exp.name + ".npz"):
-                print("Warning: Surrogate model files: {0}.npz and {0}.npz could not be found. ".format(exp.name))
-                # 4 samples for each dimension: pre-grid size = 16
-                exp.surrogate.gen_grid(gridnum=4)
-                exp.surrogate.pre_train(exp.surr_pre_it, 0.03, 0.9999, 500, store=True)
+        exp.surrogate = Surrogate(exp.name, lambda x: model.solve_t(trsf.forward(x)), 2, 2, 
+                                  model_folder=exp.surr_folder, limits=[[0, 6], [0, 6]], 
+                                  memory_len=20, device=exp.device)
+        surr_filename = exp.surr_folder + exp.name
+        if exp.use_new_surr or (not os.path.isfile(surr_filename + ".sur")) or (not os.path.isfile(surr_filename + ".npz")):
+            print("Warning: Surrogate model files: {0}.npz and {0}.npz could not be found. ".format(surr_filename))
+            # 4 samples for each dimension: pre-grid size = 16
+            exp.surrogate.gen_grid(gridnum=4)
+            exp.surrogate.pre_train(exp.surr_pre_it, 0.03, 0.9999, 500, store=True)
+        # Load the surrogate
         exp.surrogate.surrogate_load()
 
         # Define log density
@@ -162,6 +167,8 @@ class linfa_test_suite(unittest.TestCase):
         exp.annealing          = False
         exp.calibrate_interval = 200   # int: How often to update surrogate model (default 1000)
         exp.budget             = 1023  # int: Total number of true model evaluation
+        exp.surr_folder        = "./"
+        exp.use_old_surr       = False
 
         exp.output_dir   = './results/' + exp.name
         exp.log_file     = 'log.txt'
@@ -189,16 +196,18 @@ class linfa_test_suite(unittest.TestCase):
         exp.model = model
 
         # Read data
-        model.data = np.loadtxt('../resource/data/data_highdim.txt')
+        model.data = np.loadtxt('./resource/data/data_highdim.txt')
 
         # Define the surrogate
         exp.surrogate = Surrogate(exp.name, lambda x: model.solve_t(trsf.forward(x)), model.input_num, model.output_num,
-                                  torch.Tensor([[-3.0, 3.0], [-3.0, 3.0], [-3.0, 3.0], [-3.0, 3.0], [-3.0, 3.0]]), 20, device=exp.device)
-        if exp.run_nofas:
-            if not os.path.isfile(exp.name + ".sur") or not os.path.isfile(exp.name + ".npz"):
-                print("Warning: Surrogate model files: {0}.npz and {0}.npz could not be found. ".format(exp.name))
-                exp.surrogate.gen_grid(gridnum=3)
-                exp.surrogate.pre_train(self.surr_pre_it, 0.03, 0.9999, 500, store=True)
+                                  model_folder=exp.surr_folder, limits=torch.Tensor([[-3.0, 3.0], [-3.0, 3.0], [-3.0, 3.0], [-3.0, 3.0], [-3.0, 3.0]]), 
+                                  memory_len=20, device=exp.device)
+        surr_filename = exp.surr_folder + exp.name
+        if exp.use_new_surr or (not os.path.isfile(surr_filename + ".sur")) or (not os.path.isfile(surr_filename + ".npz")):
+            print("Warning: Surrogate model files: {0}.npz and {0}.npz could not be found. ".format(surr_filename))
+            exp.surrogate.gen_grid(gridnum=3)
+            exp.surrogate.pre_train(self.surr_pre_it, 0.03, 0.9999, 500, store=True)
+        # Load the surrogate
         exp.surrogate.surrogate_load()
 
         # Define the log density        
@@ -277,6 +286,8 @@ class linfa_test_suite(unittest.TestCase):
         exp.annealing          = False
         exp.calibrate_interval = 1000  # int: How often to update surrogate model (default 1000)
         exp.budget             = 64    # int: Total number of true model evaluation
+        exp.surr_folder        = "./"
+        exp.use_old_surr       = False
 
         exp.output_dir   = './results/' + exp.name
         exp.log_file     = 'log.txt'
@@ -299,21 +310,23 @@ class linfa_test_suite(unittest.TestCase):
         # Define model
         cycleTime = 1.07
         totalCycles = 10
-        forcing = np.loadtxt('../resource/data/inlet.flow')
+        forcing = np.loadtxt('./resource/data/inlet.flow')
         model = rcModel(cycleTime, totalCycles, forcing, device=exp.device)  # RCR Model Defined
         exp.model = model
 
         # Read Data
-        model.data = np.loadtxt('../resource/data/data_rc.txt')
+        model.data = np.loadtxt('./resource/data/data_rc.txt')
 
         # Define surrogate model
         exp.surrogate = Surrogate(exp.name, lambda x: model.solve_t(trsf.forward(x)), exp.input_size, 3,
-                                  torch.Tensor([[-7, 7], [-7, 7]]), 20, device=exp.device)
-        if exp.run_nofas:
-            if not os.path.isfile(exp.name + ".sur") or not os.path.isfile(exp.name + ".npz"):
-                print("Warning: Surrogate model files: {0}.npz and {0}.npz could not be found. ".format(exp.name))
-                exp.surrogate.gen_grid(gridnum=4)
-                exp.surrogate.pre_train(self.surr_pre_it, 0.03, 0.9999, 500, store=True)
+                                  model_folder=exp.surr_folder, limits=torch.Tensor([[-7, 7], [-7, 7]]), 
+                                  memory_len=20, device=exp.device)
+        surr_filename = exp.surr_folder + exp.name
+        if exp.use_new_surr or (not os.path.isfile(surr_filename + ".sur")) or (not os.path.isfile(surr_filename + ".npz")):
+            print("Warning: Surrogate model files: {0}.npz and {0}.npz could not be found. ".format(surr_filename))
+            exp.surrogate.gen_grid(gridnum=4)
+            exp.surrogate.pre_train(self.surr_pre_it, 0.03, 0.9999, 500, store=True)
+        # Load the surrogate
         exp.surrogate.surrogate_load()
 
         # Define log density
@@ -392,6 +405,8 @@ class linfa_test_suite(unittest.TestCase):
         exp.annealing          = False
         exp.calibrate_interval = 300  # int: How often to update surrogate model (default 1000)
         exp.budget             = 216  # int: Total number of true model evaluation
+        exp.surr_folder        = "./"
+        exp.use_old_surr       = False
 
         exp.output_dir = './results/' + exp.name
         exp.log_file = 'log.txt'
@@ -415,21 +430,23 @@ class linfa_test_suite(unittest.TestCase):
         # Define model
         cycleTime = 1.07
         totalCycles = 10
-        forcing = np.loadtxt('../resource/data/inlet.flow')
+        forcing = np.loadtxt('./resource/data/inlet.flow')
         model = rcrModel(cycleTime, totalCycles, forcing, device=exp.device)  # RCR Model Defined
         exp.model = model
 
         # Read data
-        model.data = np.loadtxt('../resource/data/data_rcr.txt')
+        model.data = np.loadtxt('./resource/data/data_rcr.txt')
 
         # Define surrogate
         exp.surrogate = Surrogate(exp.name, lambda x: model.solve_t(trsf.forward(x)), exp.input_size, 3,
-                                  torch.Tensor([[-7, 7], [-7, 7], [-7, 7]]), 20, device=exp.device)
-        if exp.run_nofas:
-            if not os.path.isfile(exp.name + ".sur") or not os.path.isfile(exp.name + ".npz"):
-                print("Warning: Surrogate model files: {0}.npz and {0}.npz could not be found. ".format(exp.name))
-                exp.surrogate.gen_grid(gridnum=4)
-                exp.surrogate.pre_train(self.surr_pre_it, 0.03, 0.9999, 500, store=True)
+                                  model_folder=exp.surr_folder, limits=torch.Tensor([[-7, 7], [-7, 7], [-7, 7]]), 
+                                  memory_len=20, device=exp.device)
+        surr_filename = exp.surr_folder + exp.name
+        if exp.use_new_surr or (not os.path.isfile(surr_filename + ".sur")) or (not os.path.isfile(surr_filename + ".npz")):
+            print("Warning: Surrogate model files: {0}.npz and {0}.npz could not be found. ".format(surr_filename))
+            exp.surrogate.gen_grid(gridnum=4)
+            exp.surrogate.pre_train(self.surr_pre_it, 0.03, 0.9999, 500, store=True)
+        # Load the surrogate
         exp.surrogate.surrogate_load()
 
         # Define log density
@@ -533,7 +550,7 @@ class linfa_test_suite(unittest.TestCase):
         exp.device = torch.device('cuda:0' if torch.cuda.is_available() and not exp.no_cuda else 'cpu')
 
         # Model Setting
-        data_set = np.loadtxt('../resource/data/D1000.csv',delimiter=',',skiprows=1)
+        data_set = np.loadtxt('./resource/data/D1000.csv',delimiter=',',skiprows=1)
         data = torch.tensor(data_set).to(exp.device)
 
         def log_density(params, d):

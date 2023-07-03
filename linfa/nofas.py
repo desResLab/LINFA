@@ -48,11 +48,12 @@ class Surrogate:
             surrogate (None or torch.nn.Module): the implementation of surrogate model used. Default: FNN
 
     """
-    def __init__(self, model_name, model_func, input_size, output_size, limits=None, memory_len=20, surrogate=None, device='cpu'):
+    def __init__(self, model_name, model_func, input_size, output_size, model_folder='./', limits=None, memory_len=20, surrogate=None, device='cpu'):
         self.device = device
         self.input_size = input_size
         self.output_size = output_size
         self.model_name = model_name
+        self.model_folder = model_folder
         self.mf = model_func
         self.pre_out = None
         self.m = None
@@ -116,13 +117,13 @@ class Surrogate:
 
         """
         if pre_grid is None:
-            if path.exists(self.model_name + '.npz'):
-                container = np.load(self.model_name + '.npz')
+            if path.exists(self.model_folder + self.model_name + '.npz'):
+                container = np.load(self.model_folder + self.model_name + '.npz')
                 if 'pre_grid' in container:
                     self.pre_grid = container['pre_grid']
                     print("Success: Pre-Grid found.")
             else:
-                print("Warning: " + self.model_name + ".npz does not found, please generate pre-grid.")
+                print("Warning: " + self.model_folder + self.model_name + ".npz does not found, please generate pre-grid.")
                 print("Suggestion: Use Surrogate.gen_grid(input_limits=None, grid_num=5, store=True)")
         else:
             self.__pre_grid = torch.Tensor(pre_grid).to(self.device)
@@ -153,7 +154,7 @@ class Surrogate:
                 print("Warning: Input limits recorded in surrogate.")
 
             for lim in self.limits: meshpoints.append(torch.linspace(lim[0], lim[1], steps=gridnum))
-            grid = torch.meshgrid(meshpoints)
+            grid = torch.meshgrid(meshpoints,indexing='ij')
             grid = torch.cat([item.reshape(gridnum ** len(self.limits), 1) for item in grid], 1)
 
         elif (grid_type == 'sobol'):
@@ -185,8 +186,8 @@ class Surrogate:
             None
 
         """
-        torch.save(self.surrogate.state_dict(), self.model_name + '.sur')
-        np.savez(self.model_name, limits=self.limits, pre_grid=self.pre_grid.clone().cpu().numpy(),
+        torch.save(self.surrogate.state_dict(), self.model_folder + self.model_name + '.sur')
+        np.savez(self.model_folder + self.model_name, limits=self.limits, pre_grid=self.pre_grid.clone().cpu().numpy(),
                  grid_record=self.grid_record.clone().cpu().numpy())
 
     def surrogate_load(self):
@@ -195,8 +196,8 @@ class Surrogate:
         Returns:
             None
         """
-        self.surrogate.load_state_dict(torch.load(self.model_name + '.sur'))
-        container = np.load(self.model_name + '.npz')
+        self.surrogate.load_state_dict(torch.load(self.model_folder + self.model_name + '.sur'))
+        container = np.load(self.model_folder + self.model_name + '.npz')
         for key in container:
             try:
                 setattr(self, key, torch.Tensor(container[key]))
