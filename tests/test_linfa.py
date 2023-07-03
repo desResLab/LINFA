@@ -86,11 +86,13 @@ class linfa_test_suite(unittest.TestCase):
         # exp.surrogate.surrogate_load()
 
         # Define log density
+        output_dir = './results/' + exp.name
         def log_density(x, model, transform):
             # x contains the original, untransformed inputs
 
             # Compute transformation log Jacobian
             adjust = transform.compute_log_jacob_func(x)
+            # np.savetxt(output_dir + '/' + exp.name + '_adjust_', [adjust], newline="\n")
 
             batch_size = x.size(0)
             # Get the absolute values of the standard deviations
@@ -100,7 +102,11 @@ class linfa_test_suite(unittest.TestCase):
             
             # without surrogate
             modelOut = model.solve_t(transform.forward(x))
-            # modelOut = model.solve_self(transform.forward(x))
+            x_vals = transform.forward(x)
+            x_grad = transform.compute_log_jacob_func()
+            np.savetxt(output_dir + '/' + exp.name + '_x', x.detach().numpy(), newline="\n")
+            np.savetxt(output_dir + '/' + exp.name + '_input', transform.forward(x).detach().numpy(), newline="\n")
+            np.savetxt(output_dir + '/' + exp.name + '_modelOut', modelOut.detach().numpy(), newline="\n")
               
             # Eval LL
             ll1 = -0.5 * np.prod(model.data.shape) * np.log(2.0 * np.pi)
@@ -196,10 +202,8 @@ class linfa_test_suite(unittest.TestCase):
         # exp.surrogate = False
         # Define surrogate
         # exp.surrogate = Surrogate(exp.name, lambda x: model.solve_t(trsf.forward(x)), 3, 3, torch.Tensor([[0, 2], [0, 10], [30, 80]]), 20)
-        # exp.surrogate = Surrogate(exp.name, lambda x: model.solve_t(trsf.forward(x)), 3, 3, 
-        #                           torch.Tensor([[0, 1], [0, 5], [0, 1]]), 20)
         exp.surrogate = Surrogate(exp.name, lambda x: model.solve_t(trsf.forward(x)), exp.input_size, 3, 
-                                  torch.Tensor([[0, 2], [0, 10], [-3, 3]]), 20)
+                                  torch.Tensor([[0, 2], [3, 7], [-3, 3]]), 20)
         if exp.run_nofas:
             if not os.path.isfile(exp.name + ".sur") or not os.path.isfile(exp.name + ".npz"):
                 print("Warning: Surrogate model files: {0}.npz and {0}.npz could not be found. ".format(exp.name))
@@ -208,10 +212,12 @@ class linfa_test_suite(unittest.TestCase):
                 exp.surrogate.pre_train(40000, 0.03, 0.9999, 500, store=True)
         exp.surrogate.surrogate_load()
 
+        output_dir = './results/' + exp.name
+
         # Define log density
         def log_density(x, model, surrogate, transform):
             # x contains the original, untransformed inputs
-
+            np.savetxt(output_dir + '/' + exp.name + '_x', x.detach().numpy(), newline="\n")
             # Compute transformation log Jacobian
             adjust = transform.compute_log_jacob_func(x)
 
@@ -220,12 +226,13 @@ class linfa_test_suite(unittest.TestCase):
             # stds = model.defOut * model.stdRatio
             # Data = torch.tensor(model.data)
             stds = torch.abs(model.solve_t(model.defParam)) * model.stdRatio
-            Data = torch.tensor(model.data)
+            # Data = torch.tensor(model.data)
+            Data = torch.tensor(model.data).to(exp.device)
             if surrogate:
               modelOut = exp.surrogate.forward(x)
             else:
               modelOut = model.solve_t(transform.forward(x))
-              
+            np.savetxt(output_dir + '/' + exp.name + '_modelOut', modelOut.detach().numpy(), newline="\n")  
             # Eval LL
             ll1 = -0.5 * np.prod(model.data.shape) * np.log(2.0 * np.pi)
             ll2 = (-0.5 * model.data.shape[1] * torch.log(torch.prod(stds))).item()
@@ -234,6 +241,7 @@ class linfa_test_suite(unittest.TestCase):
                 ll3 += - 0.5 * torch.sum(((modelOut[:, i].unsqueeze(1) - Data[i, :].unsqueeze(0)) / stds[0, i]) ** 2, dim=1)
             negLL = -(ll1 + ll2 + ll3)
             res = -negLL.reshape(x.size(0), 1) + adjust
+            np.savetxt(output_dir + '/' + exp.name + '_res', res.detach().numpy(), newline="\n")
             return res
             ## trivial
             # for i in range(3):
@@ -272,7 +280,7 @@ class linfa_test_suite(unittest.TestCase):
         exp.input_size = 2  # int: Dimensionality of input                      default 2
         exp.batch_size = 200  # int: Number of samples generated                  default 100
         exp.true_data_num = 2  # double: number of true model evaluated        default 2
-        exp.n_iter = 15001 # 25001  # int: Number of iterations                         default 25001
+        exp.n_iter = 25001 # 25001  # int: Number of iterations                         default 25001
         exp.lr = 0.002  # float: Learning rate                              default 0.003
         exp.lr_decay = 0.9999  # float: Learning rate decay                        default 0.9999
         exp.log_interval = 10  # int: How often to show loss stat                  default 10
@@ -321,11 +329,11 @@ class linfa_test_suite(unittest.TestCase):
                 exp.surrogate.gen_grid(gridnum=4)
                 exp.surrogate.pre_train(40000, 0.03, 0.9999, 500, store=True)
         exp.surrogate.surrogate_load()
-
+        output_dir = './results/' + exp.name
         # Define log density
         def log_density(x, model, surrogate, transform):
             # x contains the original, untransformed inputs
-
+            np.savetxt(output_dir + '/' + exp.name + '_x', x.detach().numpy(), newline="\n")
             # Compute transformation log Jacobian
             adjust = transform.compute_log_jacob_func(x)
 
@@ -334,6 +342,8 @@ class linfa_test_suite(unittest.TestCase):
             Data = torch.tensor(model.data)
             if surrogate:
               modelOut = exp.surrogate.forward(x)
+              np.savetxt(output_dir + '/' + exp.name + '_modelOut', modelOut.detach().numpy(), newline="\n")
+            #   np.savetxt(output_dir + '/' + exp.name + '_input', transform.forward(x).detach().numpy(), newline="\n")
             else:
               modelOut = model.solve_t(transform.forward(x))
               
@@ -538,13 +548,13 @@ class linfa_test_suite(unittest.TestCase):
                 exp.surrogate.gen_grid(gridnum=4)
                 exp.surrogate.pre_train(40000, 0.03, 0.9999, 500, store=True)
         exp.surrogate.surrogate_load()
-
+        output_dir = './results/' + exp.name
         # Define log density
         def log_density(x, model, surrogate, transform):
             
             # Compute transformation log Jacobian
             adjust = transform.compute_log_jacob_func(x)
-
+            np.savetxt(output_dir + '/' + exp.name + '_x', x.detach().numpy(), newline="\n")
             if surrogate:
                 modelOut = surrogate.forward(x)
             else:

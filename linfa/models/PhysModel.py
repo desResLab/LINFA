@@ -34,3 +34,9 @@ class Phys:
         #             z1 + ((z2 ** 2) * np.sin(2.0 * z3)) / self.gConst, 
         #             (2.0 * z2 * np.sin(z3)) / self.gConst), 1)
         return x
+    
+# GEN DATA
+if __name__ == '__main__':
+  
+  model = Phys()
+  model.genDataFile(50)

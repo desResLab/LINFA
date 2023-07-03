@@ -62,8 +62,8 @@ def plot_outputs(sample_file,obs_file,idx1,idx2,out_dir,out_info):
   std_1 = np.std(sample_data[:,idx1])
   avg_2 = np.mean(sample_data[:,idx2])
   std_2 = np.std(sample_data[:,idx2])  
-  plt.xlim([avg_1-15*std_1,avg_1+15*std_1])
-  plt.ylim([avg_2-15*std_2,avg_2+15*std_2])
+  plt.xlim([avg_1-3.5*std_1,avg_1+3.5*std_1])
+  plt.ylim([avg_2-3.5*std_2,avg_2+3.5*std_2])
   
   plt.tight_layout()
   plt.savefig(out_dir+'data_plot_' + out_info + '_'+str(idx1)+'_'+str(idx2)+'.pdf',bbox_inches='tight')
