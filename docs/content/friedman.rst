@@ -69,9 +69,8 @@ We impose a non-informative uniform prior :math:`p(\boldsymbol{\beta})` and, unl
      - 0.1192
      - 0.0463
 
-.. _fig_adaann_res:
-
 .. figure:: imgs/adaann/log_plot-1.png
 .. figure:: imgs/adaann/adaann-1.png
+   :name: fig_adaann_res
 
    Loss profile (left) and posterior marginal statistics for positive mode in the modified Friedman test case.
