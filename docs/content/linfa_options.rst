@@ -128,7 +128,6 @@ LINFA options
      - ``int``
      - Seed for random number generator
 
-
 .. list-table:: Surrogate model parameters (NoFAS)
    :widths: 25 25 50
    :header-rows: 1
@@ -151,6 +150,27 @@ LINFA options
      - ``int``
      - Maximum allowable number of true model evaluations
 
+   * - ``surr_pre_it``
+     - ``int``
+     - | Number of pre-training iterations 
+       | for surrogate model (default ``40000``)
+   
+   * - ``surr_upd_it``
+     - ``int``
+     - Number of iterations for the surrogate model update (default ``6000``)
+   
+   * - ``surr_folder``
+     - ``str ``
+     - Folder where the surrogate model is stored (default ``'./'``)
+   
+   * - ``use_new_surr``
+     - ``bool``
+     - | Start by pre-training a new surrogate 
+       | and ignore existing surrogates (default ``True``)
+
+   * - ``store_surr_interval``
+     - ``int``
+     - Save interval for surrogate model (None for no save, default ``None``)
 
 .. list-table:: Parameters for the adaptive annealing scheduler (AdaAnn)
    :widths: 25 25 50
