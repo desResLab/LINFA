@@ -47,7 +47,7 @@ The implementation of the lumped parameter network models (RC and RCR models) fo
 
 To run the tests type
 ```sh
-python -m unittest linfa.tests.test_linfa.linfa_test_suite.NAME_example
+python -m unittest linfa.linfa_test_suite.NAME_example
 ```
 where `NAME` need to be replaced by
 * `trivial` for the trivial example (Ex 1).
@@ -55,6 +55,7 @@ where `NAME` need to be replaced by
 * `rc` for the RC model (Ex 3).
 * `rcr` for the RCR model (Ex 4).
 * `adaann` for the Friedman model example (Ex 5).
+* `rcr_nofas_adaann_example` for the RCR model, combining NoFAS with adaptive annealing (AdaAnn)
 
 At regular intervals set by the parameter `experiment.save_interval` LINFA writes a few results files. The sub-string `NAME` refers to the experiment name specified in the `experiment.name` variable, and `IT` indicates the iteration at which the file is written. The results files are
 
@@ -89,7 +90,7 @@ In addition you need to specify a list of options as discussed in the [documenta
 
 ### Tutorial
 
-A (tutorial)[] is also available which will guide you through the definition of each of the quantities and function required by LINFA. 
+A step by step [tutorial](tutorial/TutorialwithPhys.ipynb) is also available which will guide you through the an inference problem for a ballistic simulation. 
 
 ### Citation
 

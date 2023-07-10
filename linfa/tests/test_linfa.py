@@ -1,5 +1,6 @@
 import unittest
 import os
+import linfa
 from linfa.run_experiment import experiment
 from linfa.transform import Transformation
 from linfa.nofas import Surrogate
@@ -77,7 +78,8 @@ class linfa_test_suite(unittest.TestCase):
         exp.model = model
 
         # Get data
-        model.data = np.loadtxt('./resource/data/data_trivial.txt')
+        res_path = os.path.abspath(os.path.join(os.path.dirname(linfa.__file__), os.pardir))
+        model.data = np.loadtxt(res_path + '/resource/data/data_trivial.txt')
 
         # Define surrogate
         exp.surrogate = Surrogate(exp.name, lambda x: model.solve_t(trsf.forward(x)), 2, 2, 
@@ -196,7 +198,8 @@ class linfa_test_suite(unittest.TestCase):
         exp.model = model
 
         # Read data
-        model.data = np.loadtxt('./resource/data/data_highdim.txt')
+        res_path = os.path.abspath(os.path.join(os.path.dirname(linfa.__file__), os.pardir))
+        model.data = np.loadtxt(res_path + '/resource/data/data_highdim.txt')
 
         # Define the surrogate
         exp.surrogate = Surrogate(exp.name, lambda x: model.solve_t(trsf.forward(x)), model.input_num, model.output_num,
@@ -310,12 +313,13 @@ class linfa_test_suite(unittest.TestCase):
         # Define model
         cycleTime = 1.07
         totalCycles = 10
-        forcing = np.loadtxt('./resource/data/inlet.flow')
+        res_path = os.path.abspath(os.path.join(os.path.dirname(linfa.__file__), os.pardir))
+        forcing = np.loadtxt(res_path + '/resource/data/inlet.flow')
         model = rcModel(cycleTime, totalCycles, forcing, device=exp.device)  # RCR Model Defined
         exp.model = model
 
         # Read Data
-        model.data = np.loadtxt('./resource/data/data_rc.txt')
+        model.data = np.loadtxt(res_path + '/resource/data/data_rc.txt')
 
         # Define surrogate model
         exp.surrogate = Surrogate(exp.name, lambda x: model.solve_t(trsf.forward(x)), exp.input_size, 3,
@@ -430,12 +434,13 @@ class linfa_test_suite(unittest.TestCase):
         # Define model
         cycleTime = 1.07
         totalCycles = 10
-        forcing = np.loadtxt('./resource/data/inlet.flow')
+        res_path = os.path.abspath(os.path.join(os.path.dirname(linfa.__file__), os.pardir))
+        forcing = np.loadtxt(res_path + '/resource/data/inlet.flow')
         model = rcrModel(cycleTime, totalCycles, forcing, device=exp.device)  # RCR Model Defined
         exp.model = model
 
         # Read data
-        model.data = np.loadtxt('./resource/data/data_rcr.txt')
+        model.data = np.loadtxt(res_path + '/resource/data/data_rcr.txt')
 
         # Define surrogate
         exp.surrogate = Surrogate(exp.name, lambda x: model.solve_t(trsf.forward(x)), exp.input_size, 3,
@@ -551,7 +556,8 @@ class linfa_test_suite(unittest.TestCase):
         exp.device = torch.device('cuda:0' if torch.cuda.is_available() and not exp.no_cuda else 'cpu')
 
         # Model Setting
-        data_set = np.loadtxt('./resource/data/D1000.csv',delimiter=',',skiprows=1)
+        res_path = os.path.abspath(os.path.join(os.path.dirname(linfa.__file__), os.pardir))
+        data_set = np.loadtxt(res_path + '/resource/data/D1000.csv',delimiter=',',skiprows=1)
         data = torch.tensor(data_set).to(exp.device)
 
         def log_density(params, d):
@@ -659,12 +665,13 @@ class linfa_test_suite(unittest.TestCase):
         # Define model
         cycleTime = 1.07
         totalCycles = 10
-        forcing = np.loadtxt('./resource/data/inlet.flow')
+        res_path = os.path.abspath(os.path.join(os.path.dirname(linfa.__file__), os.pardir))
+        forcing = np.loadtxt(res_path + '/resource/data/inlet.flow')
         model = rcrModel(cycleTime, totalCycles, forcing, device=exp.device)  # RCR Model Defined
         exp.model = model
 
         # Read data
-        model.data = np.loadtxt('./resource/data/data_rcr.txt')
+        model.data = np.loadtxt(res_path + '/resource/data/data_rcr.txt')
 
         # Define surrogate
         exp.surrogate = Surrogate(exp.name, lambda x: model.solve_t(trsf.forward(x)), exp.input_size, 3,

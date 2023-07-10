@@ -1,1 +1,1 @@
-from tests.test_linfa import linfa_test_suite
+from linfa.tests.test_linfa import linfa_test_suite
