@@ -641,7 +641,7 @@ class linfa_test_suite(unittest.TestCase):
         exp.log_file = 'log.txt'
         exp.seed = random.randint(0, 10 ** 9)  # int: Random seed used
         exp.n_sample = 5000                    # int: Batch size to generate final results/plots
-        exp.no_cuda = True                     # Running on CPU by default but tested on CUDA
+        exp.no_cuda = False                     # Running on CPU by default but tested on CUDA
 
         exp.optimizer = 'RMSprop'
         exp.lr_scheduler = 'ExponentialLR'

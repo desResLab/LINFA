@@ -1,1 +1,1 @@
-from linfa.tests.test_linfa import linfa_test_suite as linfa_tests
+from test_linfa import linfa_test_suite
