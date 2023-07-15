@@ -55,7 +55,7 @@ where `NAME` need to be replaced by
 * `rc` for the RC model (Ex 3).
 * `rcr` for the RCR model (Ex 4).
 * `adaann` for the Friedman model example (Ex 5).
-* `rcr_nofas_adaann_example` for the RCR model, combining NoFAS with adaptive annealing (AdaAnn)
+* `rcr_nofas_adaann` for the RCR model, combining NoFAS with adaptive annealing (AdaAnn)
 
 At regular intervals set by the parameter `experiment.save_interval` LINFA writes a few results files. The sub-string `NAME` refers to the experiment name specified in the `experiment.name` variable, and `IT` indicates the iteration at which the file is written. The results files are
 
@@ -73,7 +73,7 @@ At regular intervals set by the parameter `experiment.save_interval` LINFA write
 A post processing script is also available to plot all results. To run it type
 
 ```sh
-python linfa.plot_res -n NAME -i IT -f FOLDER
+python -m linfa.plot_res -n NAME -i IT -f FOLDER
 ```
 where `NAME` and `IT` are again the experiment name and iteration number corresponding to the result file of interest, while `FOLDER` is the name of the folder with the results of the inference task are kept.
 

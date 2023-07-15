@@ -81,7 +81,7 @@ if __name__ == '__main__':
                       action=None,
                       # nargs='+',
                       const=None,
-                      default='./tests/results/',
+                      default='./',
                       type=str,
                       required=False,
                       help='Folder with experiment results',
@@ -132,7 +132,7 @@ if __name__ == '__main__':
     print('Plotting log...')
     plot_log(log_file,out_dir)
   else:
-    print('Log file not found...')
+    print('Log file not found: '+log_file)
 
   # Plot 2D slice of posterior samples
   if(os.path.isfile(param_file) and os.path.isfile(LL_file)):
@@ -142,7 +142,8 @@ if __name__ == '__main__':
       for loopB in range(loopA+1, tot_params):
         plot_params(param_file,LL_file,loopA,loopB,out_dir,out_info)
   else:
-    print('File with posterior samples not found...')
+    print('File with posterior samples not found: '+param_file)
+    print('File with log-density not found: '+LL_file)
 
   # Plot 2D slice of outputs and observations
   if(os.path.isfile(output_file) and os.path.isfile(obs_file)):
@@ -152,4 +153,5 @@ if __name__ == '__main__':
       for loopB in range(loopA+1, tot_outputs):
         plot_outputs(output_file,obs_file,loopA,loopB,out_dir,out_info)
   else:
-    print('File with posterior predictive samples not found...')
+    print('File with posterior predictive samples not found: '+output_file)
+    print('File with observations not found: '+obs_file)
