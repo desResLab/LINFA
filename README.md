@@ -96,11 +96,10 @@ A step by step [tutorial](tutorial/TutorialwithPhys.ipynb) is also available whi
 
 Did you use LINFA? Please cite our paper using:
 ```
-@misc{TO BE FINALIZED!!!,
-      title={LINFA: a Python library for variational inference with normalizing flow and annealing}, 
-      author={Yu Wang, Emma R. Cobian, Fang Liu, Jonathan D. Hauenstein, Daniele E. Schiavazzi},
-      year={2022},
-      eprint={2201.03715},
-      archivePrefix={arXiv},
-      primaryClass={eess.IV}
+@article{linfa-vi-paper,
+  title={LINFA: a Python library for variational inference with normalizing flow and annealing},
+  author={Wang, Yu and Cobian, Emma R and Lee, Jubilee and Liu, Fang and Hauenstein, Jonathan D and Schiavazzi, Daniele E},
+  journal={arXiv preprint arXiv:2307.04675},
+  year={2023}
 }
+```

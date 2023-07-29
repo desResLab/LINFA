@@ -9,16 +9,33 @@ torch.set_default_tensor_type(torch.DoubleTensor)
 class FNN(nn.Module):
     """Fully Connected Neural Network"""
 
-    def __init__(self, input_size, output_size, device):
+    def __init__(self, input_size, output_size, arch=None, activation='relu', device='cpu'):
         """
         Args:
             input_size (int): Input size for FNN
             output_size (int): Output size for FNN
+            arch (list of int): list containing the number of neurons for each hidden layer
+            activation (stirng): type of activation function, either 'relu', 
+            device (string): computational device
         """
         super().__init__()
-        self.fc1 = nn.Linear(input_size, 64).to(device)
-        self.fc2 = nn.Linear(64, 32).to(device)
-        self.fc3 = nn.Linear(32, output_size).to(device)
+        if(arch is None):
+            self.neuron_size = [64,32]
+        else:
+            self.neuron_size = arch
+        # Set activation
+        self.activation = activation
+        self.fc = nn.ModuleList()
+        # Assign first layer
+        self.fc.append(nn.Linear(input_size, self.neuron_size[0]).to(device))
+        if(len(self.neuron_size) == 1):
+            # Assign output Layer
+            self.fc.append(nn.Linear(self.neuron_size[0], output_size).to(device))
+        else:
+            for layer in range(1,len(self.neuron_size)):
+                self.fc.append(nn.Linear(self.neuron_size[layer-1], self.neuron_size[layer]).to(device))
+            # Assign output layer
+            self.fc.append(nn.Linear(self.neuron_size[len(self.neuron_size)-1], output_size).to(device))
 
     def forward(self, x):
         """
@@ -28,12 +45,20 @@ class FNN(nn.Module):
         Returns:
             torch.Tensor. Assumed to be a batch.
         """
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        # x = F.relu(self.fc3(x))
-        x = self.fc3(x)
-        return x
+        for loopA in range(len(self.fc)-1):
+            if(self.activation == 'relu'):
+                x = F.relu(self.fc[loopA](x))
+            elif(self.activation == 'silu'):
+                x = F.silu(self.fc[loopA](x))
+            elif(self.activation == 'tanh'):
+                x = F.tanh(self.fc[loopA](x))
+            else:
+                print('Invalid activation string.')
+                exit(-1)
 
+        # Last layer with linear activation
+        x = self.fc[len(self.fc)-1](x)
+        return x
 
 class Surrogate:
     """Class to create surrogate models for inference with NoFAS
@@ -43,12 +68,15 @@ class Surrogate:
             model_func (function): with only one input of torch.Tensor
             input_size (int): input dimension of true model.
             output_size (int): output dimension of true model.
+            dnn_arch (list of int): list containing the number of neurons for each hidden layer. Default None for [64,32] architecture.
+            dnn_activation (stirng): type of activation function, either 'relu', 
+            model_folder (string): folder where surrogate model is stored.             
             limits (list or lists): bounds for all inputs, in format of [[low_0, high_0], [low_1, high_1], ... ]
             memory_len (int): the maximal number of batches stored in buffer. Default: 20
-            surrogate (None or torch.nn.Module): the implementation of surrogate model used. Default: FNN
-
+            surrogate (None or torch.nn.Module): the implementation of surrogate model used. Default: FNN This allows the user to spacify any NN architecture for the surrogate.
+                                                 If None the parameters "dnn_arch" and "dnn_activation" can be used to specify a dense neural network. 
     """
-    def __init__(self, model_name, model_func, input_size, output_size, model_folder='./', limits=None, memory_len=20, surrogate=None, device='cpu'):
+    def __init__(self, model_name, model_func, input_size, output_size, dnn_arch=None, dnn_activation='relu', model_folder='./', limits=None, memory_len=20, surrogate=None, device='cpu'):
         self.device = device
         self.input_size = input_size
         self.output_size = output_size
@@ -62,7 +90,7 @@ class Surrogate:
         self.tsd = None
         self.limits = limits
         self.pre_grid = None
-        self.surrogate = FNN(input_size, output_size, self.device) if surrogate is None else surrogate
+        self.surrogate = FNN(input_size, output_size, arch=dnn_arch, device=self.device) if surrogate is None else surrogate
         self.beta_0 = 0.5
         self.beta_1 = 0.1        
 
@@ -334,7 +362,56 @@ class Surrogate:
             x (torch.Tensor): Contains a matrix of model inputs in the form [data_num, feature_dim]
 
         Returns:
-            COMPLETE!!!
+            Value of the surrogate at x.
 
         """
         return self.surrogate((x - self.m) / self.sd) * self.tsd + self.tm
+
+def test_surrogate():
+    
+    import matplotlib.pyplot as plt
+  
+    # Define function to approximate
+    def ishigami(z):
+        z1, z2, z3 = torch.chunk(z, chunks=3, dim=1)
+        return torch.sin(z1) + 7.0 * (torch.sin(z2))**2 + 0.1 * z3**4 * torch.sin(z1)
+    
+    # Set surrogate architecture
+    # arch=[64,64,64,64]
+    arch=None
+    activation='silu'
+    
+    # Define emulator and pre-train on global grid
+    curr_limits = [[-torch.pi,torch.pi],[-torch.pi,torch.pi],[-torch.pi,torch.pi]]
+    emulator    = Surrogate(model_name='ishigami', model_func=ishigami, input_size=3, output_size=1, limits = curr_limits, 
+                            dnn_arch=arch, dnn_activation=activation)
+    emulator.gen_grid(gridnum=10)
+    emulator.pre_train(40000, 0.03, 0.9999, 500, store=True)
+
+    # Eval MSE on Sobol point collection
+    soboleng = torch.quasirandom.SobolEngine(dimension=3)
+    # 2**10 = 1024 testing points
+    z = (soboleng.draw_base2(10) - 0.5) * 2 * torch.pi
+    true_fc = ishigami(z)
+    emul_fc = emulator.forward(z)
+    mse = torch.sum((true_fc - emul_fc) ** 2) / z.size(0)
+    print('Test MSE: %.3f' % (mse.item()))
+
+    # Check loss on pregrid
+    true_fc_pg = ishigami(emulator.pre_grid)
+    emul_fc_pg = emulator.forward(emulator.pre_grid)
+    mse = torch.sum((true_fc_pg - emul_fc_pg) ** 2) / emulator.pre_grid.size(0)
+    print('Pre-grid MSE: %.3f' % (mse.item()))
+    print('Standard deviation on testing set: %.3f' % (emulator.tsd.item()))
+
+        # Plot output histograms
+    plt.figure(figsize=(5,5))
+    plt.hist(true_fc.detach().numpy(),bins='auto',alpha=0.5,density=True)
+    plt.hist(emul_fc.detach().numpy(),bins='auto',alpha=0.5,density=True)
+    plt.show()
+
+# TEST SURROGATE
+if __name__ == '__main__':
+  
+  test_surrogate()
+    
