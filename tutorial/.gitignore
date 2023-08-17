@@ -1,3 +1,5 @@
 phys_nofasFree/
 .ipynb_checkpoints/
 *.txt
+*.npz
+*.sur
