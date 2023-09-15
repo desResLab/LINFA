@@ -10,6 +10,7 @@ class Trivial:
         self.RM = torch.Tensor([[1.0, 1.0],
                                 [1.0, -1.0]]).to(device)
         self.stdRatio = 0.05
+        self.defOut = self.solve_t(self.defParam)
         self.data = None
 
     def genDataFile(self, dataSize=50, dataFileName="../../resource/data/data_trivial.txt", store=True):

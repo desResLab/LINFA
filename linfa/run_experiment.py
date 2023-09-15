@@ -226,7 +226,7 @@ class experiment:
             np.savetxt(self.output_dir + '/' + self.name + '_logdensity_' + str(iteration), self.model_logdensity(xkk).data.cpu().numpy(), newline="\n")
             # Save model outputs at the samples - If a model is defined
             if not(self.transform is None):
-              stds = torch.abs(self.model.solve_t(self.model.defParam)).to(self.device) * self.model.stdRatio
+              stds = torch.abs(self.model.defOut).to(self.device) * self.model.stdRatio
               o00 = torch.randn(x00.size(0), self.model.data.shape[0]).to(self.device)
               noise = o00*stds.repeat(o00.size(0),1)
               if self.surrogate:
