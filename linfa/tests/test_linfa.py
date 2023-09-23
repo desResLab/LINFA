@@ -4,6 +4,7 @@ import linfa
 from linfa.run_experiment import experiment
 from linfa.transform import Transformation
 from linfa.nofas import Surrogate
+from linfa.discrepancy import Discrepancy
 import torch
 import random
 import numpy as np
@@ -24,7 +25,7 @@ class linfa_test_suite(unittest.TestCase):
         print('')
 
         # Import trivial model
-        from linfa.models.TrivialModels import Trivial
+        from linfa.models.trivial_models import Trivial
 
         exp = experiment()
         exp.name              = "trivial"
@@ -140,7 +141,7 @@ class linfa_test_suite(unittest.TestCase):
         print('--- TEST 2: HIGH DIMENSIONAL SOBOL FUNCTION - NOFAS')
         print('')
 
-        from linfa.models.highdimModels import Highdim
+        from linfa.models.highdim_models import Highdim
         
         exp = experiment()
         exp.name = "highdim"
@@ -260,7 +261,7 @@ class linfa_test_suite(unittest.TestCase):
         print('')
 
         # Import model
-        from linfa.models.circuitModels import rcModel
+        from linfa.models.circuit_models import rcModel
         
         exp = experiment()
         exp.name = "rc"
@@ -380,7 +381,7 @@ class linfa_test_suite(unittest.TestCase):
         print('')
 
         # Import rcr model
-        from linfa.models.circuitModels import rcrModel
+        from linfa.models.circuit_models import rcrModel
 
         exp = experiment()
         exp.name = "rcr"
@@ -587,7 +588,7 @@ class linfa_test_suite(unittest.TestCase):
         exp.model_logdensity = lambda x: log_density(x, data)
         exp.run()
     
-    def rcr_nofas_adaann_example(run_nofas=True, run_adaann=False):
+    def rcr_nofas_adaann_example(self):
         
         # Quick run when repository is pushed
         if "it" in os.environ:
@@ -602,7 +603,7 @@ class linfa_test_suite(unittest.TestCase):
         print('')
 
         # Import rcr model
-        from linfa.models.circuitModels import rcrModel
+        from linfa.models.circuit_models import rcrModel
 
         exp = experiment()
         exp.name = "rcr_nofas_adaann"
@@ -718,7 +719,162 @@ class linfa_test_suite(unittest.TestCase):
         # Run VI
         exp.run()
 
+    def discrepancy_example(self):
 
+        if "it" in os.environ:
+          max_it  = int(os.environ["it"])
+          max_pre = 1000
+        else:
+          max_it  = 25001
+          max_pre = 50000
+
+        print('')
+        print('--- TEST 5: DISCREPANCY MODEL')
+        print('')
+
+        # Import rcr model
+        from linfa.models.discrepancy_models import PhysChem
+
+        exp = experiment()
+        exp.name = "discrepancy_example"
+        exp.flow_type           = 'maf'         # str: Type of flow (default 'realnvp')
+        exp.n_blocks            = 15            # int: Number of hidden layers   
+        exp.hidden_size         = 100           # int: Hidden layer size for MADE in each layer (default 100)
+        exp.n_hidden            = 1             # int: Number of hidden layers in each MADE
+        exp.activation_fn       = 'relu'        # str: Activation function used (default 'relu')
+        exp.input_order         = 'sequential'  # str: Input oder for create_mask (default 'sequential')
+        exp.batch_norm_order    = True          # bool: Order to decide if batch_norm is used (default True)
+        exp.save_interval       = 50            # int: How often to sample from normalizing flow
+        
+        exp.input_size          = 2             # int: Dimensionalty of input (default 2)
+        exp.batch_size          = 200           # int: Number of samples generated (default 100)
+        exp.true_data_num       = 2             # double: Number of true model evaluted (default 2)
+        exp.n_iter              = 25001         # int: Number of iterations (default 25001)
+        exp.lr                  = 0.001         # float: Learning rate (default 0.003)
+        exp.lr_decay            = 0.9999        # float:  Learning rate decay (default 0.9999)
+        exp.log_interal         = 10            # int: How often to show loss stat (default 10)
+
+        exp.run_nofas           = True
+        exp.surrogate_type     = 'discrepancy'
+        exp.surr_pre_it         = 1000          # int: Number of pre-training iterations for surrogate model
+        exp.surr_upd_it         = 1000          # int: Number of iterations for the surrogate model update
+
+        exp.annealing           = False         
+        exp.calibrate_interval  = 300           # int: How often to update the surrogate model (default 1000)
+        exp.budget              = 216           # int: Total number of true model evaulations
+        exp.surr_folder         = "./" 
+        exp.use_new_surr        = True
+
+        exp.output_dir = './results/' + exp.name
+        exp.log_file = 'log.txt'
+        exp.seed = random.randint(0, 10 ** 9)   # int: Random seed used
+        exp.n_sample = 5000                     # int: Batch size to generate final results/plots
+        exp.no_cuda = True                      # Running on CPU by default but teste on CUDA
+
+        exp.optimizer = 'RMSprop'
+        exp.lr_scheduler = 'ExponentialLR'
+
+        exp.device = torch.device('cuda:0' if torch.cuda.is_available() and not exp.no_cuda else 'cpu')
+
+        # Define transformation
+        # One list for each variable
+        trsf_info = [['linear', -1.0, 1.0, 500.0, 1500.0],
+                     ['linear', -1.0, 1.0, -30000.0, -15000.0]]
+        trsf = Transformation(trsf_info)
+        exp.trasform = trsf
+
+        # Add temperatures and pressures for each evaluation
+        variable_inputs = [[350.0, 400.0, 450.0],
+                           [1.0, 2.0, 3.0, 4.0, 5.0]]
+
+        # Define model
+        langmuir_model = PhysChem(variable_inputs)
+        # Assign as experiment model
+        exp.model = langmuir_model
+        # Read data
+        exp.model.data = np.loadtxt('observations.csv', delimiter = ',', skiprows = 1)
+
+        # Form tensors for variables and results in observations
+        var_grid_in = torch.tensor(exp.model.data[:,:2])
+        var_grid_out = torch.tensor(exp.model.data[:,2:])
+
+        # TEMPORARY
+        use_surrogate = True
+
+        # Define surrogate
+        if(use_surrogate):
+
+            # Create new discrepancy
+            exp.surrogate = Discrepancy(model_name=exp.name, 
+                                        lf_model=exp.model.solve_lf,
+                                        input_size=exp.model.var_in.size(1),
+                                        output_size=1,
+                                        var_grid_in=var_grid_in,
+                                        var_grid_out=var_grid_out)
+            # Initially tune on the default values of the calibration variables
+            exp.surrogate.update(langmuir_model.defParams, exp.surr_pre_it, 0.03, 0.9999, 100, store=True)
+            # Load the surrogate
+            exp.surrogate.surrogate_load()
+        else:
+            exp.surrogate = None
+
+        # Define log density
+        def log_density(calib_inputs, model, surrogate, transform):
+            
+            # Compute transformation by log Jacobian
+            adjust = transform.compute_log_jacob_func(calib_inputs)
+
+            # Initialize negative log likelihood
+            total_nll = torch.zeros((calib_inputs.size(0), 1))
+            
+            # Initialize total number of variable inputs
+            total_var_inputs = len(model.var_in)
+                        
+            # Evaluate discrepancy
+            if (surrogate is None):
+                discrepancy = torch.zeros()
+            else:
+                # (num_var)
+                discrepancy = surrogate.forward(model.var_in)
+            
+            # Evaluate model response - (num_var x num_batch)
+            modelOut = langmuir_model.solve_lf(transform.forward(calib_inputs)).t()
+
+            # Get the absolute values of the standard deviation (num_var)
+            stds = langmuir_model.defOut * langmuir_model.stdRatio
+            # Get data - (num_var x num_obs)
+            Data = torch.tensor(langmuir_model.data[:,2:]).to(exp.device)
+
+            num_obs = Data.size(1)
+            
+            # Evaluate log-likelihood:
+            # Loop on the available observations
+            for loopA in range(num_obs):
+                l1 = -0.5 * np.prod(langmuir_model.data.shape) * np.log(2.0 * np.pi)
+                l2 = (-0.5 * langmuir_model.data.shape[1] * torch.log(torch.prod(stds))).item()
+                # print('model out ',modelOut.size())
+                # print('discrepancy ',discrepancy.t().size())
+                # print('data ',Data[:,loopA].unsqueeze(0).size())
+                # print('stds ',stds.t().size())
+                # exit()
+                l3 = -0.5 * torch.sum(((modelOut + discrepancy.t() - Data[:,loopA].unsqueeze(0)) / stds.t())**2, dim = 1) 
+                # Compute negative ll (num_batch x 1)
+                negLL = -(l1 + l2 + l3) # sum contributions
+                res = -negLL.reshape(calib_inputs.size(0), 1) # reshape
+            
+            # Accumulate
+            total_nll += res
+                    
+            # Return log-likelihood
+            return total_nll/num_obs + adjust
+
+        # Assign log density model
+        exp.model_logdensity = lambda x: log_density(x, langmuir_model, exp.surrogate, trsf)
+
+        # Run VI
+        exp.run()
+
+# MAIN         
 if __name__ == '__main__':
     
     # Execute tests

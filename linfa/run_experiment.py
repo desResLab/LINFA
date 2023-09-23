@@ -15,7 +15,7 @@ class experiment:
     def __init__(self):
 
         # NF ARCHITECTURE parameters
-        self.name              = "Experiment"
+        self.name              = 'Experiment'
         self.input_size        = 3             #:int:  Number of input parameters
         self.flow_type         = 'maf'         #:str:  Type of flow ('maf' or 'realnvp')
         self.n_blocks          = 15            #:int:  Number of layers
@@ -26,15 +26,16 @@ class experiment:
         self.batch_norm_order  = True          #:bool: Uses decide if batch_norm is used
 
         # NOFAS parameters
-        self.run_nofas          = True  #:bool:   Activate NoFAS and the use of a surrogate model
-        self.log_interval       = 10    #:int:    How often the loss statistics are printed
-        self.calibrate_interval = 300   #:int:    How often the surrogate model is updated
-        self.true_data_num      = 2     #:double: Number of true model evaluated at each surrogate update
-        self.budget             = 216   #:int:    Maximum number of allowed evaluations of the true model
-        self.surr_pre_it        = 40000 #:int:    Number of pre-training iterations for surrogate model
-        self.surr_upd_it        = 6000  #:int:    Number of iterations for the surrogate model update
-        self.surr_folder        = "./"  #:str:    Folder where the surrogate model is stored
-        self.use_new_surr       = True #:bool:   Start by pre-training a new surrogate and ignore existing surrogates
+        self.run_nofas          = True        #:bool:   Activate NoFAS and the use of a surrogate model
+        self.surrogate_type     = 'surrogate' #:str:    Type of surrogate model ('surrogate' or 'discrepancy')
+        self.log_interval       = 10          #:int:    How often the loss statistics are printed
+        self.calibrate_interval = 300         #:int:    How often the surrogate model is updated
+        self.true_data_num      = 2           #:double: Number of true model evaluated at each surrogate update
+        self.budget             = 216         #:int:    Maximum number of allowed evaluations of the true model
+        self.surr_pre_it        = 40000       #:int:    Number of pre-training iterations for surrogate model
+        self.surr_upd_it        = 6000        #:int:    Number of iterations for the surrogate model update
+        self.surr_folder        = "./"        #:str:    Folder where the surrogate model is stored
+        self.use_new_surr       = True        #:bool:   Start by pre-training a new surrogate and ignore existing surrogates
 
         # OPTIMIZER parameters
         self.optimizer    = 'Adam'   #:str:    Type of optimizer used (either 'Adam' or 'RMSprop')
@@ -88,16 +89,25 @@ class experiment:
 
         # Check is surrogate exists
         if self.run_nofas:
-            if not os.path.exists(self.name + ".sur") or not os.path.exists(self.name + ".npz"):
+            if (self.surrogate_type == 'surrogate'):
+                not_found = not os.path.exists(self.name + ".sur") or not os.path.exists(self.name + ".npz")
+            elif(self.surrogate_type == 'discrepancy'):
+                not_found = not os.path.exists(self.name + ".sur")
+            else:
+                print('Invalid type of surrogate model')
+                exit(-1)
+            if(not_found):
                 print("Abort: NoFAS enabled, without surrogate files. \nPlease include the following surrogate files in root directory.\n{}.sur and {}.npz".format(self.name, self.name))
-                exit(0)
+                exit(-1)
+
         # setup file ops
         if not os.path.isdir(self.output_dir):
             os.makedirs(self.output_dir)
 
         # Save a copy of the data in the result folder so it is handy
         if hasattr(self.model,'data'):
-          np.savetxt(self.output_dir + '/' + self.name + '_data', self.model.data, newline="\n")
+            # np.savetxt(self.output_dir + '/' + self.name + '_data', self.model.data, newline="\n")
+            np.save(self.output_dir + '/' + self.name + '_data', self.model.data)
 
         # setup device
         torch.manual_seed(self.seed)
@@ -206,33 +216,49 @@ class experiment:
             print('--- Saving results at iteration '+str(iteration))
             x00 = nf.base_dist.sample([self.n_sample])
             xkk, _ = nf(x00)
-            # Save surrogate grid
-            if not(self.surrogate is None):
-              np.savetxt(self.output_dir + '/' + self.name + '_grid_' + str(iteration), self.surrogate.grid_record.clone().cpu().numpy(), newline="\n")
+            
+            # Save surrogate grid - there is no grid for discrepancy
+            if self.surrogate and (self.surrogate_type == 'surrogate'):
+                np.savetxt(self.output_dir + '/' + self.name + '_grid_' + str(iteration), self.surrogate.grid_record.clone().cpu().numpy(), newline="\n")
+            
             # Save log profile
             np.savetxt(self.output_dir + '/' + self.log_file, np.array(log), newline="\n")
+            
             # Save transformed samples          
             np.savetxt(self.output_dir + '/' + self.name + '_samples_' + str(iteration), xkk.data.clone().cpu().numpy(), newline="\n")
+            
             # Save samples in the original space
-            if not(self.transform is None):
-              xkk_samples = self.transform.forward(xkk).data.cpu().numpy()
-              np.savetxt(self.output_dir + '/' + self.name + '_params_' + str(iteration), xkk_samples, newline="\n")
+            if self.transform:
+                xkk_samples = self.transform.forward(xkk).data.cpu().numpy()
+                np.savetxt(self.output_dir + '/' + self.name + '_params_' + str(iteration), xkk_samples, newline="\n")
             else:
-              xkk_samples = xkk.data.cpu().numpy()
-              np.savetxt(self.output_dir + '/' + self.name + '_params_' + str(iteration), xkk_samples, newline="\n")
+                xkk_samples = xkk.data.cpu().numpy()
+                np.savetxt(self.output_dir + '/' + self.name + '_params_' + str(iteration), xkk_samples, newline="\n")
+            
             # Save marginal statistics
             np.savetxt(self.output_dir + '/' + self.name + '_marginal_stats_' + str(iteration), np.concatenate((xkk_samples.mean(axis=0).reshape(-1,1),xkk_samples.std(axis=0).reshape(-1,1)),axis=1), newline="\n")
+            
             # Save log density at the same samples
             np.savetxt(self.output_dir + '/' + self.name + '_logdensity_' + str(iteration), self.model_logdensity(xkk).data.cpu().numpy(), newline="\n")
+            
             # Save model outputs at the samples - If a model is defined
-            if not(self.transform is None):
-              stds = torch.abs(self.model.defOut).to(self.device) * self.model.stdRatio
-              o00 = torch.randn(x00.size(0), self.model.data.shape[0]).to(self.device)
-              noise = o00*stds.repeat(o00.size(0),1)
-              if self.surrogate:
-                np.savetxt(self.output_dir + '/' + self.name + '_outputs_' + str(iteration), (self.surrogate.forward(xkk) + noise).data.cpu().numpy(), newline="\n")
-              else:
-                np.savetxt(self.output_dir + '/' + self.name + '_outputs_' + str(iteration), (self.model.solve_t(self.transform.forward(xkk)) + noise).data.cpu().numpy(), newline="\n")
+            if self.transform:
+                stds = torch.abs(self.model.defOut).to(self.device) * self.model.stdRatio
+                o00 = torch.randn(x00.size(0), self.model.data.shape[0]).to(self.device)
+                noise = o00*stds.repeat(o00.size(0),1)
+                if(self.surrogate_type == 'surrogate'):
+                    if self.surrogate:
+                        np.savetxt(self.output_dir + '/' + self.name + '_outputs_' + str(iteration), (self.surrogate.forward(xkk) + noise).data.cpu().numpy(), newline="\n")
+                    else:
+                        np.savetxt(self.output_dir + '/' + self.name + '_outputs_' + str(iteration), (self.model.solve_t(self.transform.forward(xkk)) + noise).data.cpu().numpy(), newline="\n")
+                elif(self.surrogate_type == 'discrepancy'):
+                    # LF model, plus dicrepancy, plus noise
+                    model_out = self.model.solve_t(self.transform.forward(xkk)) + self.surrogate.forward(self.model.var_in) + noise
+                    np.savetxt(self.output_dir + '/' + self.name + '_outputs_' + str(iteration), model_out.data.cpu().numpy(), newline="\n")
+                else:
+                    print('Invalid type of surrogate model')
+                    exit(-1)
+
 
         if torch.any(torch.isnan(xk)):
             print("Error: samples xk are nan at iteration " + str(iteration))
@@ -241,12 +267,17 @@ class experiment:
             exit(-1)
 
         # updating surrogate model
-        if self.run_nofas and iteration % self.calibrate_interval == 0 and self.surrogate.grid_record.size(0) < self.budget:
-            xk0 = xk[:self.true_data_num, :].data.clone()            
-            # print("\n")
-            # print(list(self.surrogate.grid_record.size())[0])
-            # print(xk0)
-            self.surrogate.update(xk0, max_iters=self.surr_upd_it)
+        if (self.run_nofas and iteration % self.calibrate_interval == 0):
+            if(self.surrogate_type == 'surrogate'):
+                go_on = self.surrogate.grid_record.size(0) < self.budget
+            elif(self.surrogate_type == 'discrepancy'):
+                go_on = True
+            else:
+                print('Invalid type of surrogate model')
+                exit(-1)
+            if(go_on):    
+                xk0 = xk[:self.true_data_num, :].data.clone()            
+                self.surrogate.update(xk0, max_iters=self.surr_upd_it)
 
         # Free energy bound
         loss = (- torch.sum(sum_log_abs_det_jacobians, 1) - t * self.model_logdensity(xk)).mean()
