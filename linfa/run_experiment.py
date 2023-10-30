@@ -92,7 +92,9 @@ class experiment:
             if (self.surrogate_type == 'surrogate'):
                 not_found = not os.path.exists(self.name + ".sur") or not os.path.exists(self.name + ".npz")
             elif(self.surrogate_type == 'discrepancy'):
-                not_found = not os.path.exists(self.name + ".sur")
+                # !!! Temprary - CHECK!!!                
+                not_found = False
+                # not_found = not os.path.exists(self.name + ".sur")
             else:
                 print('Invalid type of surrogate model')
                 exit(-1)
@@ -107,7 +109,7 @@ class experiment:
         # Save a copy of the data in the result folder so it is handy
         if hasattr(self.model,'data'):
             # np.savetxt(self.output_dir + '/' + self.name + '_data', self.model.data, newline="\n")
-            np.save(self.output_dir + '/' + self.name + '_data', self.model.data)
+            np.savetxt(self.output_dir + '/' + self.name + '_data', self.model.data)
 
         # setup device
         torch.manual_seed(self.seed)
@@ -224,7 +226,7 @@ class experiment:
             # Save log profile
             np.savetxt(self.output_dir + '/' + self.log_file, np.array(log), newline="\n")
             
-            # Save transformed samples          
+            # Save normalized domain samples
             np.savetxt(self.output_dir + '/' + self.name + '_samples_' + str(iteration), xkk.data.clone().cpu().numpy(), newline="\n")
             
             # Save samples in the original space
@@ -243,18 +245,43 @@ class experiment:
             
             # Save model outputs at the samples - If a model is defined
             if self.transform:
-                stds = torch.abs(self.model.defOut).to(self.device) * self.model.stdRatio
-                o00 = torch.randn(x00.size(0), self.model.data.shape[0]).to(self.device)
-                noise = o00*stds.repeat(o00.size(0),1)
                 if(self.surrogate_type == 'surrogate'):
+                    # Define noise when we use NoFAS
+                    stds = torch.abs(self.model.defOut).to(self.device) * self.model.stdRatio
+                    o00 = torch.randn(x00.size(0), self.model.data.shape[0]).to(self.device)
+                    noise = o00*stds.repeat(o00.size(0),1)
+                    # Compute outputs
                     if self.surrogate:
                         np.savetxt(self.output_dir + '/' + self.name + '_outputs_' + str(iteration), (self.surrogate.forward(xkk) + noise).data.cpu().numpy(), newline="\n")
                     else:
                         np.savetxt(self.output_dir + '/' + self.name + '_outputs_' + str(iteration), (self.model.solve_t(self.transform.forward(xkk)) + noise).data.cpu().numpy(), newline="\n")
                 elif(self.surrogate_type == 'discrepancy'):
+                    # Define noise when we use NoFAS
+                    stds = torch.abs(self.model.defOut).to(self.device) * self.model.stdRatio
+                    # Noise is rows: number of T,P pairs, columns: number of batches
+                    o00 = torch.randn(self.model.data.shape[0], x00.size(0)).to(self.device)
+                    noise = o00*stds.repeat(1,x00.size(0))
+                    # Print lf outputs
+                    model_out = self.model.solve_t(self.transform.forward(xkk))
+                    np.savetxt(self.output_dir + '/' + self.name + '_outputs_lf_' + str(iteration), model_out.data.cpu().numpy(), newline="\n")                    
                     # LF model, plus dicrepancy, plus noise
-                    model_out = self.model.solve_t(self.transform.forward(xkk)) + self.surrogate.forward(self.model.var_in) + noise
-                    np.savetxt(self.output_dir + '/' + self.name + '_outputs_' + str(iteration), model_out.data.cpu().numpy(), newline="\n")
+                    if(self.surrogate is None):
+                        # This need to have as many rows as T,P
+                        # and as many columns as batches                        
+                        model_out_noise = model_out + noise
+                        np.savetxt(self.output_dir + '/' + self.name + '_outputs_lf+noise_' + str(iteration), model_out_noise.data.cpu().numpy(), newline="\n")
+                    else:
+                        discr_out = self.surrogate.forward(self.model.var_in)
+                        # CHECK COMPATIBILITY !!!
+                        model_out_lf_discr = model_out + discr_out                        
+                        model_out_lf_discr_noise = model_out + discr_out + noise
+                        # Save model outputs
+                        # For discrepancy we have
+                        # Rows: number of variable pairs
+                        # Columns: number of batches
+                        np.savetxt(self.output_dir + '/' + self.name + '_outputs_discr_' + str(iteration), discr_out.data.cpu().numpy(), newline="\n")
+                        np.savetxt(self.output_dir + '/' + self.name + '_outputs_lf+discr_' + str(iteration), model_out_lf_discr.data.cpu().numpy(), newline="\n")
+                        np.savetxt(self.output_dir + '/' + self.name + '_outputs_lf+discr+noise_' + str(iteration), model_out_lf_discr_noise.data.cpu().numpy(), newline="\n")
                 else:
                     print('Invalid type of surrogate model')
                     exit(-1)
@@ -276,8 +303,17 @@ class experiment:
                 print('Invalid type of surrogate model')
                 exit(-1)
             if(go_on):    
-                xk0 = xk[:self.true_data_num, :].data.clone()            
-                self.surrogate.update(xk0, max_iters=self.surr_upd_it)
+                if(self.surrogate_type == 'surrogate'):
+                    xk0 = xk[:self.true_data_num, :].data.clone()
+                    self.surrogate.update(xk0, max_iters=self.surr_upd_it)
+                elif(self.surrogate_type == 'discrepancy'):
+                    xk0 = xk.data.clone()
+                    self.surrogate.update(xk0, max_iters=self.surr_upd_it, reg=False, reg_penalty=0.0001)
+                else:
+                    print('Invalid type of surrogate model')
+                    exit(-1)    
+                # Update Surrogate Model                
+                
 
         # Free energy bound
         loss = (- torch.sum(sum_log_abs_det_jacobians, 1) - t * self.model_logdensity(xk)).mean()

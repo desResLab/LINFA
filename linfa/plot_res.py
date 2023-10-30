@@ -20,7 +20,8 @@ def plot_log(log_file,out_dir,fig_format='png',use_dark_mode=False):
 
   # loss profile
   plt.figure(figsize=(2,2))
-  plt.semilogy(log_data[:,1],log_data[:,2],'b-')
+  # plt.semilogy(log_data[:,1],log_data[:,2],'b-')
+  plt.plot(log_data[:,1],log_data[:,2],'b-')
   plt.xlabel('Iterations',fontsize=fs)
   plt.ylabel('log loss',fontsize=fs)
   plt.gca().tick_params(axis='both', labelsize=fs)
@@ -41,6 +42,7 @@ def plot_params(param_data,LL_data,idx1,idx2,out_dir,out_info,fig_format='png',u
   # Plot figure
   plt.figure(figsize=(3,2))
   plt.scatter(param_data[:,idx1],param_data[:,idx2],s=1.5,lw=0,marker='o',c=np.exp(dent_data))
+  # plt.scatter(param_data[:,idx1],param_data[:,idx2],s=1.5,lw=0,marker='o')
   plt.colorbar()
   plt.gca().xaxis.set_major_formatter(mtick.FormatStrFormatter('%.1f'))
   plt.gca().yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1e'))

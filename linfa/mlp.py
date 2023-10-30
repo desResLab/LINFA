@@ -5,7 +5,7 @@ import torch.nn.functional as F
 class FNN(nn.Module):
     """Fully Connected Neural Network"""
 
-    def __init__(self, input_size, output_size, arch=None, activation='relu', device='cpu'):
+    def __init__(self, input_size, output_size, arch=None, activation='relu', device='cpu',init_zero=False):
         """
         Args:
             input_size (int): Input size for FNN

@@ -1,6 +1,31 @@
 import math
 import torch
 import numpy as np
+from functools import partial
+
+# Identity
+def id_fun(x):
+    return x
+def id_jac(x):
+    return torch.zeros_like(x)
+
+# Tanh
+def tanh_fun(x,m1,t1,m2,t2):
+    return torch.tanh((x - m1) / t1 * 3.0) * t2 + m2
+def tanh_jac(x,m1,t1,m2,t2):
+    return torch.log(1.0 - torch.tanh((x - m1) / t1 * 3.0) ** 2) + np.log(t2) + np.log(3.0) - np.log(t1)
+
+# Linear
+def lin_fun(x,a,b,c,d):
+    return  (x - a) / (b - a) * (d - c) + c
+def lin_jac(x,a,b,c,d):
+    return torch.tensor([np.log(d - c) - np.log(b - a)]).repeat(x.size(0), 1)
+
+# Exponential
+def exp_fun(x,a,b,c,d):
+    return torch.exp((x - a) / (b - a) * (np.log(d) - np.log(c)) + np.log(c))
+def exp_jac(x,a,b,c,d):
+    return (x - a) / (b - a) * (np.log(d) - np.log(c)) + np.log(c) + np.log(np.log(d) - np.log(c)) - np.log(b - a)
 
 class Transformation(torch.nn.Module):
 
@@ -11,21 +36,21 @@ class Transformation(torch.nn.Module):
         self.n = len(func_info)
         for func, a, b, c, d in func_info:
             if func == "identity":
-                self.funcs.append(lambda x: x)
-                self.log_jacob.append(lambda x: torch.zeros_like(x))
+                self.funcs.append(id_fun)
+                self.log_jacob.append(id_jac)
             elif func == "tanh":
                 m1 = (a + b) / 2
                 t1 = (b - a) / 2
                 m2 = (c + d) / 2
                 t2 = (d - c) / 2
-                self.funcs.append(lambda x: torch.tanh((x - m1) / (b - a) * 6.0) * t2 + m2)
-                self.log_jacob.append(lambda x: torch.log(1.0 - torch.tanh((x - m1) / (b - a) * 6.0) ** 2) + np.log(t2) + np.log(3.0) - np.log(t1))
+                self.funcs.append(partial(tanh_fun,m1=m1,t1=t1,m2=m2,t2=t2))
+                self.log_jacob.append(partial(tanh_jac,m1=m1,t1=t1,m2=m2,t2=t2))
             elif func == "linear":
-                self.funcs.append(lambda x: (x - a) / (b - a) * (d - c) + c)
-                self.log_jacob.append(lambda x: torch.tensor([np.log(d - c) - np.log(b - a)]).repeat(x.size(0), 1))
+                self.funcs.append(partial(lin_fun,a=a,b=b,c=c,d=d))
+                self.log_jacob.append(partial(lin_jac,a=a,b=b,c=c,d=d))
             elif func == "exp":
-                self.funcs.append(lambda x: torch.exp((x - a) / (b - a) * (np.log(d) - np.log(c)) + np.log(c)))
-                self.log_jacob.append(lambda x: (x - a) / (b - a) * (np.log(d) - np.log(c)) + np.log(c) + np.log(np.log(d) - np.log(c)) - np.log(b - a))
+                self.funcs.append(partial(exp_fun,a=a,b=b,c=c,d=d))
+                self.log_jacob.append(partial(exp_jac,a=a,b=b,c=c,d=d))
     
     def forward(self, z):
         """

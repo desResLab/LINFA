@@ -28,6 +28,7 @@ class Discrepancy(object):
         self.output_size = output_size
         self.model_name = model_name
         self.model_folder = model_folder
+        self.is_trained = False
 
         # Assign LF model
         self.lf_model = lf_model
@@ -46,7 +47,7 @@ class Discrepancy(object):
         self.var_out_std = torch.std(var_grid_out)
 
         # Create surrogate
-        self.surrogate = FNN(input_size, output_size, arch=dnn_arch, device=self.device) if surrogate is None else surrogate
+        self.surrogate = FNN(input_size, output_size, arch=dnn_arch, device=self.device, init_zero=True) if surrogate is None else surrogate
         
     def surrogate_save(self):
         """Save surrogate model to [self.name].sur and [self.name].npz
@@ -67,7 +68,7 @@ class Discrepancy(object):
         # Read back the state dictionary from file
         self.surrogate.load_state_dict(torch.load(self.model_folder + self.model_name + '.sur'))
 
-    def update(self, batch_x, max_iters=10000, lr=0.01, lr_exp=0.999, record_interval=500, store=True, reg=False):
+    def update(self, batch_x, max_iters=10000, lr=0.01, lr_exp=0.999, record_interval=50, store=True, reg=False, reg_penalty=0.0001):
         """Train surrogate model with pre-grid.
 
         """
@@ -75,9 +76,20 @@ class Discrepancy(object):
         print('--- Training model discrepancy')
         print('')
 
+        self.is_trained = True
+
+        # LF model output at the current batch
+        y = self.lf_model(batch_x) 
+
         # Standardize inputs and outputs
         var_grid = (self.var_grid_in - self.var_in_avg) / self.var_in_std
-        var_out = (self.var_grid_out - self.var_out_avg) / self.var_out_std
+        # The output is the discrepancy
+        var_out = self.var_grid_out - torch.mean(y,dim=1).unsqueeze(1)
+        # Update output stats
+        # self.var_out_avg = torch.mean(var_out)
+        # self.var_out_std = torch.std(var_out)
+        # Rescale outputs
+        # var_out = (var_out - self.var_out_avg) / self.var_out_std
 
         # Set optimizer and scheduler
         optimizer = torch.optim.RMSprop(self.surrogate.parameters(), lr=lr)
@@ -86,22 +98,21 @@ class Discrepancy(object):
         for i in range(max_iters):
             # Set surrogate in training mode
             self.surrogate.train()          
-            # Surrogate returns a table with rows as batches and columns as variables considered
-            y = self.lf_model(batch_x) 
+            # Surrogate returns a table with rows as batches and columns as variables considered            
             disc = self.surrogate(var_grid)
 
             # Compute loss averaged over batches/variables
             # Mean over the columns (batches)
             # Mean over the rows (variables)
             # Also we need to account for the number of repeated observations
-            loss = torch.tensor(0.0)
+            loss = torch.tensor(0.0)            
             # Loop over the number of observations
             for loopA in range(var_out.size(1)):
-                loss += torch.mean(torch.mean((y + disc - var_out[:,loopA].unsqueeze(1)) ** 2,dim=1),dim=0)
+                loss += torch.sum((disc.flatten() - var_out[:,loopA]) ** 2)
                 if reg:
                     reg_loss = 0
                     for param in self.surrogate.parameters():
-                        reg_loss += torch.abs(param).sum() * 0.0001
+                        reg_loss += torch.abs(param).sum() * reg_penalty
                     loss += reg_loss
             optimizer.zero_grad()
             loss.backward()
@@ -129,7 +140,14 @@ class Discrepancy(object):
             Value of the surrogate at x.
 
         """
-        return self.surrogate((var - self.var_in_avg) / self.var_in_std) * self.var_out_std + self.var_out_avg
+        # res = self.surrogate((var - self.var_in_avg) / self.var_in_std) * self.var_out_std + self.var_out_avg
+        res = self.surrogate((var - self.var_in_avg) / self.var_in_std)
+        # res = self.surrogate(var)
+        if not(self.is_trained):
+            zero_res = torch.zeros_like(res)
+            return zero_res
+        else:
+            return res
 
 def test_surrogate():
     

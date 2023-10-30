@@ -16,10 +16,10 @@ class PhysChem(object):
         ## model constants
         self.RConst = torch.tensor(8.314) # universal gas constant (J/ mol/ K)
         self.data = None # dataset of model
-        self.stdRatio = 0.05 # standard deviation ratio
-        self.defOut = self.solve_lf(self.defParams)
+        self.stdRatio = 0.001 # standard deviation ratio
+        self.defOut = self.solve_t(self.defParams)
         
-    def solve_lf(self, cal_inputs):
+    def solve_t(self, cal_inputs):
 
         num_batch = len(cal_inputs)
         num_vars = len(self.var_in)
@@ -44,24 +44,33 @@ class PhysChem(object):
         return cov_frac
 
     def solve_true(self, cal_inputs):
-        
+
+        num_batch = len(cal_inputs)
+        num_vars = len(self.var_in)
+
         # unpack variable input
         T, P = torch.chunk(self.var_in, chunks = 2, dim = 1)
+        T = T.repeat(1, num_batch)
+        P = P.repeat(1, num_batch)
 
         # unpack ground truth calibration input (adsorption site 1)
         p01Const, e1Const = torch.chunk(cal_inputs, chunks = 2, dim = 1)
+        p01Const = p01Const.repeat(1, num_vars).t()
+        e1Const  = e1Const.repeat(1, num_vars).t()
 
         # specify adsorption site two parameters
-        p02Const, e2Const = torch.tensor(5000.0), torch.tensor(-22000.0)
+        p02Const, e2Const, lambda1Const, lambda2Const = torch.tensor(5000.0), torch.tensor(-22000.0), torch.tensor(1.0), torch.tensor(0.5)
+        p02Const = p02Const.repeat(1, num_vars).t()
+        e2Const  = e2Const.repeat(1, num_vars).t()
 
         # compute equilibrium constant of site one
         k1Const = 1.0/p01Const * torch.exp(-e1Const / self.RConst / T)
 
         # compute equilibrium constant of site two
-        k2Const = 1.0/p02Const * torch.exp(-e2Const/ self.RConst/T)
+        k2Const = 1.0/p02Const * torch.exp(-e2Const / self.RConst / T)
 
         # compute surface coverage fraction for two adsorption sites with different equilibrium conditions
-        cov_frac = k1Const*P/(1 + k1Const*P) + k2Const*P/(1 + k2Const*P)        
+        cov_frac = lambda1Const * (k1Const*P/(1 + k1Const*P)) + lambda2Const * (k2Const*P/(1 + k2Const*P))
 
         # Return
         return cov_frac
@@ -73,7 +82,7 @@ class PhysChem(object):
         if(use_true_model):
             def_out = self.solve_true(self.defParams)
         else:
-            def_out = self.solve_lf(self.defParams)
+            def_out = self.solve_t(self.defParams)
         
         # get standard deviation
         stdDev = self.stdRatio * torch.abs(def_out)
@@ -82,7 +91,8 @@ class PhysChem(object):
         coverage = def_out.repeat(1,num_observations)
 
         for loopA in range(num_observations):
-            coverage[:,loopA] = coverage[:,loopA] + (stdDev * torch.normal(torch.tensor(0.0), torch.tensor(1.0),size=(len(coverage),1))).flatten()
+            noise = torch.randn((len(coverage),1))*stdDev
+            coverage[:,loopA] = coverage[:,loopA] + noise.flatten()
         
         if store:
 
