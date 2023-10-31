@@ -308,7 +308,7 @@ class experiment:
                     self.surrogate.update(xk0, max_iters=self.surr_upd_it)
                 elif(self.surrogate_type == 'discrepancy'):
                     xk0 = xk.data.clone()
-                    self.surrogate.update(xk0, max_iters=self.surr_upd_it, reg=False, reg_penalty=0.0001)
+                    self.surrogate.update(self.transform.forward(xk0), max_iters=self.surr_upd_it, reg=False, reg_penalty=0.0001)
                 else:
                     print('Invalid type of surrogate model')
                     exit(-1)    

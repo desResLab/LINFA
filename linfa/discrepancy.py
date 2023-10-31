@@ -126,7 +126,7 @@ class Discrepancy(object):
                     print('DISC: it: %7d | loss: %8.3e' % (i, loss))
         print('')
         print('--- Surrogate model pre-train complete')
-        print('')
+        print('')        
         if store:
             self.surrogate_save()
 
