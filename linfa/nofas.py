@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
+from mlp import FNN
 from os import path
 
 torch.set_default_tensor_type(torch.DoubleTensor)
