@@ -19,7 +19,7 @@ classifiers = [
 keywords = ["variational inference", "normalizig flow", "adaptive annealing", "physics-based modeling"]
 dependencies = [
     "torch==1.13.1",
-    "numpy==1.19.5",
+    "numpy==1.22",
     "matplotlib==3.5.3",
     'tomli; python_version < "3.11"',    
 ]
