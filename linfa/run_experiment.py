@@ -303,6 +303,7 @@ class experiment:
                 print('Invalid type of surrogate model')
                 exit(-1)
             if(go_on):    
+                # Update Surrogate Model
                 if(self.surrogate_type == 'surrogate'):
                     xk0 = xk[:self.true_data_num, :].data.clone()
                     self.surrogate.update(xk0, max_iters=self.surr_upd_it)
@@ -312,8 +313,6 @@ class experiment:
                 else:
                     print('Invalid type of surrogate model')
                     exit(-1)    
-                # Update Surrogate Model                
-                
 
         # Free energy bound
         loss = (- torch.sum(sum_log_abs_det_jacobians, 1) - t * self.model_logdensity(xk)).mean()
