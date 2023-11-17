@@ -1,8 +1,3 @@
-#NOTES
-#did not change any of the NOFAS parameters to work with multifidelity
-#left optimizer and learning rate scheduler the same for both model optimizations, could be adjusted
-#did not change annealing parameters for multifidelity since the idea is we will only apply annealing to low fidelity model
-
 import os
 import torch
 import numpy as np
@@ -20,65 +15,66 @@ class experiment_mf:
     def __init__(self):
 
         # NF ARCHITECTURE parameters
-        self.name              = "Experiment"
-        self.input_size        = 3             
-        self.flow_type         = 'maf'         
-        self.n_blocks_low      = 15     #change n_blocks to n_blocks_low for the low fidelity model
-        self.n_blocks_high     = 20     #add n_blocks_high for the high fidelity model (must be greater than n_blocks_low)
-        self.hidden_size       = 100           
-        self.n_hidden          = 1             
-        self.activation_fn     = 'relu'        
-        self.input_order       = 'sequential'  
-        self.batch_norm_order  = True          
+        self.name              = 'Experiment'
+        self.input_size        = 3             #:int:  Number of input parameters
+        self.flow_type         = 'maf'         #:str:  Type of flow ('maf' or 'realnvp')
+        self.n_blocks_lf       = 15            #:int:  Number of layers for low fidelity model
+        self.n_blocks_hf       = 20            #:int:  Number of layers for high fidelity model
+        self.hidden_size       = 100           #:int:  Hidden layer size for MADE in each layer
+        self.n_hidden          = 1             #:int:  Number of hidden layers in each MADE
+        self.activation_fn     = 'relu'        #:str:  Actication function used (either 'relu','tanh' or 'sigmoid')
+        self.input_order       = 'sequential'  #:str:  Input order for create_mask (either 'sequential' or 'random')
+        self.batch_norm_order  = True          #:bool: Uses decide if batch_norm is used
 
         # NOFAS parameters
-        self.run_nofas          = True  
-        self.log_interval       = 10    
-        self.calibrate_interval = 300   
-        self.true_data_num      = 2     
-        self.budget             = 216   
-        self.surr_pre_it        = 40000 
-        self.surr_upd_it        = 6000  
-        self.surr_folder        = "./"  
-        self.use_new_surr       = True  
+        self.run_nofas          = True        #:bool:   Activate NoFAS and the use of a surrogate model
+        self.surrogate_type     = 'surrogate' #:str:    Type of surrogate model ('surrogate' or 'discrepancy')
+        self.log_interval       = 10          #:int:    How often the loss statistics are printed
+        self.calibrate_interval = 300         #:int:    How often the surrogate model is updated
+        self.true_data_num      = 2           #:double: Number of true model evaluated at each surrogate update
+        self.budget             = 216         #:int:    Maximum number of allowed evaluations of the true model
+        self.surr_pre_it        = 40000       #:int:    Number of pre-training iterations for surrogate model
+        self.surr_upd_it        = 6000        #:int:    Number of iterations for the surrogate model update
+        self.surr_folder        = "./"        #:str:    Folder where the surrogate model is stored
+        self.use_new_surr       = True        #:bool:   Start by pre-training a new surrogate and ignore existing surrogates
 
         # OPTIMIZER parameters
-        self.optimizer       = 'Adam'   
-        self.lr_low          = 0.003   #change lr to lr_low for the low fidelity model optimization
-        self.lr_high         = 0.003   #add lr_high for the high fidelity model optimization
-        self.lr_decay_low    = 0.9999  #change lr_decay to lr_decay_low for the low fidelity model optimization
-        self.lr_decay_high   = 0.9999  #add lr_decay_high for the high fidelity model optimization
-        self.lr_scheduler    = 'StepLR' 
-        self.lr_step_low     = 1000    #change lr_step to lr_step_low for the low fidelity model optimization
-        self.lr_step_high    = 1000    #add lr_step_high for the high fidelity model optimization  
-        self.batch_size_low  = 500     #change batch_size to batch_size_low for the low fidelity model optimization
-        self.batch_size_high = 500     #add batch_size_high for the high fidelity model optimization        
-        self.n_iter_low      = 25001   #change n_iter to n_iter_low for the low fidelity model optimization
-        self.n_iter_high     = 25001   #add n_iter_high for the high fidelity model optimization
+        self.optimizer     = 'Adam'   #:str:    Type of optimizer used (either 'Adam' or 'RMSprop')
+        self.lr_lf         = 0.003    #:double: Learning rate for low fidelity model
+        self.lr_hf         = 0.003    #:double: Learning rate for high fidelity model
+        self.lr_decay_lf   = 0.9999   #:double: Learning rate decay for low fidelity model
+        self.lr_decay_hf   = 0.9999   #:double: Learning rate decay for high fidelity model
+        self.lr_scheduler  = 'StepLR' #:str:    type of lr scheduler used (either 'StepLR' or 'ExponentialLR')
+        self.lr_step_lf    = 1000     #:int:    Number of steps for StepLR learning rate scheduler for low fidelity model
+        self.lr_step_hf    = 1000     #:int:    Number of steps for StepLR learning rate scheduler for high fidelity model
+        self.batch_size_lf = 500      #:int:    Number of batch samples generated at every iteration from the base distribution for low fidelity model
+        self.batch_size_hf = 500      #:int:    Number of batch samples generated at every iteration from the base distribution for high fidelity model
+        self.n_iter_lf     = 25001    #:int:    Total number of iterations for low fidelity model
+        self.n_iter_hf     = 25001    #:int:    Total number of iterations for high fidelity model
 
         # ANNEALING parameters
-        self.annealing     = True     
-        self.scheduler     = 'AdaAnn' 
+        self.annealing    = True     #:bool:   Flag to activate an annealing scheduler
+        self.scheduler    = 'AdaAnn' #:str:    Type of annealing scheduler (either 'AdaAnn' or 'Linear')
         # AdaAnn
-        self.tol           = 0.001    
-        self.t0            = 0.01     
-        self.N             = 100      
-        self.N_1           = 1000     
-        self.T_0           = 500      
-        self.T             = 5        
-        self.T_1           = 5001     
-        self.M             = 1000             
+        self.tol          = 0.001    #:double: KL tolerance for AdaAnn scheduler
+        self.t0           = 0.01     #:double: Initial value for the inverse temperature
+        self.N            = 100      #:int:    Number of batch samples generated for $t<1$ at each iteration
+        self.N_1          = 1000     #:int:    number of batch samples generated for $t=1$ at each iteration
+        self.T_0          = 500      #:int:    Number of parameter updates at the initial inverse temperature $t_0$
+        self.T            = 5        #:int:    Number of parameter updates for each temperature for $t<1$
+        self.T_1          = 5001     #:int:    Number of parameter updates at $t=1$
+        self.M            = 1000     #:int:    Number of Monte Carlo  samples use to compute the denominator of the AdaAnn formula        
         # Linear scheduler
-        self.linear_step  = 0.0001   
+        self.linear_step  = 0.0001   #:double: Fixed step size for the Linear annealing scheduler
 
         # OUTPUT parameters
-        self.output_dir          = './results/' + self.name 
-        self.log_file            = 'log.txt'                
-        self.seed                = 35435                    
-        self.n_sample            = 5000                     
-        self.save_interval       = 200                      
-        self.store_nf_interval   = 1000                     
-        self.store_surr_interval = None                     
+        self.output_dir          = './results/' + self.name #:str: Name of the output folder
+        self.log_file            = 'log.txt'                #:str: File name where the log profile stats are written
+        self.seed                = 35435                    #:int: Random seed
+        self.n_sample            = 5000                     #:int: Number of batch samples used to print results at save_interval
+        self.save_interval       = 200                      #:int: Save interval for all results
+        self.store_nf_interval   = 1000                     #:int: Save interval for normalizing flow parameters
+        self.store_surr_interval = None                     #:int: Save interval for surrogate model (None for no save)
 
         # DEVICE parameters
         self.no_cuda = True #:bool: Flag to use CPU
@@ -87,33 +83,47 @@ class experiment_mf:
         self.device = torch.device('cuda:0' if torch.cuda.is_available() and not self.no_cuda else 'cpu')
 
         # Local pointer to the main components for inference
-        self.transform             = None
-        self.model_low             = None #change model to model_low for low fidelity model
-        self.model_high            = None #add model_high for high fidelity model
-        self.model_logdensity_low  = None #change model_logdensity to model_logdensity_low for low fidelity model
-        self.model_logdensity_high = None #add model_logdensity_high for high fidelity model
-        self.surrogate             = None
+        self.transform           = None  #needs to be updated for surrogate saving
+        self.transform_lf        = None
+        self.transform_hf        = None
+        self.model_lf            = None
+        self.model_hf            = None
+        self.model_logdensity_lf = None
+        self.model_logdensity_hf = None
+        self.surrogate           = None
 
-        
     def run(self):
-        """Runs instance of inference problem        
+        """Runs instance of inference inference problem        
 
         """
 
         # Check is surrogate exists
         if self.run_nofas:
-            if not os.path.exists(self.name + ".sur") or not os.path.exists(self.name + ".npz"):
+            if (self.surrogate_type == 'surrogate'):
+                not_found = not os.path.exists(self.name + ".sur") or not os.path.exists(self.name + ".npz")
+            elif(self.surrogate_type == 'discrepancy'):
+                # !!! Temprary - CHECK!!!                
+                not_found = False
+                # not_found = not os.path.exists(self.name + ".sur")
+            else:
+                print('Invalid type of surrogate model')
+                exit(-1)
+            if(not_found):
                 print("Abort: NoFAS enabled, without surrogate files. \nPlease include the following surrogate files in root directory.\n{}.sur and {}.npz".format(self.name, self.name))
-                exit(0)
+                exit(-1)
+
         # setup file ops
         if not os.path.isdir(self.output_dir):
             os.makedirs(self.output_dir)
 
         # Save a copy of the data in the result folder so it is handy
-        if hasattr(self.model_low,'data'):
-          np.savetxt(self.output_dir + '/' + self.name + '_data', self.model.data, newline="\n") #change to save low fidelity data
-        if hasattr(self.model_high,'data'):
-          np.savetxt(self.output_dir + '/' + self.name + '_data', self.model.data, newline="\n") #add save high fidelity data
+        if hasattr(self.model_lf,'data'):
+            # np.savetxt(self.output_dir + '/' + self.name + '_data', self.model.data, newline="\n")
+            np.savetxt(self.output_dir + '/' + self.name + '_data_lf', self.model_lf.data)
+        if hasattr(self.model_hf,'data'):
+            # np.savetxt(self.output_dir + '/' + self.name + '_data', self.model.data, newline="\n")
+            np.savetxt(self.output_dir + '/' + self.name + '_data_hf', self.model_hf.data)    
+        
 
         # setup device
         torch.manual_seed(self.seed)
@@ -123,39 +133,28 @@ class experiment_mf:
         print('--- Running on device: '+ str(self.device))
         print('')
 
-        #CHANGE: set up the first normalizing flow for the low fidelity model optimization here
-        # the only change here is the n_blocks_low so the number of layers differ between nf_low and nf_high
-        # the remaining parameters need to be the same so the nf_low and nf_high have the same structure
-        
-        # model
+        # model for low fidelity
         if self.flow_type == 'maf':
-            nf_low = MAF(self.n_blocks_low, self.input_size, self.hidden_size, self.n_hidden, None,
+            nf_lf = MAF(self.n_blocks_lf, self.input_size, self.hidden_size, self.n_hidden, None,
                      self.activation_fn, self.input_order, batch_norm=self.batch_norm_order)
         elif self.flow_type == 'realnvp':  # Under construction
-            nf_low = RealNVP(self.n_blocks_low, self.input_size, self.hidden_size, self.n_hidden, None,
+            nf_lf = RealNVP(self.n_blocks_lf, self.input_size, self.hidden_size, self.n_hidden, None,
                          batch_norm=self.batch_norm_order)
         else:
             raise ValueError('Unrecognized model.')
 
-        
-        #CHANGE: set the optimizer and learning rate scheduler for the low fidelity model
-        # set nf to nf_low
-        # set lr to lr_low
-        # set lr_step to lr_step_low
-        # set lr_decay to lr_decay_low
-        
-        nf_low = nf_low.to(self.device)
+        nf_lf = nf_lf.to(self.device)
         if self.optimizer == 'Adam':
-            optimizer = torch.optim.Adam(nf_low.parameters(), lr=self.lr_low)
+            optimizer = torch.optim.Adam(nf_lf.parameters(), lr=self.lr_lf)
         elif self.optimizer == 'RMSprop':
-            optimizer = torch.optim.RMSprop(nf_low.parameters(), lr=self.lr_low)
+            optimizer = torch.optim.RMSprop(nf_lf.parameters(), lr=self.lr_lf)
         else:
             raise ValueError('Unrecognized optimizer.')
 
         if self.lr_scheduler == 'StepLR':
-            scheduler = torch.optim.lr_scheduler.StepLR(optimizer, self.lr_step_low, self.lr_decay_low)
+            scheduler = torch.optim.lr_scheduler.StepLR(optimizer, self.lr_step_lf, self.lr_decay_lf)
         elif self.lr_scheduler == 'ExponentialLR':
-            scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, self.lr_decay_low)
+            scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, self.lr_decay_lf)
         else:
             raise ValueError('Unrecognized learning rate scheduler.')
 
@@ -169,26 +168,26 @@ class experiment_mf:
             while t < 1:
                 t = min(1, t + dt)
                 tvals = np.concatenate([tvals, np.array([t])])
-                self.n_iter_low = self.T
-                self.batch_size_low = self.N
+                self.n_iter_lf = self.T
+                self.batch_size_lf = self.N
                 
                 if t == self.t0:
-                    self.n_iter_low = self.T_0
+                    self.n_iter_lf = self.T_0
                 if t == 1:
-                    self.batch_size_low = self.N_1
-                    self.n_iter_low = self.T_1
+                    self.batch_size_lf = self.N_1
+                    self.n_iter_lf = self.T_1
 
-                while i < prev_i + self.n_iter_low:
-                    self.train(nf_low, optimizer, i, loglist, low_fidelity=True, sampling=True, t=t) #added low_fidelity flag
+                while i < prev_i + self.n_iter_lf:
+                    self.train(nf_lf, optimizer, i, loglist, lf = True, sampling=True, t=t)
                     if t == 1:
                         scheduler.step()
                     i += 1
                 prev_i = i
 
                 if self.scheduler == 'AdaAnn':
-                    z0 = nf_low.base_dist.sample([self.M])
-                    zk, _ = nf_low(z0)
-                    log_qk = self.model_logdensity_low(zk)
+                    z0 = nf_lf.base_dist.sample([self.M])
+                    zk, _ = nf_lf(z0)
+                    log_qk = self.model_logdensity_lf(zk)
                     dt = self.tol / torch.sqrt(log_qk.var())
                     dt = dt.detach()# .numpy()
 
@@ -196,106 +195,80 @@ class experiment_mf:
                     dt = self.linear_step
         else:
             loglist = []
-            for i in range(1, self.n_iter_low+1):                
-                self.train(nf_low, optimizer, i, loglist, low_fidelity=True, sampling=True)
+            for i in range(1, self.n_iter_lf+1):                
+                self.train(nf_lf, optimizer, i, loglist, lf = True, sampling=True)
                 scheduler.step()
-
                 
-        #ADD: set up the second normalizing flow for the high fidelity model optimization here
-        # the only change here is the n_blocks_high
-        
-        # model
+                
+        # model for high fidelity
         if self.flow_type == 'maf':
-            nf_high = MAF(self.n_blocks_high, self.input_size, self.hidden_size, self.n_hidden, None,
+            nf_hf = MAF(self.n_blocks_hf, self.input_size, self.hidden_size, self.n_hidden, None,
                      self.activation_fn, self.input_order, batch_norm=self.batch_norm_order)
         elif self.flow_type == 'realnvp':  # Under construction
-            nf_high = RealNVP(self.n_blocks_high, self.input_size, self.hidden_size, self.n_hidden, None,
+            nf_hf = RealNVP(self.n_blocks_hf, self.input_size, self.hidden_size, self.n_hidden, None,
                          batch_norm=self.batch_norm_order)
         else:
             raise ValueError('Unrecognized model.')
 
-        
-        #CHANGE: set the optimizer and learning rate scheduler for the high fidelity model
-        # reinitializing the optimizer and scheduler, we can rename instead
-        # set nf to nf_high
-        # set lr to lr_high
-        # set lr_step to lr_step_high
-        # set lr_decay to lr_decay_high
-        
-        nf_high = nf_high.to(self.device)
+        nf_hf = nf_hf.to(self.device)
         if self.optimizer == 'Adam':
-            optimizer = torch.optim.Adam(nf_high.parameters(), lr=self.lr_high)
+            optimizer = torch.optim.Adam(nf_hf.parameters(), lr=self.lr_hf)
         elif self.optimizer == 'RMSprop':
-            optimizer = torch.optim.RMSprop(nf_high.parameters(), lr=self.lr_high)
+            optimizer = torch.optim.RMSprop(nf_hf.parameters(), lr=self.lr_hf)
         else:
             raise ValueError('Unrecognized optimizer.')
 
         if self.lr_scheduler == 'StepLR':
-            scheduler = torch.optim.lr_scheduler.StepLR(optimizer, self.lr_step_high, self.lr_decay_high)
+            scheduler = torch.optim.lr_scheduler.StepLR(optimizer, self.lr_step_hf, self.lr_decay_hf)
         elif self.lr_scheduler == 'ExponentialLR':
-            scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, self.lr_decay_high)
+            scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, self.lr_decay_hf)
         else:
-            raise ValueError('Unrecognized learning rate scheduler.')
+            raise ValueError('Unrecognized learning rate scheduler.')   
 
         
-        #CHANGE: compute the statistics for the batch norm layers
+        # update state dictionary for high fidelity model
+        state_dict = nf_hf.state_dict()
+        state_dict.update(nf_lf.state_dict())
+        
+        
+        if self.batch_norm_order:
+            
+            # compute means and stds for batch norm
+            x00 = nf_lf.base_dist.sample([10000])
+            xkk, _ = nf_lf(x00)
+
+            mean_vals = xkk.mean(dim=0)
+            log_std_vals = torch.log(xkk.std(dim=0))
+            
+            # update the batch norm layers
+            for j in range(2*self.n_blocks_lf+1, 2*self.n_blocks_hf):
                 
-        x00 = nf_low.base_dist.sample([10000])
-        xkk, _ = nf_low(x00)
+                if j % 2 == 1:
+                    state_dict['net.' + str(j) + '.log_gamma'] = log_std_vals
+                    state_dict['net.' + str(j) + '.beta'] = mean_vals
+                    
+                    
+        # update the high fidelity state dictionary and freeze low fidelity parameters
+        nf_hf.load_state_dict(state_dict)
         
-        mean_vals = xkk.mean(dim=0)
-        log_std_vals = torch.log(xkk.std(dim=0)) #log since the batch norm uses log of standard deviation
-        
-        
-        #CHANGE: update the state dictionary for the high fidelity model with the parameters from the low fidelity model
-        
-        state_dict = nf_high.state_dict()
-        state_dict.update(nf_low.state_dict())
-        
-        
-        #CHANGE: update the remaining batch norm layers in the high fidelity model using the computed statistics above
-        # the batch norm layers fall on the odd layers of the realnvp framework
-        # this is only currently working for realnvp, I still need to look into the maf framework
-        
-        for j in range(2*self.n_blocks_low + 1, 2*self.n_blocks_high):
-        
-            if j % 2 == 1:
-                state_dict['net.' + str(j) + '.log_gamma'] = log_std_vals
-                state_dict['net.' + str(j) + '.beta'] = mean_vals
-
-        
-        #CHANGE: update the high fideltiy model with the updated parameters
-        nf_high.load_state_dict(state_dict)
-        
-        
-        #CHANGE: determine the length of the parameter list in low fidelity model
-        length = len(torch.nn.ParameterList(nf_low.parameters()))
-        
-        
-        #CHANGE: freeze the layers corresponding to the low fidelity model in the new high fidelity model
-        # do this by changing the requires_grad parameter to False 
+        length = len(torch.nn.ParameterList(nf_lf.parameters()))
         
         j = 0
-        for param in nf_high.parameters():
+        for param in nf_hf.parameters():
             param.requires_grad = False
             j+=1
             if j == length:
                 break
                 
-        
-        #CHANGE: optimize the high fidelity model
-        # did not include annealing here since we are optimizing the high fidelity model, we can always change this
-        
         #loglist = []
-        for i in range(1, self.n_iter_high+1):                
-            self.train(nf_high, optimizer, i, loglist, low_fidelity=False, sampling=True)
+        for i in range(self.n_iter_lf+1, self.n_iter_lf+self.n_iter_hf+1):                
+            self.train(nf_hf, optimizer, i, loglist, lf = False, sampling=True)
             scheduler.step()
-                
+            
         print('')
         print('--- Simulation completed!')        
 
-        
-    def train(self, nf, optimizer, iteration, log, low_fidelity, sampling=True, t=1): #added a flag to switch between low and high fidelity models
+    def train(self, nf, optimizer, iteration, log, lf, sampling=True, t=1):
         """Parameter update for normalizing flow and surrogate model
 
         This is the function where the ELBO loss function is evaluated, 
@@ -318,46 +291,93 @@ class experiment_mf:
 
         # Evaluate the Jacobian terms in  loss function
         
-        if low_fidelity == True:
-            x0 = nf.base_dist.sample([self.batch_size_low]) #low fidelity model batch size
-            
+        if lf:
+            x0 = nf.base_dist.sample([self.batch_size_lf])
         else:
-            x0 = nf.base_dist.sample([self.batch_size_high]) #high fidelity model batch size
-        
+            x0 = nf.base_dist.sample([self.batch_size_hf])
+            
         xk, sum_log_abs_det_jacobians = nf(x0)
 
+        
         # generate and save samples evaluation
         if sampling and iteration % self.save_interval == 0:
             print('--- Saving results at iteration '+str(iteration))
             x00 = nf.base_dist.sample([self.n_sample])
             xkk, _ = nf(x00)
-            # Save surrogate grid
-            if not(self.surrogate is None):
-              np.savetxt(self.output_dir + '/' + self.name + '_grid_' + str(iteration), self.surrogate.grid_record.clone().cpu().numpy(), newline="\n")
+            
+            # Save surrogate grid - there is no grid for discrepancy
+            if self.surrogate and (self.surrogate_type == 'surrogate'):
+                np.savetxt(self.output_dir + '/' + self.name + '_grid_' + str(iteration), self.surrogate.grid_record.clone().cpu().numpy(), newline="\n")
+            
             # Save log profile
             np.savetxt(self.output_dir + '/' + self.log_file, np.array(log), newline="\n")
-            # Save transformed samples          
+            
+            # Save normalized domain samples
             np.savetxt(self.output_dir + '/' + self.name + '_samples_' + str(iteration), xkk.data.clone().cpu().numpy(), newline="\n")
+            
             # Save samples in the original space
-            if not(self.transform is None):
-              xkk_samples = self.transform.forward(xkk).data.cpu().numpy()
-              np.savetxt(self.output_dir + '/' + self.name + '_params_' + str(iteration), xkk_samples, newline="\n")
+            if self.transform_lf and lf:
+                xkk_samples = self.transform_lf.forward(xkk).data.cpu().numpy()
+                np.savetxt(self.output_dir + '/' + self.name + '_params_' + str(iteration), xkk_samples, newline="\n")
+            elif self.transform_hf and not(lf):
+                xkk_samples = self.transform_hf.forward(xkk).data.cpu().numpy()
+                np.savetxt(self.output_dir + '/' + self.name + '_params_' + str(iteration), xkk_samples, newline="\n")
             else:
-              xkk_samples = xkk.data.cpu().numpy()
-              np.savetxt(self.output_dir + '/' + self.name + '_params_' + str(iteration), xkk_samples, newline="\n")
+                xkk_samples = xkk.data.cpu().numpy()
+                np.savetxt(self.output_dir + '/' + self.name + '_params_' + str(iteration), xkk_samples, newline="\n")
+            
             # Save marginal statistics
             np.savetxt(self.output_dir + '/' + self.name + '_marginal_stats_' + str(iteration), np.concatenate((xkk_samples.mean(axis=0).reshape(-1,1),xkk_samples.std(axis=0).reshape(-1,1)),axis=1), newline="\n")
+            
             # Save log density at the same samples
-            np.savetxt(self.output_dir + '/' + self.name + '_logdensity_LF_' + str(iteration), self.model_logdensity_low(xkk).data.cpu().numpy(), newline="\n")
+            if lf:
+                np.savetxt(self.output_dir + '/' + self.name + '_logdensity_' + str(iteration), self.model_logdensity_lf(xkk).data.cpu().numpy(), newline="\n")
+            else:
+                np.savetxt(self.output_dir + '/' + self.name + '_logdensity_' + str(iteration), self.model_logdensity_hf(xkk).data.cpu().numpy(), newline="\n")
+            
             # Save model outputs at the samples - If a model is defined
-            if not(self.transform is None):
-              stds = torch.abs(self.model.defOut).to(self.device) * self.model.stdRatio
-              o00 = torch.randn(x00.size(0), self.model.data.shape[0]).to(self.device)
-              noise = o00*stds.repeat(o00.size(0),1)
-              if self.surrogate:
-                np.savetxt(self.output_dir + '/' + self.name + '_outputs_' + str(iteration), (self.surrogate.forward(xkk) + noise).data.cpu().numpy(), newline="\n")
-              else:
-                np.savetxt(self.output_dir + '/' + self.name + '_outputs_' + str(iteration), (self.model.solve_t(self.transform.forward(xkk)) + noise).data.cpu().numpy(), newline="\n")
+            if self.transform:
+                if(self.surrogate_type == 'surrogate'):
+                    # Define noise when we use NoFAS
+                    stds = torch.abs(self.model.defOut).to(self.device) * self.model.stdRatio
+                    o00 = torch.randn(x00.size(0), self.model.data.shape[0]).to(self.device)
+                    noise = o00*stds.repeat(o00.size(0),1)
+                    # Compute outputs
+                    if self.surrogate:
+                        np.savetxt(self.output_dir + '/' + self.name + '_outputs_' + str(iteration), (self.surrogate.forward(xkk) + noise).data.cpu().numpy(), newline="\n")
+                    else:
+                        np.savetxt(self.output_dir + '/' + self.name + '_outputs_' + str(iteration), (self.model.solve_t(self.transform.forward(xkk)) + noise).data.cpu().numpy(), newline="\n")
+                elif(self.surrogate_type == 'discrepancy'):
+                    # Define noise when we use NoFAS
+                    stds = torch.abs(self.model.defOut).to(self.device) * self.model.stdRatio
+                    # Noise is rows: number of T,P pairs, columns: number of batches
+                    o00 = torch.randn(self.model.data.shape[0], x00.size(0)).to(self.device)
+                    noise = o00*stds.repeat(1,x00.size(0))
+                    # Print lf outputs
+                    model_out = self.model.solve_t(self.transform.forward(xkk))
+                    np.savetxt(self.output_dir + '/' + self.name + '_outputs_lf_' + str(iteration), model_out.data.cpu().numpy(), newline="\n")                    
+                    # LF model, plus dicrepancy, plus noise
+                    if(self.surrogate is None):
+                        # This need to have as many rows as T,P
+                        # and as many columns as batches                        
+                        model_out_noise = model_out + noise
+                        np.savetxt(self.output_dir + '/' + self.name + '_outputs_lf+noise_' + str(iteration), model_out_noise.data.cpu().numpy(), newline="\n")
+                    else:
+                        discr_out = self.surrogate.forward(self.model.var_in)
+                        # CHECK COMPATIBILITY !!!
+                        model_out_lf_discr = model_out + discr_out                        
+                        model_out_lf_discr_noise = model_out + discr_out + noise
+                        # Save model outputs
+                        # For discrepancy we have
+                        # Rows: number of variable pairs
+                        # Columns: number of batches
+                        np.savetxt(self.output_dir + '/' + self.name + '_outputs_discr_' + str(iteration), discr_out.data.cpu().numpy(), newline="\n")
+                        np.savetxt(self.output_dir + '/' + self.name + '_outputs_lf+discr_' + str(iteration), model_out_lf_discr.data.cpu().numpy(), newline="\n")
+                        np.savetxt(self.output_dir + '/' + self.name + '_outputs_lf+discr+noise_' + str(iteration), model_out_lf_discr_noise.data.cpu().numpy(), newline="\n")
+                else:
+                    print('Invalid type of surrogate model')
+                    exit(-1)
+
 
         if torch.any(torch.isnan(xk)):
             print("Error: samples xk are nan at iteration " + str(iteration))
@@ -366,26 +386,31 @@ class experiment_mf:
             exit(-1)
 
         # updating surrogate model
-        if self.run_nofas and iteration % self.calibrate_interval == 0 and self.surrogate.grid_record.size(0) < self.budget:
-            xk0 = xk[:self.true_data_num, :].data.clone()            
-            # print("\n")
-            # print(list(self.surrogate.grid_record.size())[0])
-            # print(xk0)
-            self.surrogate.update(xk0, max_iters=self.surr_upd_it)
+        if (self.run_nofas and iteration % self.calibrate_interval == 0):
+            if(self.surrogate_type == 'surrogate'):
+                go_on = self.surrogate.grid_record.size(0) < self.budget
+            elif(self.surrogate_type == 'discrepancy'):
+                go_on = True
+            else:
+                print('Invalid type of surrogate model')
+                exit(-1)
+            if(go_on):    
+                # Update Surrogate Model
+                if(self.surrogate_type == 'surrogate'):
+                    xk0 = xk[:self.true_data_num, :].data.clone()
+                    self.surrogate.update(xk0, max_iters=self.surr_upd_it)
+                elif(self.surrogate_type == 'discrepancy'):
+                    xk0 = xk.data.clone()
+                    self.surrogate.update(self.transform.forward(xk0), max_iters=self.surr_upd_it, reg=False, reg_penalty=0.0001)
+                else:
+                    print('Invalid type of surrogate model')
+                    exit(-1)    
 
         # Free energy bound
-        
-        
-        #CHANGE: need to switch between the low and high fidelity models in the loss function
-        # added a flag in the training function depending on which model is being optimized
-        # true for low fidelity model, false for high fidelity model
-        
-        if low_fidelity == True:
-            loss = (- torch.sum(sum_log_abs_det_jacobians, 1) - t * self.model_logdensity_low(xk)).mean()
-            
+        if lf:
+            loss = (- torch.sum(sum_log_abs_det_jacobians, 1) - t * self.model_logdensity_lf(xk)).mean()
         else:
-            loss = (- torch.sum(sum_log_abs_det_jacobians, 1) - t * self.model_logdensity_high(xk)).mean()
-            
+            loss = (- torch.sum(sum_log_abs_det_jacobians, 1) - t * self.model_logdensity_hf(xk)).mean()
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
@@ -398,5 +423,4 @@ class experiment_mf:
             torch.save(nf.state_dict(), self.output_dir + '/' + self.name + "_" + str(iteration) + ".nf")
 
         if not(self.store_surr_interval is None) and self.store_surr_interval > 0 and iteration % self.store_surr_interval == 0:
-            self.surrogate.surrogate_save() # Save surrogate model        
-
+            self.surrogate.surrogate_save() # Save surrogate model
