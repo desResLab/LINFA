@@ -7,28 +7,30 @@ tags:
   - adaptive posterior annealing
   - physics-based models
 authors:
-  - name: Adrian M. Price-Whelan
-    orcid: 0000-0000-0000-0000
-    equal-contrib: true
-    affiliation: "1, 2" # (Multiple affiliations must be quoted)
-  - name: Author Without ORCID
-    equal-contrib: true # (This is how you can denote equal contributions between multiple authors)
-    affiliation: 2
-  - name: Author with no affiliation
-    corresponding: true # (This is how to denote the corresponding author)
-    affiliation: 3
-  - given-names: Ludwig
-    dropping-particle: van
-    surname: Beethoven
-    affiliation: 3
+  - name: Yu Wang
+    email: ywang50@nd.edu
+    affiliation: 1
+  - name: Emma R. Cobian
+    email: ecobian@nd.edu
+    affiliation: 1
+  - name: Jubilee Lee 
+    email: jlee222@nd.edu
+    affiliation: 1
+  - name: Fang Liu 
+    email: fang.liu.131@nd.edu
+    affiliation: 1
+  - name: Jonathan D. Hauenstein 
+    email: hauenstein@nd.edu
+    affiliation: 1
+  - name: Daniele E. Schiavazzi
+    corresponding: true
+    email: dschiavazzi@nd.edu
+    affiliation: 1
+
 affiliations:
- - name: Lyman Spitzer, Jr. Fellow, Princeton University, USA
+ - name: Department of Applied and Computational Mathematics and Statistics, University of Notre Dame, Notre Dame, IN 46556, USA.
    index: 1
- - name: Institution Name, Country
-   index: 2
- - name: Independent Researcher, Country
-   index: 3
-date: 13 August 2017
+date: 9 November 2023
 bibliography: paper.bib
 
 # Optional fields if submitting to a AAS journal too, see this blog post:
@@ -37,43 +39,22 @@ aas-doi: 10.3847/xxxxx <- update this with the DOI from AAS once you know it.
 aas-journal: Astrophysical Journal <- The name of the AAS journal.
 ---
 
-\author{\name Yu Wang \email ywang50@nd.edu
-       \AND
-       \name Emma R. Cobian \email ecobian@nd.edu
-       \AND
-       \name Jubilee Lee \email jlee222@nd.edu
-       \AND
-       \name Fang Liu \email fang.liu.131@nd.edu
-       \AND
-       \name Jonathan D. Hauenstein \email hauenstein@nd.edu
-       \AND
-       \name Daniele E. Schiavazzi \email dschiavazzi@nd.edu\\
-       \addr ACMS Department\\
-       University of Notre Dame\\
-       Notre Dame, IN 46556, USA
-}
-
-
 # Summary
 
 Variational inference is an increasingly popular method in statistics and machine learning for approximating probability distributions.
 We developed LINFA (Library for Inference with Normalizing Flow and Annealing), a Python library for variational inference to accommodate computationally expensive models and difficult-to-sample distributions with dependent parameters. 
 We discuss the theoretical background, capabilities, and performance of LINFA in various benchmarks. LINFA is publicly available on GitHub at [https://github.com/desResLab/LINFA](https://github.com/desResLab/LINFA).
 
-
 # Introduction
 
-
-Generating samples from a posterior distribution is a fundamental task in Bayesian inference. The development of sampling-based algorithms from the Markov chain Monte Carlo family [@metropolis1953equation; @hastings1970monte; @geman1984stochastic; @gelfand1990sampling] has made solving Bayesian inverse problems accessible to a wide audience of both researchers and practitioners. However, the number of samples required by these approaches is typically significant and the convergence of Markov chains to their stationary distribution can be slow especially in high-dimensions. Additionally, satisfactory convergence may not be always easy to quantify, even if a number of metrics have been proposed in the literature over the years. More recent paradigms have been proposed in the context of variational inference [@wainwright2008graphical], where an optimization problem is formulated to determine the optimal member of a parametric family of distributions that can approximate a target posterior density. In addition, flexible approaches to parametrize variational distributions through a composition of transformations (closely related to the concept of _trasport maps_, see, e.g., @villani2009optimal) have reached popularity under the name of \emph{normalizing flows} [@rezende2015variational; @dinh2016density; @kingma2016improved; @kobyzev2020normalizing; @papamakarios2021normalizing]. The combination of variational inference and normalizing flow has received significant recent interest in the context of general algorithms for solving inverse problems~\citep{el2012bayesian,rezende2015variational}.
+Generating samples from a posterior distribution is a fundamental task in Bayesian inference. The development of sampling-based algorithms from the Markov chain Monte Carlo family [@metropolis1953equation; @hastings1970monte; @geman1984stochastic; @gelfand1990sampling] has made solving Bayesian inverse problems accessible to a wide audience of both researchers and practitioners. However, the number of samples required by these approaches is typically significant and the convergence of Markov chains to their stationary distribution can be slow especially in high-dimensions. Additionally, satisfactory convergence may not be always easy to quantify, even if a number of metrics have been proposed in the literature over the years. More recent paradigms have been proposed in the context of variational inference [@wainwright2008graphical], where an optimization problem is formulated to determine the optimal member of a parametric family of distributions that can approximate a target posterior density. In addition, flexible approaches to parametrize variational distributions through a composition of transformations (closely related to the concept of _trasport maps_, see, e.g., @villani2009optimal) have reached popularity under the name of \emph{normalizing flows} [@rezende2015variational; @dinh2016density; @kingma2016improved; @kobyzev2020normalizing; @papamakarios2021normalizing]. The combination of variational inference and normalizing flow has received significant recent interest in the context of general algorithms for solving inverse problems [@el2012bayesian; @rezende2015variational].
 
 However, cases where the computational cost of evaluating the underlying probability distribution is significant occur quite often in engineering and applied sciences, for example when such evaluation requires the solution of an ordinary or partial differential equation. In such cases, inference can easily become intractable. Additionally, strong and nonlinear dependence between model parameters may results in difficult-to-sample posterior distributions characterized by features at multiple scales or by multiple modes. Problem when working with physics-based solver
 The LINFA library is specifically designed for cases where the model evaluation is computationally expensive. In such cases, the construction of an adaptively trained surrogate model is key to reducing the computational cost of inference [@wang2022variational]. In addition, LINFA provides an adaptive annealing scheduler, where temperature increments are automatically determined based on the available variational approximant of the posterior distribution. Thus, adaptive annealing makes it easier to sample from complicated densities [@cobian2023adaann].
 
-% Section overlook
-This paper is organized as follows. The main features of the LINFA library are discussed in Section ~\ref{sec:capabilities}, followed by a brief outline of a few selected numerical tests in Section~\ref{sec:benchmarks}. Conclusions and future work are finally discussed in Section~\ref{sec:conclusions}. The paper is completed by a brief description of the background theory and reference to the relevant papers in Appendix~\ref{sec:background}, a detailed presentation of a four benchmarks in Appendix~\ref{sec:detailed_benchmarks}, and a list of all the relevant hyperparameters in Appendix~\ref{sec:hyper}.
+This paper is organized as follows. The main features of the LINFA library are discussed in Section \autoref{sec:capabilities}, followed by a brief outline of a few selected numerical tests in Section \autoref{sec:benchmarks}. Conclusions and future work are finally discussed in Section \autoref{sec:conclusions}. The paper is completed by a brief description of the background theory and reference to the relevant papers in Appendix \autoref{sec:background}, a detailed presentation of a four benchmarks in Appendix \autoref{sec:detailed_benchmarks}, and a list of all the relevant hyperparameters in Appendix \autoref{sec:hyper}.
 
-
-# Capabilities\label{sec:capabilities}
+# Capabilities {#sec:capabilities}
 
 LINFA is designed as a general inference engine and allows the user to define custom input transformations, computational models, surrogates, and likelihood functions.
 
@@ -119,19 +100,19 @@ LINFA is designed as a general inference engine and allows the user to define cu
     ```
 Likelihood from pre-defined families will be defined in future versions of LINFA.
 
-5. **Linear and adaptive annealing schedulers** - LINFA provides two annealing schedulers by default. The first is the `'Linear'` scheduler with constant increments. The second is the `'AdaAnn'` adaptive scheduler [@cobian2023adaann] with hyperparameters reported in Table~\autoref{tab:adaann}. For the AdaAnn scheduler, the user can also specify a different number of parameter updates to be performed at the initial temperature $t_{0}$, final temperature $t_{1}$, and for any temperature $t_{0}<t<1$. Finally, the batch size (number of samples used to evaluate the expectations in the loss function) can also be differentiated for $t=1$ and $t<1$. 
+5. **Linear and adaptive annealing schedulers** - LINFA provides two annealing schedulers by default. The first is the `'Linear'` scheduler with constant increments. The second is the `'AdaAnn'` adaptive scheduler [@cobian2023adaann] with hyperparameters reported in Table \autoref{tab:adaann}. For the AdaAnn scheduler, the user can also specify a different number of parameter updates to be performed at the initial temperature $t_{0}$, final temperature $t_{1}$, and for any temperature $t_{0}<t<1$. Finally, the batch size (number of samples used to evaluate the expectations in the loss function) can also be differentiated for $t=1$ and $t<1$. 
 
-6. **User-defined hyperparameters** - A complete list of hyperparameters with a description of their functionality can be found in Appendix~\autoref{sec:hyper}.
+6. **User-defined hyperparameters** - A complete list of hyperparameters with a description of their functionality can be found in Appendix \autoref{sec:hyper}.
 
-# Numerical benchmarks\label{sec:benchmarks}
+# Numerical benchmarks {#sec:benchmarks}
 
-We tested LINFA on multiple problems. These include inference on unimodal and multi-modal posterior distributions specified in closed form, ordinary differential models and dynamical systems with gradients directly computed through automatic differentiation in PyTorch, identifiable and non-identifiable physics-based models with fixed and adaptive surrogates, and high-dimensional statistical models. Some of the above tests are included with the library and systematically tested using GitHub Actions. A detailed discussion of these test cases is provided in Appendix~\autoref{sec:detailed_benchmarks}. To run the test type
+We tested LINFA on multiple problems. These include inference on unimodal and multi-modal posterior distributions specified in closed form, ordinary differential models and dynamical systems with gradients directly computed through automatic differentiation in PyTorch, identifiable and non-identifiable physics-based models with fixed and adaptive surrogates, and high-dimensional statistical models. Some of the above tests are included with the library and systematically tested using GitHub Actions. A detailed discussion of these test cases is provided in Appendix \autoref{sec:detailed_benchmarks}. To run the test type
 ```
 python -m unittest linfa.linfa\_test\_suite.NAME\_example
 ```
 where `NAME` is the name of the test case, either `trivial`, `highdim`, `rc`, `rcr`, `adaann` or `rcr_nofas_adaann`.
 
-# Conclusion and Future Work\label{sec:conclusions}
+# Conclusion and Future Work {#sec:conclusions}
 
 In this paper, we have introduced the LINFA library for variational inference, briefly discussed the relevant background, its capabilities, and report its performance on a number of test cases. Some interesting directions for future work are mentioned below.
 
@@ -144,7 +125,7 @@ NSF CAREER grant #1942662.
 
 # Appendix
 
-## Background theory\label{sec:background}
+## Background theory {#sec:background}
 
 ### Variational inference with normalizing flow
 
@@ -180,7 +161,7 @@ RealNVP is another widely used flow where, at each layer the first $d'$ variable
 
 LINFA is designed to accommodate black-box models $\bm{f}: \bm{\mathcal{Z}} \to \bm{\mathcal{X}}$ between the random inputs $\bm{z} = (z_1, z_2, \cdots, z_d)^T \in \bm{\mathcal{Z}}$ and the outputs $(x_1, x_2,\cdots,x_m)^T \in \bm{\mathcal{X}}$, and assumes $n$ observations $\bm x = \{\bm x_i\}_{i=1}^n \subset \bm{\mathcal{X}}$ to be available. Our goal is to infer $\bm z$ and to quantify its uncertainty given $\bm{x}$. We embrace a variational Bayesian paradigm and sample from the posterior distribution $p(\bm z\vert \bm x)\propto \ell_{\bm z}(\bm x,\bm{f})\,p(\bm z)$, with prior $p(\bm z)$ via normalizing flows. 
 
-This requires the evaluation of the gradient of the ELBO~\eqref{equ:ELBO} with respect to the NF parameters $\bm{\lambda}$, replacing $p(\bm x, \bm z_K)$ with $p(\bm x\vert\bm z_K)\,p(\bm z)$ $=\ell_{\bm z_K}(\bm{x},\bm{f})\,p(\bm z)$, and approximating the expectations with their MC estimates. However, the likelihood function needs to be evaluated at every MC realization, which can be costly if the model $\bm{f}(\bm{z})$ is computationally expensive. In addition, automatic differentiation through a legacy (e.g. physics-based) solver may be an impractical, time-consuming, or require the development of an adjoint solver.
+This requires the evaluation of the gradient of the ELBO \eqref{equ:ELBO} with respect to the NF parameters $\bm{\lambda}$, replacing $p(\bm x, \bm z_K)$ with $p(\bm x\vert\bm z_K)\,p(\bm z)$ $=\ell_{\bm z_K}(\bm{x},\bm{f})\,p(\bm z)$, and approximating the expectations with their MC estimates. However, the likelihood function needs to be evaluated at every MC realization, which can be costly if the model $\bm{f}(\bm{z})$ is computationally expensive. In addition, automatic differentiation through a legacy (e.g. physics-based) solver may be an impractical, time-consuming, or require the development of an adjoint solver.
 
 Our solution is to replace the model $\bm{f}$ with a computationally inexpensive surrogate $\widehat{\bm{f}}: \bm{\mathcal{Z}} \times \bm{\mathcal{W}} \to \bm{\mathcal{X}}$ parameterized by the weigths $\bm{w} \in \bm{\mathcal{W}}$, whose derivatives can be obtained at a relatively low computational cost, but intrinsic bias in the selected surrogate formulation, a limited number of training examples, and locally optimal $\bm{w}$ can compromise the accuracy of $\widehat{\bm{f}}$.
 
@@ -201,7 +182,7 @@ The AdaAnn scheduler determines the increment $\epsilon_{k}$ that approximately 
 
 The denominator is large when the support of the annealed distribution $p^{t_{k}}(\bm{z},\bm{x})$ is wider than the support of the target $p(\bm{z},\bm{x})$, and progressively reduces with increasing $t_{k}$. Further detail on the derivation of the expression for $\epsilon_{k}$ can be found in [@cobian2023adaann].
 
-## Numerical benchmarks\label{sec:detailed_benchmarks}
+## Numerical benchmarks {#sec:detailed_benchmarks}
 
 ### Simple two-dimensional map with Gaussian likelihood
 
@@ -215,19 +196,14 @@ Observations $\bm{x}$ are generated as
 \bm{x} = \bm{x}^{*} + 0.05\,|\bm{x}^{*}|\,\odot\bm{x}_{0},
 \end{equation}
 
-where $\bm{x}_{0} \sim \mathcal{N}(0,\bm I_2)$ and $\odot$ is the Hadamard product. We set the _true_ model parameters at $\bm{z}^{*} = (3, 5)^T$, with output $\bm{x}^{*} = f(\bm z^{*})=(7.99, -2.59)^{T}$, and simulate 50 sets of observations from~\eqref{eqn:exp1}. The likelihood of $\bm z$ given $\bm{x}$ is assumed Gaussian, and we adopt a noninformative uniform prior $p(\bm z)$. We allocate a budget of $4\times4=16$ model solutions to the pre-grid and use the rest to adaptively calibrate $\widehat{f}$ using $2$ samples every $1000$ normalizing flow iterations.
+where $\bm{x}_{0} \sim \mathcal{N}(0,\bm I_2)$ and $\odot$ is the Hadamard product. We set the _true_ model parameters at $\bm{z}^{*} = (3, 5)^T$, with output $\bm{x}^{*} = f(\bm z^{*})=(7.99, -2.59)^{T}$, and simulate 50 sets of observations from \eqref{eqn:exp1}. The likelihood of $\bm z$ given $\bm{x}$ is assumed Gaussian, and we adopt a noninformative uniform prior $p(\bm z)$. We allocate a budget of $4\times4=16$ model solutions to the pre-grid and use the rest to adaptively calibrate $\widehat{f}$ using $2$ samples every $1000$ normalizing flow iterations.
 
-Results in terms of loss profile, variational approximation, and posterior predictive distribution are shown in Figure~\autoref{fig:trivial}.
+Results in terms of loss profile, variational approximation, and posterior predictive distribution are shown in Figure \autoref{fig:trivial}.
 
-# FIN QUI!!!
-
-![Caption for example figure.\label{fig:example}](figure.png)
-and referenced from text using \autoref{fig:example}.
-Figure sizes can be customized by adding an optional second parameter:
-![Results from the simple two-dimensional map. Loss profile (left), posterior samples (center), and posterior predictive distribution (right).\label{fig:trivial}](log_plot_trivial.pdf){ width=20% }
-
-(target_plot_trivial.pdf)
-(sample_plot_trivial.pdf)
+![](../docs/content/imgs/trivial/log_plot_trivial-1.png) / ![](../docs/content/imgs/trivial/sample_plot_trivial-1.png) / ![](../docs/content/imgs/trivial/target_plot_trivial-1.png)
+\begin{figure}
+\caption{Results from the simple two-dimensional map. Loss profile (left), posterior samples (center), and posterior predictive distribution (right).\label{fig:trivial}}
+\end{figure}
 
 ### High-dimensional example
 
@@ -237,7 +213,7 @@ f(\bm{z}) = \bm{A}\,\bm{g}(e^{\bm{z}}),
 $$
 where $g_i(\bm{r}) = (2\cdot |2\,a_{i} - 1| + r_i) / (1 + r_i)$ with $r_i > 0$ for $i=1,\dots,5$ is the _Sobol_ function [@sobol2003theorems] and $\bm{A}$ is a $4\times5$ matrix. We also set
 $$
-\bm{a} = (0.084, 0.229, 0.913, 0.152, 0.826)^T \mbox{ and }\bm{A} = \frac{1}{\sqrt{2}}
+\bm{a} = (0.084, 0.229, 0.913, 0.152, 0.826)^T \text{ and }\bm{A} = \frac{1}{\sqrt{2}}
 \begin{pmatrix}
 1 & 1 & 0 & 0 & 0\\
 0 & 1 & 1 & 0 & 0\\
@@ -249,105 +225,72 @@ The true parameter vector is $\bm{z}^{*} = (2.75,$ $-1.5, 0.25,$ $-2.5,$ $1.75)^
 $$
 \bm{x} = \bm{x}^{*} + 0.01\cdot |\bm{x}^{*}| \odot \bm{x}_{0},\,\,\text{and}\,\,\bm{x}_{0} \sim \mathcal{N}(0,\bm I_5).
 $$
-Results are shown in Figure~\autoref{fig:highdim}.
+Results are shown in Figure \autoref{fig:highdim}.
 %
-\begin{figure}[!ht]
-\centering
-\includegraphics[scale=0.7]{imgs/highdim/log_plot.pdf}
-\includegraphics[scale=0.7]{imgs/highdim/data_plot_highdim_25000_0_2.pdf}
-\includegraphics[scale=0.7]{imgs/highdim/data_plot_highdim_25000_2_3.pdf}\\
-%
-\includegraphics[scale=0.7]{imgs/highdim/params_plot_highdim_25000_0_1.pdf}
-\includegraphics[scale=0.7]{imgs/highdim/params_plot_highdim_25000_1_2.pdf}
-\includegraphics[scale=0.7]{imgs/highdim/params_plot_highdim_25000_3_4.pdf}
+
+![](../docs/content/imgs/highdim/log_plot-1.png) 
+![](../docs/content/imgs/highdim/data_plot_highdim_25000_0_2-1.png) 
+![](../docs/content/imgs/highdim/data_plot_highdim_25000_2_3-1.png) 
+
+![](../docs/content/imgs/highdim/params_plot_highdim_25000_0_1-1.png) 
+![](../docs/content/imgs/highdim/params_plot_highdim_25000_1_2-1.png) 
+![](../docs/content/imgs/highdim/params_plot_highdim_25000_3_4-1.png)
+\begin{figure}
 \caption{Results from the high-dimensional example. Loss profile, posterior samples, and posterior predictive distribution.}\label{fig:highdim}
 \end{figure}
 
-% =======================================
-\subsection{Two-element Windkessel Model}
-% =======================================
+### Two-element Windkessel Model
 
-The two-element Windkessel model (often referred to as the \emph{RC} model) is the simplest representation of the human systemic circulation and requires two parameters, i.e., a resistance $R \in [100, 1500]$ Barye$\cdot$ s/ml and a capacitance $C \in [1\times 10^{-5}, 1 \times 10^{-2}]$ ml/Barye. 
-%
-We provide a periodic time history of the aortic flow (see~\cite{wang2022variational} for additional details) and use the RC model to predict the time history of the proximal pressure $P_{p}(t)$, specifically its maximum, minimum, and average values over a typical heart cycle, while assuming the distal resistance $P_{d}(t)$ as a constant in time, equal to 55 mmHg. 
-%
-In our experiment, we set the true resistance and capacitance as $z_{K,1}^{*}=R^{*} = 1000$ Barye$\cdot$ s/ml and $z_{K,2}^{*}=C^{*} = 5\times 10^{-5}$ ml/Barye, and determine $P_{p}(t)$ from a RK4 numerical solution of the following algebraic-differential system
-%
+The two-element Windkessel model (often referred to as the _RC_ model) is the simplest representation of the human systemic circulation and requires two parameters, i.e., a resistance $R \in [100, 1500]$ Barye$\cdot$ s/ml and a capacitance $C \in [1\times 10^{-5}, 1 \times 10^{-2}]$ ml/Barye. We provide a periodic time history of the aortic flow (see [@wang2022variational] for additional details) and use the RC model to predict the time history of the proximal pressure $P_{p}(t)$, specifically its maximum, minimum, and average values over a typical heart cycle, while assuming the distal resistance $P_{d}(t)$ as a constant in time, equal to 55 mmHg. In our experiment, we set the true resistance and capacitance as $z_{K,1}^{*}=R^{*} = 1000$ Barye$\cdot$ s/ml and $z_{K,2}^{*}=C^{*} = 5\times 10^{-5}$ ml/Barye, and determine $P_{p}(t)$ from a RK4 numerical solution of the following algebraic-differential system
+
 \begin{equation}\label{equ:RC}
 Q_{d} = \frac{P_{p}-P_{d}}{R},\quad \frac{d P_{p}}{d t} = \frac{Q_{p} - Q_{d}}{C},
 \end{equation}
-%
-where $Q_{p}$ is the flow entering the RC system and $Q_{d}$ is the distal flow.
-%
-Synthetic observations are generated by adding Gaussian noise to the true model solution $\bm{x}^{*}=(x^{*}_{1},x^{*}_{2},x^{*}_{3})=(P_{p,\text{min}},$ $P_{p,\text{max}},$ $P_{p,\text{avg}})= (78.28, 101.12,  85.75)$, i.e., $\bm{x}$ follows a multivariate Gaussian distribution with mean $\bm{x}^{*}$ and a diagonal covariance matrix with entries $0.05\,x_{i}^{*}$, where $i=1,2,3$ corresponds to the maximum, minimum, and average pressures, respectively. 
-%
-The aim is to quantify the uncertainty in the RC model parameters given 50 repeated pressure measurements. We imposed a non-informative prior on $R$ and $C$. Results are shown in Figure~\ref{fig:rc_res}.
-%
-\begin{figure}[!ht]
-\centering
-\includegraphics[scale=0.7]{imgs/rc/log_plot_rc.pdf}
-\includegraphics[scale=0.75]{imgs/rc/target_plot_rc.pdf}
-\includegraphics[scale=0.7]{imgs/rc/sample_plot_rc_0_1.pdf}
+
+where $Q_{p}$ is the flow entering the RC system and $Q_{d}$ is the distal flow. Synthetic observations are generated by adding Gaussian noise to the true model solution $\bm{x}^{*}=(x^{*}_{1},x^{*}_{2},x^{*}_{3})=(P_{p,\text{min}},$ $P_{p,\text{max}},$ $P_{p,\text{avg}})= (78.28, 101.12,  85.75)$, i.e., $\bm{x}$ follows a multivariate Gaussian distribution with mean $\bm{x}^{*}$ and a diagonal covariance matrix with entries $0.05\,x_{i}^{*}$, where $i=1,2,3$ corresponds to the maximum, minimum, and average pressures, respectively. The aim is to quantify the uncertainty in the RC model parameters given 50 repeated pressure measurements. We imposed a non-informative prior on $R$ and $C$. Results are shown in Figure \autoref{fig:rc_res}.
+
+![](../docs/content/imgs/rc/log_plot_rc-1.png) 
+![](../docs/content/imgs/rc/target_plot_rc-1.png)
+![](../docs/content/imgs/rc/sample_plot_rc_0_1-1.png) 
+
+\begin{figure}
 \caption{Results from the RC model. Loss profile (left), posterior samples (center) for R and C, and the posterior predictive distribution for $P_{p,\text{min}}$ and $P_{p,\text{max}}$ (right, $P_{p,\text{avg}}$ not shown).}\label{fig:rc_res}
 \end{figure}
 
-% ======================================================================
-\subsection{Three-element Wndkessel Circulatory Model (NoFAS + AdaAnn)}
-% ======================================================================
+### Three-element Wndkessel Circulatory Model (NoFAS + AdaAnn)
 
-The three-parameter Windkessel or \emph{RCR} model is characterized by proximal and distal resistance parameters $R_{p}, R_{d} \in [100, 1500]$ Barye$\cdot$s/ml, and one capacitance parameter $C \in [1\times 10^{-5}, 1\times 10^{-2}]$ ml/Barye.  
-%
-This model is not identifiable. The average distal pressure is only affected by the total system resistance, i.e. the sum $R_{p}+R_{d}$, leading to a negative correlation between these two parameters. Thus, an increment in the proximal resistance is compensated by a reduction in the distal resistance (so the average distal pressure remains the same) which, in turn, reduces the friction encountered by the flow exiting the capacitor. An increase in the value of $C$ is finally needed to restore the average, minimum and maximum pressure. This leads to a positive correlation between $C$ and $R_{d}$.
+The three-parameter Windkessel or _RCR_ model is characterized by proximal and distal resistance parameters $R_{p}, R_{d} \in [100, 1500]$ Barye$\cdot$s/ml, and one capacitance parameter $C \in [1\times 10^{-5}, 1\times 10^{-2}]$ ml/Barye. This model is not identifiable. The average distal pressure is only affected by the total system resistance, i.e. the sum $R_{p}+R_{d}$, leading to a negative correlation between these two parameters. Thus, an increment in the proximal resistance is compensated by a reduction in the distal resistance (so the average distal pressure remains the same) which, in turn, reduces the friction encountered by the flow exiting the capacitor. An increase in the value of $C$ is finally needed to restore the average, minimum and maximum pressure. This leads to a positive correlation between $C$ and $R_{d}$.
 
-The output consists of the maximum, minimum, and average values of the proximal pressure $P_{p}(t)$, i.e., $(P_{p,\text{min}}, P_{p,\text{max}}, P_{p,\text{avg}})$ over one heart cycle.
-%
-The true parameters are $z^{*}_{K,1} = R^{*}_{p} = 1000$ Barye$\cdot$s/ml, $z^{*}_{K,2}=R^{*}_{d} = 1000$ Barye$\cdot$s/ml, and $C^{*} = 5\times 10^{-5}$ ml/Barye. The proximal pressure is computed from the solution of the algebraic-differential system
-%
-\begin{equation}
+The output consists of the maximum, minimum, and average values of the proximal pressure $P_{p}(t)$, i.e., $(P_{p,\text{min}}, P_{p,\text{max}}, P_{p,\text{avg}})$ over one heart cycle. The true parameters are $z^{*}_{K,1} = R^{*}_{p} = 1000$ Barye$\cdot$s/ml, $z^{*}_{K,2}=R^{*}_{d} = 1000$ Barye$\cdot$s/ml, and $C^{*} = 5\times 10^{-5}$ ml/Barye. The proximal pressure is computed from the solution of the algebraic-differential system
+$$
 Q_{p} = \frac{P_{p} - P_{c}}{R_{p}},\quad Q_{d} = \frac{P_{c}-P_{d}}{R_{d}},\quad \frac{d\, P_{c}}{d\,t} = \frac{Q_{p}-Q_{d}}{C},
-\end{equation}
-%
-where the distal pressure is set to $P_{d}=55$ mmHg.
-%
-Synthetic observations are generated from $N(\bm\mu, \bm\Sigma)$, where $\mu=(f_{1}(\bm{z}^{*}),f_{2}(\bm{z}^{*}),f_{3}(\bm{z}^{*}))^T = (P_{p,\text{min}}, P_{p,\text{max}}, P_{p,\text{ave}})^T = (100.96,$ $148.02,$ $ 116.50)^T$ and $\bm\Sigma$ is a diagonal matrix with entries $(5.05, 7.40, 5.83)^T$. The budgeted number of true model solutions is $216$; the fixed surrogate model is evaluated on a $6\times 6\times 6 = 216$ pre-grid while the adaptive surrogate is evaluated with a pre-grid of size $4\times 4\times 4 = 64$ and the other 152 evaluations are adaptively selected. 
+$$
+where the distal pressure is set to $P_{d}=55$ mmHg. Synthetic observations are generated from $N(\bm\mu, \bm\Sigma)$, where $\mu=(f_{1}(\bm{z}^{*}),f_{2}(\bm{z}^{*}),f_{3}(\bm{z}^{*}))^T = (P_{p,\text{min}}, P_{p,\text{max}}, P_{p,\text{ave}})^T = (100.96,$ $148.02,$ $ 116.50)^T$ and $\bm\Sigma$ is a diagonal matrix with entries $(5.05, 7.40, 5.83)^T$. The budgeted number of true model solutions is $216$; the fixed surrogate model is evaluated on a $6\times 6\times 6 = 216$ pre-grid while the adaptive surrogate is evaluated with a pre-grid of size $4\times 4\times 4 = 64$ and the other 152 evaluations are adaptively selected. 
 
-This example also demonstrates how NoFAS can be combined with annealing for improved convergence. The results in Figure ~\ref{fig:rcr_res} are generated using the AdaAnn adaptive annealing scheduler with intial inverse temperature $t_{0}=0.05$, KL tolerance $\tau=0.01$ and a batch size of 100 samples. The number of parameter updates is set to 500, 5000 and 5 for $t_{0}$, $t_{1}$ and $t_{0}<t<t_{1}$, respectively and 1000 Monte Carlo realizations are used to evaluate the denominator in equation~\eqref{equ:adaann}. The posterior samples capture well the nonlinear correlation among the parameters and generate a fairly accurate posterior predictive distribution that overlaps with the observations. Additional details can be found in~\cite{wang2022variational} and \cite{cobian2023adaann}.
-%
-\begin{figure}[!ht]
-\centering
-\includegraphics[scale=0.7]{imgs/rcr_adaann/log_plot.pdf}
-\includegraphics[scale=0.7]{imgs/rcr_adaann/data_plot_rcr_nofas_adaann_8400_0_1.pdf}
-\includegraphics[scale=0.7]{imgs/rcr_adaann/data_plot_rcr_nofas_adaann_8400_0_2.pdf}\\
-\includegraphics[scale=0.65]{imgs/rcr_adaann/params_plot_rcr_nofas_adaann_8400_0_1.pdf}
-\includegraphics[scale=0.65]{imgs/rcr_adaann/params_plot_rcr_nofas_adaann_8400_0_2.pdf}
-\includegraphics[scale=0.65]{imgs/rcr_adaann/params_plot_rcr_nofas_adaann_8400_1_2.pdf}
+This example also demonstrates how NoFAS can be combined with annealing for improved convergence. The results in Figure \autoref{fig:rcr_res} are generated using the AdaAnn adaptive annealing scheduler with intial inverse temperature $t_{0}=0.05$, KL tolerance $\tau=0.01$ and a batch size of 100 samples. The number of parameter updates is set to 500, 5000 and 5 for $t_{0}$, $t_{1}$ and $t_{0}<t<t_{1}$, respectively and 1000 Monte Carlo realizations are used to evaluate the denominator in equation \eqref{equ:adaann}. The posterior samples capture well the nonlinear correlation among the parameters and generate a fairly accurate posterior predictive distribution that overlaps with the observations. Additional details can be found in [@wang2022variational] and [@cobian2023adaann].
+
+![Alt text](../docs/content/imgs/rcr/log_plot-1.png) 
+![Alt text](../docs/content/imgs/rcr/data_plot_rcr_nofas_adaann_8400_0_1-1.png) 
+![Alt text](../docs/content/imgs/rcr/data_plot_rcr_nofas_adaann_8400_0_2-1.png) 
+![Alt text](../docs/content/imgs/rcr/params_plot_rcr_nofas_adaann_8400_0_1-1.png) 
+![Alt text](../docs/content/imgs/rcr/params_plot_rcr_nofas_adaann_8400_0_2-1.png) 
+![Alt text](../docs/content/imgs/rcr/params_plot_rcr_nofas_adaann_8400_1_2-1.png)
+\begin{figure}
 \caption{Results from the RCR model. Loss profile (left), posterior predictive distribution (center), and posterior samples (right).}\label{fig:rcr_res}
 \end{figure}
 
-% ====================================
-\subsection{Friedman 1 model (AdaAnn)}
-% ====================================
+### Friedman 1 model (AdaAnn)
 
-We consider a modified version of the Friedman 1 dataset~\citep{friedman1991multivariate} to examine the performance of  our adaptive annealing scheduler in a high-dimensional context. 
-According to the original model in~\cite{friedman1991multivariate}, the data are generated as
-%
+We consider a modified version of the Friedman 1 dataset [@friedman1991multivariate] to examine the performance of  our adaptive annealing scheduler in a high-dimensional context. According to the original model in [@friedman1991multivariate], the data are generated as
 \begin{equation}\label{eqn:friedman1}
 \textstyle y_i = \mu_i(\boldsymbol{\beta})+ \epsilon_i, \mbox{ where }
 \mu_i(\boldsymbol{\beta})=\beta_1\text{sin}(\pi x_{i,1}x_{i,2})+ \beta_2(x_{i,3}-\beta_3)^2+\sum_{j=4}^{10}\beta_jx_{i,j}, 
 \end{equation}
-%
-where $\epsilon_i\sim\mathcal{N}(0,1)$. 
-%
-We made a slight modification to the model in~\eqref{eqn:friedman1} as
+where $\epsilon_i\sim\mathcal{N}(0,1)$. We made a slight modification to the model in \eqref{eqn:friedman1} as
 \begin{equation} \label{eqn:friedman1_modified}
 \mu_i(\boldsymbol{\beta}) = \textstyle \beta_1\text{sin}(\pi x_{i,1}x_{i,2})+ \beta_2^2(x_{i,3}-\beta_3)^2+\sum_{j=4}^{10}\beta_jx_{i,j},
 \end{equation}
-%
-and set the true parameter combination to $\boldsymbol{\beta}=(\beta_1,\ldots,\beta_{10})=(10,\pm \sqrt{20}, 0.5, 10, 5, 0, 0, 0, 0, 0)$. Note that both~\eqref{eqn:friedman1} and \eqref{eqn:friedman1_modified} contain linear, nonlinear, and interaction terms of the input variables $X_1$ to $X_{10}$, five of which ($X_6$ to $X_{10}$) are irrelevant to $Y$. Each $X$ is drawn independently from $\mathcal{U}(0,1)$. We used R package \texttt{tgp} \citep{gramacy2007tgp} to generate a Friedman~1 dataset with a sample size of $n$=1000.
-%
-We impose a non-informative uniform prior $p(\boldsymbol{\beta})$ and, unlike the original modal, we now expect a bimodal posterior distribution of $\boldsymbol{\beta}$. Results in terms of marginal statistics and their convergence for the mode with positive $z_{K,2}$ are illustrated in Table~\ref{table:Friedman_bimodal_stats} and Figure~\ref{fig:adaann_res}.
-
-\vspace{10pt}
+and set the true parameter combination to $\boldsymbol{\beta}=(\beta_1,\ldots,\beta_{10})=(10,\pm \sqrt{20}, 0.5, 10, 5, 0, 0, 0, 0, 0)$. Note that both \eqref{eqn:friedman1} and \eqref{eqn:friedman1_modified} contain linear, nonlinear, and interaction terms of the input variables $X_1$ to $X_{10}$, five of which ($X_6$ to $X_{10}$) are irrelevant to $Y$. Each $X$ is drawn independently from $\mathcal{U}(0,1)$. We used R package `tgp` [@gramacy2007tgp] to generate a Friedman~1 dataset with a sample size of $n$=1000. We impose a non-informative uniform prior $p(\boldsymbol{\beta})$ and, unlike the original modal, we now expect a bimodal posterior distribution of $\boldsymbol{\beta}$. Results in terms of marginal statistics and their convergence for the mode with positive $z_{K,2}$ are illustrated in Table \ref{table:Friedman_bimodal_stats} and Figure \ref{fig:adaann_res}.
 
 \begin{minipage}{\textwidth}
   \begin{minipage}[b]{0.4\textwidth}
@@ -381,14 +324,9 @@ We impose a non-informative uniform prior $p(\boldsymbol{\beta})$ and, unlike th
 \end{minipage}
 \end{minipage}
 
-% =================================================
-\section{Hyperparameters in LINFA}\label{sec:hyper}
-% =================================================
+### Hyperparameters in LINFA {#sec:hyper}
 
-This section contains the list of all hyperparameters in the library, their default values, and a description of the functionalities they control.
-%
-General hyperparameters are listed in Table~\ref{tab:par_general}, those related to the optimization process in Table~\ref{tab:par_optimizers}, and to the output folder and files in Table~\ref{tab:par_output}. Hyperparameters for the proposed NoFAS and AdaAnn approaches are listed in Table~\ref{tab:surr_optimizers} and~\ref{tab:adaann}, respectively. 
-Finally, a hyperparameter used to select the hardware device is described in Table~\ref{tab:par_device}.
+This section contains the list of all hyperparameters in the library, their default values, and a description of the functionalities they control. General hyperparameters are listed in Table \ref{tab:par_general}, those related to the optimization process in Table \autoref{tab:par_optimizers}, and to the output folder and files in Table \autoref{tab:par_output}. Hyperparameters for the proposed NoFAS and AdaAnn approaches are listed in Table \autoref{tab:surr_optimizers} and \autoref{tab:adaann}, respectively.  Finally, a hyperparameter used to select the hardware device is described in Table \autoref{tab:par_device}.
 
 \begin{table}[H]
 \centering
@@ -486,88 +424,16 @@ Finally, a hyperparameter used to select the hardware device is described in Tab
 \midrule
 \emph{\texttt{annealing}} & bool & Flag to activate the annealing scheduler. If this is \emph{\texttt{False}}, the target posterior distribution is left unchanged during the iterations.\\
 \emph{\texttt{scheduler}} & string & Type of annealing scheduler (\emph{\texttt{'AdaAnn'}} or \emph{\texttt{'fixed'}}, default \emph{\texttt{'AdaAnn'}}).\\
-\emph{\texttt{tol}} & float & KL tolerance. It is kept constant during inference and used in the numerator of equation~\eqref{equ:adaann}.\\
+\emph{\texttt{tol}} & float & KL tolerance. It is kept constant during inference and used in the numerator of equation \eqref{equ:adaann}.\\
 \emph{\texttt{t0}} & float & Initial inverse temperature.\\
 \emph{\texttt{N}} & int & Number of batch samples during annealing.\\
 \emph{\texttt{N\_1}} & int & Number of batch samples at $t=1$.\\
 \emph{\texttt{T\_0}} & int & Number of initial parameter updates at $t_0$.\\
 \emph{\texttt{T}} & int & Number of parameter updates after each temperature update. During such updates the temperature is kept fixed.\\
 \emph{\texttt{T\_1}} & int & Number of parameter updates at $t=1$\\
-\emph{\texttt{M}} & int & Number of Monte Carlo samples used to evaluate the denominator in equation~\eqref{equ:adaann}.\\
+\emph{\texttt{M}} & int & Number of Monte Carlo samples used to evaluate the denominator in equation \eqref{equ:adaann}.\\
 \bottomrule
 \end{tabular}
 \end{table}
-
-\vskip 0.2in
-\bibliography{linfa}
-
-\end{document}
-
-# Statement of need
-
-`Gala` is an Astropy-affiliated Python package for galactic dynamics. Python
-enables wrapping low-level languages (e.g., C) for speed without losing
-flexibility or ease-of-use in the user-interface. The API for `Gala` was
-designed to provide a class-based and user-friendly interface to fast (C or
-Cython-optimized) implementations of common operations such as gravitational
-potential and force evaluation, orbit integration, dynamical transformations,
-and chaos indicators for nonlinear dynamics. `Gala` also relies heavily on and
-interfaces well with the implementations of physical units and astronomical
-coordinate systems in the `Astropy` package [@astropy] (`astropy.units` and
-`astropy.coordinates`).
-
-`Gala` was designed to be used by both astronomical researchers and by
-students in courses on gravitational dynamics or astronomy. It has already been
-used in a number of scientific publications [@Pearson:2017] and has also been
-used in graduate courses on Galactic dynamics to, e.g., provide interactive
-visualizations of textbook material [@Binney:2008]. The combination of speed,
-design, and support for Astropy functionality in `Gala` will enable exciting
-scientific explorations of forthcoming data releases from the *Gaia* mission
-[@gaia] by students and experts alike.
-
-# Mathematics
-
-Single dollars ($) are required for inline mathematics e.g. $f(x) = e^{\pi/x}$
-
-Double dollars make self-standing equations:
-
-$$\Theta(x) = \left\{\begin{array}{l}
-0\textrm{ if } x < 0\cr
-1\textrm{ else}
-\end{array}\right.$$
-
-You can also use plain \LaTeX for equations
-\begin{equation}\label{eq:fourier}
-\hat f(\omega) = \int_{-\infty}^{\infty} f(x) e^{i\omega x} dx
-\end{equation}
-and refer to \autoref{eq:fourier} from text.
-
-# Citations
-
-Citations to entries in paper.bib should be in
-[rMarkdown](http://rmarkdown.rstudio.com/authoring_bibliographies_and_citations.html)
-format.
-
-If you want to cite a software repository URL (e.g. something on GitHub without a preferred
-citation) then you can do it with the example BibTeX entry below for @fidgit.
-
-For a quick reference, the following citation commands can be used:
-- `@author:2001`  ->  "Author et al. (2001)"
-- `[@author:2001]` -> "(Author et al., 2001)"
-- `[@author1:2001; @author2:2001]` -> "(Author1 et al., 2001; Author2 et al., 2002)"
-
-# Figures
-
-Figures can be included like this:
-
-![Caption for example figure.\label{fig:example}](figure.png)
-and referenced from text using \autoref{fig:example}.
-Figure sizes can be customized by adding an optional second parameter:
-![Caption for example figure.](figure.png){ width=20% }
-
-# Acknowledgements
-
-We acknowledge contributions from Brigitta Sipocz, Syrtis Major, and Semyeong
-Oh, and support from Kathryn Johnston during the genesis of this project.
 
 # References
