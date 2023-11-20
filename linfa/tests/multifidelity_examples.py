@@ -108,6 +108,7 @@ def linear_example():
     exp.run()
     
 def nonlinear_example_2d():
+    
     # Experiment Setting
     exp = experiment_mf()
     exp.name              = "nonlinear_2d"
@@ -246,9 +247,137 @@ def nonlinear_example_2d():
     exp.model_logdensity_hf = lambda x: log_density_high(x, high_data, trsf_high)
     
     exp.run()
+
+def nonlinear_example_4d():
     
+    # Experiment Setting
+    exp = experiment_mf()
+    exp.name              = "nonlinear_4d"
+    exp.input_size        = 4             
+    exp.flow_type         = 'realnvp'         
+    exp.n_blocks_lf       = 14     
+    exp.n_blocks_hf       = 18     
+    exp.hidden_size       = 20           
+    exp.n_hidden          = 1             
+    exp.activation_fn     = 'relu'        
+    exp.input_order       = 'sequential'  
+    exp.batch_norm_order  = True          
+
+    # NOFAS parameters
+    exp.run_nofas          = False  
+    exp.log_interval       = 500     
+
+    # OPTIMIZER parameters
+    exp.optimizer       = 'Adam'   
+    exp.lr_lf           = 0.008   
+    exp.lr_hf           = 0.005   
+    exp.lr_decay_lf     = 0.75    
+    exp.lr_decay_hf     = 0.75    
+    exp.lr_scheduler    = 'StepLR' 
+    exp.lr_step_lf      = 2000    
+    exp.lr_step_hf      = 2000      
+    exp.batch_size_lf   = 100     
+    exp.batch_size_hf   = 10              
+    exp.n_iter_lf       = 5000    
+    exp.n_iter_hf       = 5000    
+
+    # ANNEALING parameters
+    exp.annealing     = False     
+
+    # OUTPUT parameters
+    exp.output_dir          = './results/' + exp.name 
+    exp.log_file            = 'log.txt'                
+    exp.seed                = 2                 
+    exp.n_sample            = 5000                                                 
+
+    # DEVICE parameters
+    exp.no_cuda = True #:bool: Flag to use CPU
+
+    # Set device
+    exp.device = torch.device('cuda:0' if torch.cuda.is_available() and not exp.no_cuda else 'cpu')
+
+    # Define transformation
+    # One list for each variable
+    trsf_info_low = [['tanh',-3,3,-0.5,0.5],
+                     ['tanh',-3,3,0,2],
+                     ['tanh',-3,3,-1,1],
+                     ['tanh',-3,3,0,2]]
+
+    trsf_low = Transformation(trsf_info_low)        
+    exp.transform_lf = trsf_low
+
+    trsf_info_high = [['tanh',-3,3,0,1],
+                      ['tanh',-3,3,0,1],
+                      ['tanh',-3,3,0,2],
+                      ['tanh',-3,3,-1,1]]
+
+    trsf_high = Transformation(trsf_info_high)        
+    exp.transform_hf = trsf_high
+
+    # Compute data
+
+    low_params = torch.tensor([0.01, 0.99, 0, 1])
+    high_params = torch.tensor([0.7, 0.3, 1, 0])
+
+    #functions for both models
+    def model(x, p):
+        return torch.exp(p[0]*x[:,0] + p[1]*x[:,1]) + 0.15*torch.sin(2*np.pi*(p[2]*x[:,0] + p[3]*x[:,1]))
+
+    x_low = y_low = torch.linspace(0,1,10)
+    X_low, Y_low = torch.meshgrid(x_low, y_low)
+    X_low_flatten, Y_low_flatten = np.reshape(X_low, (-1, 1)), np.reshape(Y_low, (-1, 1))
+    XY_low = torch.from_numpy(np.concatenate([X_low_flatten, Y_low_flatten], 1))
+    Z_low_data = model(XY_low, low_params)
+
+    x_high = y_high = torch.linspace(0,1,5)
+    X_high, Y_high = torch.meshgrid(x_high, y_high)
+    X_high_flatten, Y_high_flatten = np.reshape(X_high, (-1, 1)), np.reshape(Y_high, (-1, 1))
+    XY_high = torch.from_numpy(np.concatenate([X_high_flatten, Y_high_flatten], 1))
+    Z_high_data = model(XY_high, high_params)
+
+    #add noise to the data
+    low_data = Z_low_data + np.random.normal(0,0.1,100)
+    high_data = Z_high_data + np.random.normal(0,0.1,25)
+
+    #concatenate the x and y data values together
+    low_data = np.concatenate([np.reshape(XY_low, [100,2]), np.reshape(low_data, [100,1])], 1)
+    high_data = np.concatenate([np.reshape(XY_high, [25,2]),np.reshape(high_data, [25,1])], 1)
+
+    #create into tensors for Pytorch
+    low_data = torch.from_numpy(low_data)
+    high_data = torch.from_numpy(high_data)
+
+
+    # Model Setting
+    def log_density(x, d, transform):
+
+        # Compute transformation log Jacobian
+        adjust = transform.compute_log_jacob_func(x)
+
+        params = transform.forward(x)
+
+        # Compute Model
+        def targetPosterior(p, Z):
+            return torch.exp(p[0]*Z[:,0] + p[1]*Z[:,1]) + 0.15*torch.sin(2*np.pi*(p[2]*Z[:,0] + p[3]*Z[:,1]))
+
+        f = torch.zeros(len(params)).to(exp.device)
+
+        for i in range(len(params)):
+            y_out = targetPosterior(params[i], d[:,0:2])
+            val = torch.linalg.norm(y_out - d[:, 2])
+            f[i] = -val ** 2 / (2*0.1**2)
+
+        return f.reshape(x.size(0), 1) + adjust
+
+    # Define low and high fidelity models
+    exp.model_logdensity_lf = lambda x: log_density(x, low_data, trsf_low)
+    exp.model_logdensity_hf = lambda x: log_density(x, high_data, trsf_high)
+    
+    exp.run()
+
 if __name__ == '__main__':
     
     # Execute tests
     linear_example()
     #nonlinear_example_2d()
+    #nonlinear_example_4d()
