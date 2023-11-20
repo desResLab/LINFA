@@ -96,7 +96,7 @@ def run_test():
         print('%15.6f %15.6f' % (lf_model[loopA][0].item()+discr[loopA][0].item(),var_grid_out[loopA][0].item()))
 
 
-def generate_data(use_true_model=False,num_observations=50):
+def generate_data(use_true_model=False, num_observations=50):
 
     # Set variable grid
     var_grid = [[350.0, 400.0, 450.0],

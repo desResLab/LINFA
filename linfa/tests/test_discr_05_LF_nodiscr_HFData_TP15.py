@@ -14,7 +14,7 @@ from linfa.models.discrepancy_models import PhysChem
 def run_test():
 
     exp = experiment()
-    exp.name = "lf_no_disc_example_5"
+    exp.name = "lf_no_disc_example_hf_data_tp_15"
     exp.flow_type           = 'maf'         # str: Type of flow (default 'realnvp')
     exp.n_blocks            = 15            # int: Number of hidden layers   
     exp.hidden_size         = 100           # int: Hidden layer size for MADE in each layer (default 100)
@@ -27,7 +27,7 @@ def run_test():
     exp.input_size          = 2             # int: Dimensionalty of input (default 2)
     exp.batch_size          = 200           # int: Number of samples generated (default 100)
     exp.true_data_num       = 2             # double: Number of true model evaluted (default 2)
-    exp.n_iter              = 25001         # int: Number of iterations (default 25001)
+    exp.n_iter              = 2501         # int: Number of iterations (default 25001)
     exp.lr                  = 0.001         # float: Learning rate (default 0.003)
     exp.lr_decay            = 0.9999        # float:  Learning rate decay (default 0.9999)
     exp.log_interal         = 10            # int: How often to show loss stat (default 10)
@@ -179,7 +179,7 @@ def run_test():
 def generate_data():
 
     # Set variable grid
-    if(False):
+    if(True):
         var_grid = [[350.0, 400.0, 450.0],
                     [1.0, 2.0, 3.0, 4.0, 5.0]]
     else:
@@ -246,10 +246,3 @@ if __name__ == "__main__":
     # transf_test()
 
     # test_model()
-
-
-
-
-
-
-

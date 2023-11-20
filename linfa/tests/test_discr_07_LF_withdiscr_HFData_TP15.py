@@ -14,7 +14,7 @@ from linfa.models.discrepancy_models import PhysChem
 def run_test():
 
     exp = experiment()
-    exp.name = "lf_no_disc_example_5"
+    exp.name = "lf_disc_hf_data_tp15"
     exp.flow_type           = 'maf'         # str: Type of flow (default 'realnvp')
     exp.n_blocks            = 15            # int: Number of hidden layers   
     exp.hidden_size         = 100           # int: Hidden layer size for MADE in each layer (default 100)
@@ -179,7 +179,7 @@ def run_test():
 def generate_data():
 
     # Set variable grid
-    if(False):
+    if(True):
         var_grid = [[350.0, 400.0, 450.0],
                     [1.0, 2.0, 3.0, 4.0, 5.0]]
     else:
@@ -239,7 +239,7 @@ def test_model():
 # Main code
 if __name__ == "__main__":
     
-    # generate_data()
+    generate_data()
     
     run_test()
 
