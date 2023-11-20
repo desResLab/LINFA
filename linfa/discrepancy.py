@@ -41,7 +41,10 @@ class Discrepancy(object):
 
         # Input/output statistics
         self.var_in_avg = torch.mean(var_grid_in,dim=0)
-        self.var_in_std = torch.std(var_grid_in,dim=0)
+        if(len(self.var_grid_in) == 1):
+            self.var_in_std = torch.zeros_like(self.var_in_avg)
+        else:
+            self.var_in_std = torch.std(var_grid_in,dim=0)
         # If there are multiple outputs, we will define one file for each output
         self.var_out_avg = torch.mean(var_grid_out)
         self.var_out_std = torch.std(var_grid_out)
@@ -82,7 +85,10 @@ class Discrepancy(object):
         y = self.lf_model(batch_x) 
 
         # Standardize inputs and outputs
-        var_grid = (self.var_grid_in - self.var_in_avg) / self.var_in_std
+        if(len(self.var_grid_in) == 1):
+            var_grid = torch.zeros_like(self.var_grid_in)
+        else:
+            var_grid = (self.var_grid_in - self.var_in_avg) / self.var_in_std
         # The output is the discrepancy
         var_out = self.var_grid_out - torch.mean(y,dim=1).unsqueeze(1)
         # Update output stats
@@ -140,9 +146,11 @@ class Discrepancy(object):
             Value of the surrogate at x.
 
         """
-        # res = self.surrogate((var - self.var_in_avg) / self.var_in_std) * self.var_out_std + self.var_out_avg
-        res = self.surrogate((var - self.var_in_avg) / self.var_in_std)
-        # res = self.surrogate(var)
+        if(len(self.var_grid_in) == 1):
+            res = self.surrogate(torch.zeros_like(var))
+        else:
+            res = self.surrogate((var - self.var_in_avg) / self.var_in_std)
+
         if not(self.is_trained):
             zero_res = torch.zeros_like(res)
             return zero_res

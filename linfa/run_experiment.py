@@ -81,6 +81,7 @@ class experiment:
         self.model            = None
         self.model_logdensity = None
         self.surrogate        = None
+        self.model_logprior   = None
 
     def run(self):
         """Runs instance of inference inference problem        
@@ -315,7 +316,10 @@ class experiment:
                     exit(-1)    
 
         # Free energy bound
-        loss = (- torch.sum(sum_log_abs_det_jacobians, 1) - t * self.model_logdensity(xk)).mean()
+        if(self.model_logprior is None):
+            loss = (- torch.sum(sum_log_abs_det_jacobians, 1) - t * self.model_logdensity(xk)).mean()
+        else:
+            loss = (- torch.sum(sum_log_abs_det_jacobians, 1) - t * (self.model_logdensity(xk) + self.model_logprior(xk))).mean()
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
