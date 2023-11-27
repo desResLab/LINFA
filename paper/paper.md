@@ -203,7 +203,7 @@ where $\symbfit{x}_{0} \sim \mathcal{N}(0,\symbfit I_2)$ and $\odot$ is the Hada
 
 Results in terms of loss profile, variational approximation, and posterior predictive distribution are shown in Figure \autoref{fig:trivial}.
 
-![](../docs/content/imgs/trivial/log_plot_trivial-1.png){height=400px}![](../docs/content/imgs/trivial/sample_plot_trivial-1.png){height=400px}![](../docs/content/imgs/trivial/target_plot_trivial-1.png){height=400px}
+![](../docs/content/imgs/trivial/log_plot_trivial-1.png){height=420px}![](../docs/content/imgs/trivial/sample_plot_trivial-1.png){height=420px}![](../docs/content/imgs/trivial/target_plot_trivial-1.png){height=420px}
 \begin{figure}
 \caption{Results from the simple two-dimensional map. Loss profile (left), posterior samples (center), and posterior predictive distribution (right).\label{fig:trivial}}
 \end{figure}
