@@ -122,7 +122,7 @@ where `NAME` is the name of the test case, either `trivial`, `highdim`, `rc`, `r
 
 In this paper, we have introduced the LINFA library for variational inference, briefly discussed the relevant background, its capabilities, and report its performance on a number of test cases. Some interesting directions for future work are mentioned below.
 
-Future versions will support user-defined privacy-preserving synthetic data generation and variational inference through differentially private gradient descent algorithms. This will allow the user to perform inference tasks while preserving a pre-defined privacy budget, as discussed in [@su2023differentially]. LINFA will also be extended to handle multiple models. This will open new possibilities to solve inverse problems combining variational inference and multi-fidelity surrogates (see, e.g., @siahkoohi2021preconditioned]. In addition, for inverse problems with significant dependence among the parameters, it is often possible to simplify the inference task by operating on manifolds of reduced dimensionality [@brennan2020greedy]. New modules for dimensionality reduction will be developed and integrated with the LINFA library. Finally, the ELBO loss typically used in variational inference has known limitations, some of which are related to its close connection with the KL divergence. Future versions of LINFA will provide the option to use alternative losses.
+Future versions will support user-defined privacy-preserving synthetic data generation and variational inference through differentially private gradient descent algorithms. This will allow the user to perform inference tasks while preserving a pre-defined privacy budget, as discussed in [@su2023differentially]. LINFA will also be extended to handle multiple models. This will open new possibilities to solve inverse problems combining variational inference and multi-fidelity surrogates (see, e.g., @siahkoohi2021preconditioned). In addition, for inverse problems with significant dependence among the parameters, it is often possible to simplify the inference task by operating on manifolds of reduced dimensionality [@brennan2020greedy]. New modules for dimensionality reduction will be developed and integrated with the LINFA library. Finally, the ELBO loss typically used in variational inference has known limitations, some of which are related to its close connection with the KL divergence. Future versions of LINFA will provide the option to use alternative losses.
 
 # Acknowledgements
 
@@ -285,8 +285,9 @@ where $\epsilon_i\sim\mathcal{N}(0,1)$. We made a slight modification to the mod
 \begin{equation} \label{eqn:friedman1_modified}
 \mu_i(\boldsymbol{\beta}) = \textstyle \beta_1\text{sin}(\pi x_{i,1}x_{i,2})+ \beta_2^2(x_{i,3}-\beta_3)^2+\sum_{j=4}^{10}\beta_jx_{i,j},
 \end{equation}
-and set the true parameter combination to $\boldsymbol{\beta}=(\beta_1,\ldots,\beta_{10})=(10,\pm \sqrt{20}, 0.5, 10, 5, 0, 0, 0, 0, 0)$. Note that both \eqref{eqn:friedman1} and \eqref{eqn:friedman1_modified} contain linear, nonlinear, and interaction terms of the input variables $X_1$ to $X_{10}$, five of which ($X_6$ to $X_{10}$) are irrelevant to $Y$. Each $X$ is drawn independently from $\mathcal{U}(0,1)$. We used R package `tgp` [@gramacy2007tgp] to generate a Friedman~1 dataset with a sample size of $n$=1000. We impose a non-informative uniform prior $p(\boldsymbol{\beta})$ and, unlike the original modal, we now expect a bimodal posterior distribution of $\boldsymbol{\beta}$. Results in terms of marginal statistics and their convergence for the mode with positive $z_{K,2}$ are illustrated in Table \ref{table:Friedman_bimodal_stats} and Figure \ref{fig:adaann_res}.
+and set the true parameter combination to $\boldsymbol{\beta}=(\beta_1,\ldots,\beta_{10})=(10,\pm \sqrt{20}, 0.5, 10, 5, 0, 0, 0, 0, 0)$. Note that both \eqref{eqn:friedman1} and \eqref{eqn:friedman1_modified} contain linear, nonlinear, and interaction terms of the input variables $X_1$ to $X_{10}$, five of which ($X_6$ to $X_{10}$) are irrelevant to $Y$. Each $X$ is drawn independently from $\mathcal{U}(0,1)$. We used R package `tgp` [@gramacy2007tgp] to generate a Friedman1 dataset with a sample size of $n$=1000. We impose a non-informative uniform prior $p(\boldsymbol{\beta})$ and, unlike the original modal, we now expect a bimodal posterior distribution of $\boldsymbol{\beta}$. Results in terms of marginal statistics and their convergence for the mode with positive $z_{K,2}$ are illustrated in \autoref{table:Friedman_bimodal_stats} and \autoref{fig:adaann_res}.
 
+\begin{center}
 \begin{table}
 \begin{tabular}[2in]{l c c c c}
 \toprule
@@ -307,6 +308,7 @@ $\beta_{10} = 0$ & 0.1192 & 0.0463\\
 \end{tabular}
 \caption{Posterior mean and standard deviation for positive mode in the modified Friedman test case.}\label{table:Friedman_bimodal_stats}    
 \end{table}
+\end{center}
 
 
 ![](../docs/content/imgs/adaann/log_plot-1.png){height=430px}![](../docs/content/imgs/adaann/adaann-1.png){height=430px}
