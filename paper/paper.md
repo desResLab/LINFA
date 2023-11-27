@@ -308,10 +308,8 @@ $\beta_{10} = 0$ & 0.1192 & 0.0463\\
 \caption{Posterior mean and standard deviation for positive mode in the modified Friedman test case.}\label{table:Friedman_bimodal_stats}    
 \end{table}
 
-
-\begin{figure}
-\centering
 ![](../docs/content/imgs/adaann/log_plot-1.png){height=500px}![](../docs/content/imgs/adaann/adaann-1.png){height=500px}
+\begin{figure}
 \caption{Loss profile (left) and posterior marginal statistics (right) for positive mode in the modified Friedman test case.}\label{fig:adaann_res}
 \end{figure}
 
