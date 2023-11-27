@@ -98,13 +98,13 @@ LINFA is designed as a general inference engine and allows the user to define cu
     - The `forward()` function evaluates the surrogate model at multiple input realizations. If a transformation is defined, the surrogate should always be specified in the _normalized domain_ with limits defined in terms of the normalized intervals (i.e., $[a,b]$).
 
 4.  **User-defined likelihood** - A user-defined likelihood function can be defined by passing the parameters, the model, the surrogate and a coordinate transformation using 
-```
-log_density(x, model, surrogate, transformation),
-```
-and then assigning it as a member function of the `experiment` class using:
-```
-exp.model_logdensity = lambda x: log_density(x, model, surr, transf).
-```
+  ```
+  log_density(x, model, surrogate, transformation),
+  ```
+  and then assigning it as a member function of the `experiment` class using:
+  ```
+  exp.model_logdensity = lambda x: log_density(x, model, surr, transf).
+  ```
 
 5. **Linear and adaptive annealing schedulers** - LINFA provides two annealing schedulers by default. The first is the `'Linear'` scheduler with constant increments. The second is the `'AdaAnn'` adaptive scheduler [@cobian2023adaann] with hyperparameters reported in \autoref{tab:adaann}. For the AdaAnn scheduler, the user can also specify a different number of parameter updates to be performed at the initial temperature $t_{0}$, final temperature $t_{1}$, and for any temperature $t_{0}<t<1$. Finally, the batch size (number of samples used to evaluate the expectations in the loss function) can also be differentiated for $t=1$ and $t<1$. 
 
