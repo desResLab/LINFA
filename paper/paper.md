@@ -265,9 +265,9 @@ where the distal pressure is set to $P_{d}=55$ mmHg. Synthetic observations are 
 
 This example also demonstrates how NoFAS can be combined with annealing for improved convergence. The results in Figure \autoref{fig:rcr_res} are generated using the AdaAnn adaptive annealing scheduler with intial inverse temperature $t_{0}=0.05$, KL tolerance $\tau=0.01$ and a batch size of 100 samples. The number of parameter updates is set to 500, 5000 and 5 for $t_{0}$, $t_{1}$ and $t_{0}<t<t_{1}$, respectively and 1000 Monte Carlo realizations are used to evaluate the denominator in equation \eqref{equ:adaann}. The posterior samples capture well the nonlinear correlation among the parameters and generate a fairly accurate posterior predictive distribution that overlaps with the observations. Additional details can be found in [@wang2022variational] and [@cobian2023adaann].
 
-![](../docs/content/imgs/rcr/log_plot-1.png){height=120px}![](../docs/content/imgs/rcr/data_plot_rcr_nofas_adaann_8400_0_1-1.png){height=120px}![](../docs/content/imgs/rcr/data_plot_rcr_nofas_adaann_8400_0_2-1.png){height=120px} 
+![](../docs/content/imgs/rcr/log_plot-1.png){height=430px}![](../docs/content/imgs/rcr/data_plot_rcr_nofas_adaann_8400_0_1-1.png){height=430px}![](../docs/content/imgs/rcr/data_plot_rcr_nofas_adaann_8400_0_2-1.png){height=430px} 
 
-![](../docs/content/imgs/rcr/params_plot_rcr_nofas_adaann_8400_0_1-1.png){height=100px}![](../docs/content/imgs/rcr/params_plot_rcr_nofas_adaann_8400_0_2-1.png){height=100px}![](../docs/content/imgs/rcr/params_plot_rcr_nofas_adaann_8400_1_2-1.png){height=100px}
+![](../docs/content/imgs/rcr/params_plot_rcr_nofas_adaann_8400_0_1-1.png){height=350px}![](../docs/content/imgs/rcr/params_plot_rcr_nofas_adaann_8400_0_2-1.png){height=350px}![](../docs/content/imgs/rcr/params_plot_rcr_nofas_adaann_8400_1_2-1.png){height=350px}
 \begin{figure}
 \caption{Results from the RCR model. Loss profile (left), posterior predictive distribution (center), and posterior samples (right).}\label{fig:rcr_res}
 \end{figure}
