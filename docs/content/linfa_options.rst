@@ -160,12 +160,12 @@ LINFA options
      - Number of iterations for the surrogate model update (default ``6000``)
    
    * - ``surr_folder``
-     - ``str ``
+     - ``str``
      - Folder where the surrogate model is stored (default ``'./'``)
    
    * - ``use_new_surr``
      - ``bool``
-     - | Start by pre-training a new surrogate 
+     - | Start by pre-training a new surrogate
        | and ignore existing surrogates (default ``True``)
 
    * - ``store_surr_interval``
