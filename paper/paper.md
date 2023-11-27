@@ -104,7 +104,7 @@ LINFA is designed as a general inference engine and allows the user to define cu
     ```
 
     and then assigning it as a member function of the `experiment` class using:
-    
+
     ```
     exp.model_logdensity = lambda x: log_density(x, model, surr, transf).
     ```
@@ -158,7 +158,7 @@ In the context of variational inference, we seek to determine an _optimal_ set o
 \end{split}
 \end{equation}
 
-For computational convenience, normalizing flow transformations are selected to be easily invertible and their Jacobian determinant can be computed with a cost that grows linearly with the problem dimensionality. Approaches in the literature include RealNVP [@dinh2016density], GLOW [@kingma2018glow], and autoregressive transformations such as MAF [@papamakarios2018masked] and IAF [@kingma2016improved]. Detailed reviews on a wide range of flow formulations can be found in [@kobyzev2020normalizing] and  [@papamakarios2021normalizing].
+For computational convenience, normalizing flow transformations are selected to be easily invertible and their Jacobian determinant can be computed with a cost that grows linearly with the problem dimensionality. Approaches in the literature include RealNVP [@dinh2016density], GLOW [@kingma2018glow], and autoregressive transformations such as MAF [@papamakarios2018masked] and IAF [@kingma2016improved]. Detailed reviews on a wide range of flow formulations can be found in @kobyzev2020normalizing and @papamakarios2021normalizing.
 
 ### MAF and RealNVP
 
@@ -175,7 +175,7 @@ This requires the evaluation of the gradient of the ELBO \eqref{equ:ELBO} with r
 Our solution is to replace the model $\symbfit{f}$ with a computationally inexpensive surrogate $\widehat{\symbfit{f}}: \symbfit{\mathcal{Z}} \times \symbfit{\mathcal{W}} \to \symbfit{\mathcal{X}}$ parameterized by the weigths $\symbfit{w} \in \symbfit{\mathcal{W}}$, whose derivatives can be obtained at a relatively low computational cost, but intrinsic bias in the selected surrogate formulation, a limited number of training examples, and locally optimal $\symbfit{w}$ can compromise the accuracy of $\widehat{\symbfit{f}}$.
 
 To resolve these issues, LINFA implements NoFAS, which updates the surrogate model adaptively by smartly weighting the samples of $\symbfit{z}$ from NF thanks to a \emph{memory-aware} loss function.
-Once a newly updated surrogate is obtained, the likelihood function is updated, leading to a new posterior distribution that will be approximated by VI-NF, producing, in turn, new samples for the next surrogate model update, and so on. Additional details can be found in [@wang2022variational].
+Once a newly updated surrogate is obtained, the likelihood function is updated, leading to a new posterior distribution that will be approximated by VI-NF, producing, in turn, new samples for the next surrogate model update, and so on. Additional details can be found in @wang2022variational.
 
 ### Adaptive Annealing
 
@@ -189,7 +189,7 @@ The AdaAnn scheduler determines the increment $\epsilon_{k}$ that approximately 
 \epsilon_k = \tau/ \sqrt{\mathbb{V}_{p^{t_k}}[\log p(\symbfit z,\symbfit{x})]}. 
 \end{equation}
 
-The denominator is large when the support of the annealed distribution $p^{t_{k}}(\symbfit{z},\symbfit{x})$ is wider than the support of the target $p(\symbfit{z},\symbfit{x})$, and progressively reduces with increasing $t_{k}$. Further detail on the derivation of the expression for $\epsilon_{k}$ can be found in [@cobian2023adaann].
+The denominator is large when the support of the annealed distribution $p^{t_{k}}(\symbfit{z},\symbfit{x})$ is wider than the support of the target $p(\symbfit{z},\symbfit{x})$, and progressively reduces with increasing $t_{k}$. Further detail on the derivation of the expression for $\epsilon_{k}$ can be found in @cobian2023adaann.
 
 ## Numerical benchmarks
 
@@ -207,7 +207,7 @@ Observations $\symbfit{x}$ are generated as
 
 where $\symbfit{x}_{0} \sim \mathcal{N}(0,\symbfit I_2)$ and $\odot$ is the Hadamard product. We set the _true_ model parameters at $\symbfit{z}^{*} = (3, 5)^T$, with output $\symbfit{x}^{*} = f(\symbfit z^{*})=(7.99, -2.59)^{T}$, and simulate 50 sets of observations from \eqref{eqn:exp1}. The likelihood of $\symbfit z$ given $\symbfit{x}$ is assumed Gaussian, and we adopt a noninformative uniform prior $p(\symbfit z)$. We allocate a budget of $4\times4=16$ model solutions to the pre-grid and use the rest to adaptively calibrate $\widehat{f}$ using $2$ samples every $1000$ normalizing flow iterations.
 
-Results in terms of loss profile, variational approximation, and posterior predictive distribution are shown in Figure \autoref{fig:trivial}.
+Results in terms of loss profile, variational approximation, and posterior predictive distribution are shown in \autoref{fig:trivial}.
 
 ![](../docs/content/imgs/trivial/log_plot_trivial-1.png){height=420px}![](../docs/content/imgs/trivial/target_plot_trivial-1.png){height=420px}![](../docs/content/imgs/trivial/sample_plot_trivial-1.png){height=420px}
 \begin{figure}
@@ -241,7 +241,7 @@ The true parameter vector is $\symbfit{z}^{*} = (2.75,$ $-1.5, 0.25,$ $-2.5,$ $1
 
 ### Two-element Windkessel Model
 
-The two-element Windkessel model (often referred to as the _RC_ model) is the simplest representation of the human systemic circulation and requires two parameters, i.e., a resistance $R \in [100, 1500]$ Barye$\cdot$ s/ml and a capacitance $C \in [1\times 10^{-5}, 1 \times 10^{-2}]$ ml/Barye. We provide a periodic time history of the aortic flow (see [@wang2022variational] for additional details) and use the RC model to predict the time history of the proximal pressure $P_{p}(t)$, specifically its maximum, minimum, and average values over a typical heart cycle, while assuming the distal resistance $P_{d}(t)$ as a constant in time, equal to 55 mmHg. In our experiment, we set the true resistance and capacitance as $z_{K,1}^{*}=R^{*} = 1000$ Barye$\cdot$ s/ml and $z_{K,2}^{*}=C^{*} = 5\times 10^{-5}$ ml/Barye, and determine $P_{p}(t)$ from a RK4 numerical solution of the following algebraic-differential system
+The two-element Windkessel model (often referred to as the _RC_ model) is the simplest representation of the human systemic circulation and requires two parameters, i.e., a resistance $R \in [100, 1500]$ Barye$\cdot$ s/ml and a capacitance $C \in [1\times 10^{-5}, 1 \times 10^{-2}]$ ml/Barye. We provide a periodic time history of the aortic flow (see @wang2022variational for additional details) and use the RC model to predict the time history of the proximal pressure $P_{p}(t)$, specifically its maximum, minimum, and average values over a typical heart cycle, while assuming the distal resistance $P_{d}(t)$ as a constant in time, equal to 55 mmHg. In our experiment, we set the true resistance and capacitance as $z_{K,1}^{*}=R^{*} = 1000$ Barye$\cdot$ s/ml and $z_{K,2}^{*}=C^{*} = 5\times 10^{-5}$ ml/Barye, and determine $P_{p}(t)$ from a RK4 numerical solution of the following algebraic-differential system
 
 \begin{equation}\label{equ:RC}
 Q_{d} = \frac{P_{p}-P_{d}}{R},\quad \frac{d P_{p}}{d t} = \frac{Q_{p} - Q_{d}}{C},
@@ -264,7 +264,7 @@ Q_{p} = \frac{P_{p} - P_{c}}{R_{p}},\quad Q_{d} = \frac{P_{c}-P_{d}}{R_{d}},\qua
 $$
 where the distal pressure is set to $P_{d}=55$ mmHg. Synthetic observations are generated from $N(\symbfit\mu, \symbfit\Sigma)$, where $\mu=(f_{1}(\symbfit{z}^{*}),f_{2}(\symbfit{z}^{*}),f_{3}(\symbfit{z}^{*}))^T$ = $(P_{p,\text{min}}, P_{p,\text{max}}, P_{p,\text{ave}})^T$ = $(100.96,148.02,116.50)^T$ and $\symbfit\Sigma$ is a diagonal matrix with entries $(5.05, 7.40, 5.83)^T$. The budgeted number of true model solutions is $216$; the fixed surrogate model is evaluated on a $6\times 6\times 6 = 216$ pre-grid while the adaptive surrogate is evaluated with a pre-grid of size $4\times 4\times 4 = 64$ and the other 152 evaluations are adaptively selected. 
 
-This example also demonstrates how NoFAS can be combined with annealing for improved convergence. The results in \autoref{fig:rcr_res} are generated using the AdaAnn adaptive annealing scheduler with intial inverse temperature $t_{0}=0.05$, KL tolerance $\tau=0.01$ and a batch size of 100 samples. The number of parameter updates is set to 500, 5000 and 5 for $t_{0}$, $t_{1}$ and $t_{0}<t<t_{1}$, respectively and 1000 Monte Carlo realizations are used to evaluate the denominator in equation \eqref{equ:adaann}. The posterior samples capture well the nonlinear correlation among the parameters and generate a fairly accurate posterior predictive distribution that overlaps with the observations. Additional details can be found in [@wang2022variational] and [@cobian2023adaann].
+This example also demonstrates how NoFAS can be combined with annealing for improved convergence. The results in \autoref{fig:rcr_res} are generated using the AdaAnn adaptive annealing scheduler with intial inverse temperature $t_{0}=0.05$, KL tolerance $\tau=0.01$ and a batch size of 100 samples. The number of parameter updates is set to 500, 5000 and 5 for $t_{0}$, $t_{1}$ and $t_{0}<t<t_{1}$, respectively and 1000 Monte Carlo realizations are used to evaluate the denominator in equation \eqref{equ:adaann}. The posterior samples capture well the nonlinear correlation among the parameters and generate a fairly accurate posterior predictive distribution that overlaps with the observations. Additional details can be found in @wang2022variational and @cobian2023adaann.
 
 ![](../docs/content/imgs/rcr/log_plot-1.png){height=430px}![](../docs/content/imgs/rcr/data_plot_rcr_nofas_adaann_8400_0_1-1.png){height=430px}![](../docs/content/imgs/rcr/data_plot_rcr_nofas_adaann_8400_0_2-1.png){height=430px} 
 
@@ -308,8 +308,10 @@ $\beta_{10} = 0$ & 0.1192 & 0.0463\\
 \caption{Posterior mean and standard deviation for positive mode in the modified Friedman test case.}\label{table:Friedman_bimodal_stats}    
 \end{table}
 
-![](../docs/content/imgs/adaann/log_plot-1.png){height=430px}![](../docs/content/imgs/adaann/adaann-1.png){height=430px}
+
 \begin{figure}
+\centering
+![](../docs/content/imgs/adaann/log_plot-1.png){height=500px}![](../docs/content/imgs/adaann/adaann-1.png){height=500px}
 \caption{Loss profile (left) and posterior marginal statistics (right) for positive mode in the modified Friedman test case.}\label{fig:adaann_res}
 \end{figure}
 
