@@ -9,7 +9,7 @@ fs=8
 plt.rc('font', family='serif')
 plt.rc('xtick', labelsize='x-small')
 plt.rc('ytick', labelsize='x-small')
-plt.rc('text', usetex=True)
+plt.rc('text', usetex = False)
 
 def plot_log(log_file,out_dir,fig_format='png',use_dark_mode=False):
   log_data = np.loadtxt(log_file)

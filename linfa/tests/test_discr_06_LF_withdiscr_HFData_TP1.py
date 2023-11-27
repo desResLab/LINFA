@@ -19,7 +19,7 @@ def run_test():
     exp.activation_fn       = 'relu'        # str: Activation function used (default 'relu')
     exp.input_order         = 'sequential'  # str: Input oder for create_mask (default 'sequential')
     exp.batch_norm_order    = True          # bool: Order to decide if batch_norm is used (default True)
-    exp.save_interval       = 5000          # int: How often to sample from normalizing flow
+    exp.save_interval       = 1000          # int: How often to sample from normalizing flow
     
     exp.input_size          = 2             # int: Dimensionalty of input (default 2)
     exp.batch_size          = 200           # int: Number of samples generated (default 100)
@@ -29,14 +29,13 @@ def run_test():
     exp.lr_decay            = 0.9999        # float:  Learning rate decay (default 0.9999)
     exp.log_interal         = 10            # int: How often to show loss stat (default 10)
 
-    #### HAD TO TURN THIS OFF FOR NOW
     exp.run_nofas           = True          # normalizing flow with adaptive surrogate
     exp.surrogate_type      = 'discrepancy' # type of surrogate we are using
     exp.surr_pre_it         = 1000          # int: Number of pre-training iterations for surrogate model
     exp.surr_upd_it         = 2000          # int: Number of iterations for the surrogate model update
     exp.calibrate_interval  = 1000          #:int:    How often the surrogate model is updated
 
-    exp.annealing           = False         # TODO : turn this on eventually
+    exp.annealing           = False
     exp.budget              = 216           # int: Total number of true model evaulations
     exp.surr_folder         = "./" 
     exp.use_new_surr        = True
@@ -109,8 +108,7 @@ def run_test():
         
         # Initialize total number of variable inputs
         total_var_inputs = len(model.var_in)
-
-        # HAD TO MOVE THIS UP BEFORE EVALUATE DISCREPANCY            
+         
         # Evaluate model response - (num_var x num_batch)
         modelOut = langmuir_model.solve_t(transform.forward(calib_inputs)).t()
 
@@ -132,8 +130,6 @@ def run_test():
         # Loop on the available observations
         for loopA in range(num_obs):
             l1 = -0.5 * np.prod(langmuir_model.data.shape) * np.log(2.0 * np.pi)
-            
-            # TODO: generalize to multiple inputs
             l2 = (-0.5 * langmuir_model.data.shape[1] * torch.log(torch.prod(stds))).item()
             l3 = -0.5 * torch.sum(((modelOut + discrepancy.t() - Data[:,loopA].unsqueeze(0)) / stds.t())**2, dim = 1)
 
@@ -178,7 +174,7 @@ def generate_data(use_true_model=False,num_observations=50):
 # Main code
 if __name__ == "__main__":
     
-    generate_data(use_true_model=True,num_observations=1)
+    generate_data(use_true_model=True, num_observations=1)
     
     run_test()
 

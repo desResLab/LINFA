@@ -23,7 +23,7 @@ def run_test():
     exp.input_size          = 2             # int: Dimensionalty of input (default 2)
     exp.batch_size          = 200           # int: Number of samples generated (default 100)
     exp.true_data_num       = 2             # double: Number of true model evaluted (default 2)
-    exp.n_iter              = 2501         # int: Number of iterations (default 25001)
+    exp.n_iter              = 25001         # int: Number of iterations (default 25001)
     exp.lr                  = 0.001         # float: Learning rate (default 0.003)
     exp.lr_decay            = 0.9999        # float:  Learning rate decay (default 0.9999)
     exp.log_interal         = 10            # int: How often to show loss stat (default 10)
@@ -52,13 +52,9 @@ def run_test():
     exp.device = torch.device('cuda:0' if torch.cuda.is_available() and not exp.no_cuda else 'cpu')
 
     # Define transformation
-    trsf_info = [['linear', -4.0, 4.0, 500.0, 1500.0],
-                 ['linear', -4.0, 4.0, -30000.0, -15000.0]]
+    trsf_info = [['tanh', -7.0, 7.0, 500.0, 1500.0],
+                 ['tanh', -7.0, 7.0, -30000.0, -15000.0]]
     trsf = Transformation(trsf_info)
-    # If it does not work try with (1) more noise (2) tanh transform
-    # trsf_info = [['tanh', -7.0, 7.0, 500.0, 1500.0],
-    #              ['tanh', -7.0, 7.0, -30000.0, -15000.0]]
-    # trsf = Transformation(trsf_info)
     
     # Apply the transformation
     exp.transform = trsf
