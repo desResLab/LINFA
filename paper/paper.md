@@ -227,11 +227,7 @@ $$
 0 & 0 & 0 & 1 & 1\\
 \end{pmatrix}.
 $$
-The true parameter vector is $\symbfit{z}^{*} = (2.75,$ $-1.5, 0.25,$ $-2.5,$ $1.75)^T$. While the Sobol' function is bijective and analytic, $f$ is over-parameterized and non identifiabile. This is also confirmed by the fact that the curve segment $\gamma(t) = g^{-1}(g(\symbfit z^*) + \symbfit v\,t)\in Z$ gives the same model solution as $\symbfit{x}^{*} = f(\symbfit{z}^{*}) = f(\gamma(t)) \approx (1.4910,$ $1.6650,$ $1.8715,$ $1.7011)^T$ for $t \in (-0.0153, 0.0686]$, where $\symbfit v = (1,-1,1,-1,1)^T$. This is consistent with the one-dimensional null-space of the matrix $\symbfit A$. We also generate synthetic observations from the Gaussian distribution
-$$
-\symbfit{x} = \symbfit{x}^{*} + 0.01\cdot |\symbfit{x}^{*}| \odot \symbfit{x}_{0},\,\,\text{and}\,\,\symbfit{x}_{0} \sim \mathcal{N}(0,\symbfit I_5).
-$$
-Results are shown in \autoref{fig:highdim}.
+The true parameter vector is $\symbfit{z}^{*} = (2.75,$ $-1.5, 0.25,$ $-2.5,$ $1.75)^T$. While the Sobol' function is bijective and analytic, $f$ is over-parameterized and non identifiabile. This is also confirmed by the fact that the curve segment $\gamma(t) = g^{-1}(g(\symbfit z^*) + \symbfit v\,t)\in Z$ gives the same model solution as $\symbfit{x}^{*} = f(\symbfit{z}^{*}) = f(\gamma(t)) \approx (1.4910,$ $1.6650,$ $1.8715,$ $1.7011)^T$ for $t \in (-0.0153, 0.0686]$, where $\symbfit v = (1,-1,1,-1,1)^T$. This is consistent with the one-dimensional null-space of the matrix $\symbfit A$. We also generate synthetic observations from the Gaussian distribution $\symbfit{x} = \symbfit{x}^{*} + 0.01\cdot |\symbfit{x}^{*}| \odot \symbfit{x}_{0}$ with $\symbfit{x}_{0} \sim \mathcal{N}(0,\symbfit I_5)$, and results shown in \autoref{fig:highdim}.
 
 ![](../docs/content/imgs/highdim/log_plot-1.png){height=430px}![](../docs/content/imgs/highdim/data_plot_highdim_25000_0_2-1.png){height=430px}![](../docs/content/imgs/highdim/data_plot_highdim_25000_2_3-1.png){height=430px}
 
