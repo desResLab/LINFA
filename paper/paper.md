@@ -52,7 +52,7 @@ We discuss the theoretical background, capabilities, and performance of LINFA in
 
 Generating samples from a posterior distribution is a fundamental task in Bayesian inference. The development of sampling-based algorithms from the Markov chain Monte Carlo family [@metropolis1953equation; @hastings1970monte; @geman1984stochastic; @gelfand1990sampling] has made solving Bayesian inverse problems accessible to a wide audience of both researchers and practitioners. However, the number of samples required by these approaches is typically significant and the convergence of Markov chains to their stationary distribution can be slow especially in high-dimensions. Additionally, satisfactory convergence may not be always easy to quantify, even if a number of metrics have been proposed in the literature over the years. More recent paradigms have been proposed in the context of variational inference [@wainwright2008graphical], where an optimization problem is formulated to determine the optimal member of a parametric family of distributions that can approximate a target posterior density. In addition, flexible approaches to parametrize variational distributions through a composition of transformations (closely related to the concept of _trasport maps_, see, e.g., @villani2009optimal) have reached popularity under the name of \emph{normalizing flows} [@rezende2015variational; @dinh2016density; @kingma2016improved; @kobyzev2020normalizing; @papamakarios2021normalizing]. The combination of variational inference and normalizing flow has received significant recent interest in the context of general algorithms for solving inverse problems [@el2012bayesian; @rezende2015variational].
 
-However, cases where the computational cost of evaluating the underlying probability distribution is significant occur quite often in engineering and applied sciences, for example when such evaluation requires the solution of an ordinary or partial differential equation. In such cases, inference can easily become intractable. Additionally, strong and nonlinear dependence between model parameters may results in difficult-to-sample posterior distributions characterized by features at multiple scales or by multiple modes. Problem when working with physics-based solver
+However, cases where the computational cost of evaluating the underlying probability distribution is significant occur quite often in engineering and applied sciences, for example when such evaluation requires the solution of an ordinary or partial differential equation. In such cases, inference can easily become intractable. Additionally, strong and nonlinear dependence between model parameters may results in difficult-to-sample posterior distributions characterized by features at multiple scales or by multiple modes.
 The LINFA library is specifically designed for cases where the model evaluation is computationally expensive. In such cases, the construction of an adaptively trained surrogate model is key to reducing the computational cost of inference [@wang2022variational]. In addition, LINFA provides an adaptive annealing scheduler, where temperature increments are automatically determined based on the available variational approximant of the posterior distribution. Thus, adaptive annealing makes it easier to sample from complicated densities [@cobian2023adaann].
 
 <!-- This paper is organized as follows. The main features of the LINFA library are discussed in Section \ref{sec:capabilities}, followed by a brief outline of a few selected numerical tests in Section \autoref{sec:benchmarks}. Conclusions and future work are finally discussed in Section \autoref{sec:conclusions}. The paper is completed by a brief description of the background theory and reference to the relevant papers in Appendix \autoref{sec:background}, a detailed presentation of a four benchmarks in Appendix \autoref{sec:detailed_benchmarks}, and a list of all the relevant hyperparameters in Appendix \autoref{sec:hyper}. -->
@@ -63,7 +63,7 @@ LINFA is designed as a general inference engine and allows the user to define cu
 
 1. **User-defined input parameter transformations** - Input transformations may reduce the complexity of inference and surrogate model construction in situations where the ranges of the input variables differ substantially or when the input parameters are bounded. A number of pre-defined univariate transformations are provided, i.e, `identity`, `tanh`, `linear`, and `exp`. These transformations are independently defined for each input variable, using four parameters $(a,b,c,d)$, providing a nonlinear transformation between the _normalized_ interval $[a,b]$ and the _physical_ interval $[c,d]$. Additional transformations can be defined by implementing the following member functions.
 
-    - `forward` - It evaluates the transformation from the normalized to the physical space. One transformation needs to be defined for each input. For example, the list of lists 
+    - `forward` - It evaluates the transformation from the normalized to the physical space. One transformation needs to be defined for each input dimension. For example, the list of lists 
       ```
       trsf_info = [['tanh',-7.0,7.0,100.0,1500.0],
                    ['tanh',-7.0,7.0,100.0,1500.0],
@@ -92,26 +92,29 @@ LINFA is designed as a general inference engine and allows the user to define cu
     - A _pre-grid_ is defined as an a priori selected point cloud created inside the hyper-rectangle defined by `limits`. The pre-grid can be either of type `'tensor'` (tensor product grid) where the grid order (number of points in each dimension) is defined through the argument `gridnum`, or of type `'sobol'` (using low-discrepancy quasi-random Sobol' sequences, see @sobol1967distribution), in which case the variable `gridnum` defines the total number of samples.
 
     - Surrogate model Input/Output. The two functions `surrogate_save()` and `surrogate_load()` are provided to save a snapshot of a given surrogate or to read it from a file. 
-%
+
     - The `pre_train()` function is provided to perform an initial training of the surrogate model on the pre-grid. In addition, the `update()` function is also available to re-train the model once additional training examples are available. 
-%
+
     - The `forward()` function evaluates the surrogate model at multiple input realizations. If a transformation is defined, the surrogate should always be specified in the _normalized domain_ with limits defined in terms of the normalized intervals (i.e., $[a,b]$).
 
-4.  **User-defined likelihood** - A user-defined likelihood function can be defined by passing the parameters, the model, the surrogate and a coordinate transformation using `log\_density(x, model, surr, transf)` and then assigning it as a member function of the appropriate `experiment` class using:
+4.  **User-defined likelihood** - A user-defined likelihood function can be defined by passing the parameters, the model, the surrogate and a coordinate transformation using 
+    ```
+    log_density(x, model, surrogate, transformation),
+    ```
+    and then assigning it as a member function of the `experiment` class using:
     ```
     exp.model_logdensity = lambda x: log_density(x, model, surr, transf).
     ```
-Likelihood from pre-defined families will be defined in future versions of LINFA.
 
-5. **Linear and adaptive annealing schedulers** - LINFA provides two annealing schedulers by default. The first is the `'Linear'` scheduler with constant increments. The second is the `'AdaAnn'` adaptive scheduler [@cobian2023adaann] with hyperparameters reported in Table \autoref{tab:adaann}. For the AdaAnn scheduler, the user can also specify a different number of parameter updates to be performed at the initial temperature $t_{0}$, final temperature $t_{1}$, and for any temperature $t_{0}<t<1$. Finally, the batch size (number of samples used to evaluate the expectations in the loss function) can also be differentiated for $t=1$ and $t<1$. 
+5. **Linear and adaptive annealing schedulers** - LINFA provides two annealing schedulers by default. The first is the `'Linear'` scheduler with constant increments. The second is the `'AdaAnn'` adaptive scheduler [@cobian2023adaann] with hyperparameters reported in \autoref{tab:adaann}. For the AdaAnn scheduler, the user can also specify a different number of parameter updates to be performed at the initial temperature $t_{0}$, final temperature $t_{1}$, and for any temperature $t_{0}<t<1$. Finally, the batch size (number of samples used to evaluate the expectations in the loss function) can also be differentiated for $t=1$ and $t<1$. 
 
-6. **User-defined hyperparameters** - A complete list of hyperparameters with a description of their functionality can be found in Appendix \autoref{sec:hyper}.
+6. **User-defined hyperparameters** - A complete list of hyperparameters with a description of their functionality can be found in the Appendix.
 
 # Numerical benchmarks
 
-We tested LINFA on multiple problems. These include inference on unimodal and multi-modal posterior distributions specified in closed form, ordinary differential models and dynamical systems with gradients directly computed through automatic differentiation in PyTorch, identifiable and non-identifiable physics-based models with fixed and adaptive surrogates, and high-dimensional statistical models. Some of the above tests are included with the library and systematically tested using GitHub Actions. A detailed discussion of these test cases is provided in Appendix \autoref{sec:detailed_benchmarks}. To run the test type
+We tested LINFA on multiple problems. These include inference on unimodal and multi-modal posterior distributions specified in closed form, ordinary differential models and dynamical systems with gradients directly computed through automatic differentiation in PyTorch, identifiable and non-identifiable physics-based models with fixed and adaptive surrogates, and high-dimensional statistical models. Some of the above tests are included with the library and systematically tested using GitHub Actions. A detailed discussion of these test cases is provided in the Appendix. To run the test type
 ```
-python -m unittest linfa.linfa\_test\_suite.NAME\_example
+python -m unittest linfa.linfa_test_suite.NAME_example
 ```
 where `NAME` is the name of the test case, either `trivial`, `highdim`, `rc`, `rcr`, `adaann` or `rcr_nofas_adaann`.
 
@@ -203,7 +206,7 @@ where $\symbfit{x}_{0} \sim \mathcal{N}(0,\symbfit I_2)$ and $\odot$ is the Hada
 
 Results in terms of loss profile, variational approximation, and posterior predictive distribution are shown in Figure \autoref{fig:trivial}.
 
-![](../docs/content/imgs/trivial/log_plot_trivial-1.png){height=420px}![](../docs/content/imgs/trivial/sample_plot_trivial-1.png){height=420px}![](../docs/content/imgs/trivial/target_plot_trivial-1.png){height=420px}
+![](../docs/content/imgs/trivial/log_plot_trivial-1.png){height=420px}![](../docs/content/imgs/trivial/target_plot_trivial-1.png){height=420px}![](../docs/content/imgs/trivial/sample_plot_trivial-1.png){height=420px}
 \begin{figure}
 \caption{Results from the simple two-dimensional map. Loss profile (left), posterior samples (center), and posterior predictive distribution (right).\label{fig:trivial}}
 \end{figure}
@@ -214,7 +217,7 @@ We consider a map $f: \mathbb{R}^{5}\to\mathbb{R}^{4}$ expressed as
 $$
 f(\symbfit{z}) = \symbfit{A}\,\symbfit{g}(e^{\symbfit{z}}),
 $$
-where $g_i(\symbfit{r}) = (2\cdot |2\,a_{i} - 1| + r_i) / (1 + r_i)$ with $r_i > 0$ for $i=1,\dots,5$ is the _Sobol_ function [@sobol2003theorems] and $\symbfit{A}$ is a $4\times5$ matrix. We also set
+where $g_i(\symbfit{r}) = (2\cdot |2\,a_{i} - 1| + r_i) / (1 + r_i)$ with $r_i > 0$ for $i=1,\dots,5$ is the _Sobol'_ function [@sobol2003theorems] and $\symbfit{A}$ is a $4\times5$ matrix. We also set
 $$
 \symbfit{a} = (0.084, 0.229, 0.913, 0.152, 0.826)^T \text{ and }\symbfit{A} = \frac{1}{\sqrt{2}}
 \begin{pmatrix}
@@ -224,18 +227,17 @@ $$
 0 & 0 & 0 & 1 & 1\\
 \end{pmatrix}.
 $$
-The true parameter vector is $\symbfit{z}^{*} = (2.75,$ $-1.5, 0.25,$ $-2.5,$ $1.75)^T$. While the Sobol function is bijective and analytic, $f$ is over-parameterized and non identifiabile. This is also confirmed by the fact that the curve segment $\gamma(t) = g^{-1}(g(\symbfit z^*) + \symbfit v\,t)\in Z$ gives the same model solution as $\symbfit{x}^{*} = f(\symbfit{z}^{*}) = f(\gamma(t)) \approx (1.4910,$ $1.6650,$ $1.8715,$ $1.7011)^T$ for $t \in (-0.0153, 0.0686]$, where $\symbfit v = (1,-1,1,-1,1)^T$. This is consistent with the one-dimensional null-space of the matrix $\symbfit A$. We also generate synthetic observations from the Gaussian distribution
+The true parameter vector is $\symbfit{z}^{*} = (2.75,$ $-1.5, 0.25,$ $-2.5,$ $1.75)^T$. While the Sobol' function is bijective and analytic, $f$ is over-parameterized and non identifiabile. This is also confirmed by the fact that the curve segment $\gamma(t) = g^{-1}(g(\symbfit z^*) + \symbfit v\,t)\in Z$ gives the same model solution as $\symbfit{x}^{*} = f(\symbfit{z}^{*}) = f(\gamma(t)) \approx (1.4910,$ $1.6650,$ $1.8715,$ $1.7011)^T$ for $t \in (-0.0153, 0.0686]$, where $\symbfit v = (1,-1,1,-1,1)^T$. This is consistent with the one-dimensional null-space of the matrix $\symbfit A$. We also generate synthetic observations from the Gaussian distribution
 $$
 \symbfit{x} = \symbfit{x}^{*} + 0.01\cdot |\symbfit{x}^{*}| \odot \symbfit{x}_{0},\,\,\text{and}\,\,\symbfit{x}_{0} \sim \mathcal{N}(0,\symbfit I_5).
 $$
-Results are shown in Figure \autoref{fig:highdim}.
-%
+Results are shown in \autoref{fig:highdim}.
 
 ![](../docs/content/imgs/highdim/log_plot-1.png){height=430px}![](../docs/content/imgs/highdim/data_plot_highdim_25000_0_2-1.png){height=430px}![](../docs/content/imgs/highdim/data_plot_highdim_25000_2_3-1.png){height=430px}
 
 ![](../docs/content/imgs/highdim/params_plot_highdim_25000_0_1-1.png){height=350px}![](../docs/content/imgs/highdim/params_plot_highdim_25000_1_2-1.png){height=350px}![](../docs/content/imgs/highdim/params_plot_highdim_25000_3_4-1.png){height=350px}
 \begin{figure}
-\caption{Results from the high-dimensional example. Loss profile, posterior samples, and posterior predictive distribution.}\label{fig:highdim}
+\caption{Results from the high-dimensional example. The top row contains the loss profile (left) and samples from the posterior predictive distribution plus the available observations (right). Samples from the posterior distribution are instead shown in the bottom row.}\label{fig:highdim}
 \end{figure}
 
 ### Two-element Windkessel Model
@@ -246,7 +248,7 @@ The two-element Windkessel model (often referred to as the _RC_ model) is the si
 Q_{d} = \frac{P_{p}-P_{d}}{R},\quad \frac{d P_{p}}{d t} = \frac{Q_{p} - Q_{d}}{C},
 \end{equation}
 
-where $Q_{p}$ is the flow entering the RC system and $Q_{d}$ is the distal flow. Synthetic observations are generated by adding Gaussian noise to the true model solution $\symbfit{x}^{*}=(x^{*}_{1},x^{*}_{2},x^{*}_{3})=(P_{p,\text{min}},$ $P_{p,\text{max}},$ $P_{p,\text{avg}})= (78.28, 101.12,  85.75)$, i.e., $\symbfit{x}$ follows a multivariate Gaussian distribution with mean $\symbfit{x}^{*}$ and a diagonal covariance matrix with entries $0.05\,x_{i}^{*}$, where $i=1,2,3$ corresponds to the maximum, minimum, and average pressures, respectively. The aim is to quantify the uncertainty in the RC model parameters given 50 repeated pressure measurements. We imposed a non-informative prior on $R$ and $C$. Results are shown in Figure \autoref{fig:rc_res}.
+where $Q_{p}$ is the flow entering the RC system and $Q_{d}$ is the distal flow. Synthetic observations are generated by adding Gaussian noise to the true model solution $\symbfit{x}^{*}=(x^{*}_{1},x^{*}_{2},x^{*}_{3})=(P_{p,\text{min}},$ $P_{p,\text{max}},$ $P_{p,\text{avg}})= (78.28, 101.12,  85.75)$, i.e., $\symbfit{x}$ follows a multivariate Gaussian distribution with mean $\symbfit{x}^{*}$ and a diagonal covariance matrix with entries $0.05\,x_{i}^{*}$, where $i=1,2,3$ corresponds to the maximum, minimum, and average pressures, respectively. The aim is to quantify the uncertainty in the RC model parameters given 50 repeated pressure measurements. We imposed a non-informative prior on $R$ and $C$. Results are shown in \autoref{fig:rc_res}.
 
 ![](../docs/content/imgs/rc/log_plot_rc-1.png){height=420px}![](../docs/content/imgs/rc/target_plot_rc-1.png){height=420px}![](../docs/content/imgs/rc/sample_plot_rc_0_1-1.png){height=420px} 
 \begin{figure}
@@ -261,20 +263,20 @@ The output consists of the maximum, minimum, and average values of the proximal 
 $$
 Q_{p} = \frac{P_{p} - P_{c}}{R_{p}},\quad Q_{d} = \frac{P_{c}-P_{d}}{R_{d}},\quad \frac{d\, P_{c}}{d\,t} = \frac{Q_{p}-Q_{d}}{C},
 $$
-where the distal pressure is set to $P_{d}=55$ mmHg. Synthetic observations are generated from $N(\symbfit\mu, \symbfit\Sigma)$, where $\mu=(f_{1}(\symbfit{z}^{*}),f_{2}(\symbfit{z}^{*}),f_{3}(\symbfit{z}^{*}))^T = (P_{p,\text{min}}, P_{p,\text{max}}, P_{p,\text{ave}})^T = (100.96,$ $148.02,$ $ 116.50)^T$ and $\symbfit\Sigma$ is a diagonal matrix with entries $(5.05, 7.40, 5.83)^T$. The budgeted number of true model solutions is $216$; the fixed surrogate model is evaluated on a $6\times 6\times 6 = 216$ pre-grid while the adaptive surrogate is evaluated with a pre-grid of size $4\times 4\times 4 = 64$ and the other 152 evaluations are adaptively selected. 
+where the distal pressure is set to $P_{d}=55$ mmHg. Synthetic observations are generated from $N(\symbfit\mu, \symbfit\Sigma)$, where $\mu=(f_{1}(\symbfit{z}^{*}),f_{2}(\symbfit{z}^{*}),f_{3}(\symbfit{z}^{*}))^T$ = $(P_{p,\text{min}}, P_{p,\text{max}}, P_{p,\text{ave}})^T$ = $(100.96,148.02,116.50)^T$ and $\symbfit\Sigma$ is a diagonal matrix with entries $(5.05, 7.40, 5.83)^T$. The budgeted number of true model solutions is $216$; the fixed surrogate model is evaluated on a $6\times 6\times 6 = 216$ pre-grid while the adaptive surrogate is evaluated with a pre-grid of size $4\times 4\times 4 = 64$ and the other 152 evaluations are adaptively selected. 
 
-This example also demonstrates how NoFAS can be combined with annealing for improved convergence. The results in Figure \autoref{fig:rcr_res} are generated using the AdaAnn adaptive annealing scheduler with intial inverse temperature $t_{0}=0.05$, KL tolerance $\tau=0.01$ and a batch size of 100 samples. The number of parameter updates is set to 500, 5000 and 5 for $t_{0}$, $t_{1}$ and $t_{0}<t<t_{1}$, respectively and 1000 Monte Carlo realizations are used to evaluate the denominator in equation \eqref{equ:adaann}. The posterior samples capture well the nonlinear correlation among the parameters and generate a fairly accurate posterior predictive distribution that overlaps with the observations. Additional details can be found in [@wang2022variational] and [@cobian2023adaann].
+This example also demonstrates how NoFAS can be combined with annealing for improved convergence. The results in \autoref{fig:rcr_res} are generated using the AdaAnn adaptive annealing scheduler with intial inverse temperature $t_{0}=0.05$, KL tolerance $\tau=0.01$ and a batch size of 100 samples. The number of parameter updates is set to 500, 5000 and 5 for $t_{0}$, $t_{1}$ and $t_{0}<t<t_{1}$, respectively and 1000 Monte Carlo realizations are used to evaluate the denominator in equation \eqref{equ:adaann}. The posterior samples capture well the nonlinear correlation among the parameters and generate a fairly accurate posterior predictive distribution that overlaps with the observations. Additional details can be found in [@wang2022variational] and [@cobian2023adaann].
 
 ![](../docs/content/imgs/rcr/log_plot-1.png){height=430px}![](../docs/content/imgs/rcr/data_plot_rcr_nofas_adaann_8400_0_1-1.png){height=430px}![](../docs/content/imgs/rcr/data_plot_rcr_nofas_adaann_8400_0_2-1.png){height=430px} 
 
 ![](../docs/content/imgs/rcr/params_plot_rcr_nofas_adaann_8400_0_1-1.png){height=350px}![](../docs/content/imgs/rcr/params_plot_rcr_nofas_adaann_8400_0_2-1.png){height=350px}![](../docs/content/imgs/rcr/params_plot_rcr_nofas_adaann_8400_1_2-1.png){height=350px}
 \begin{figure}
-\caption{Results from the RCR model. Loss profile (left), posterior predictive distribution (center), and posterior samples (right).}\label{fig:rcr_res}
+\caption{Results from the RCR model. The top row contains the loss profile (left) and samples from the posterior predictive distribution plus the available observations (right). Samples from the posterior distribution are instead shown in the bottom row.}\label{fig:rcr_res}
 \end{figure}
 
 ### Friedman 1 model (AdaAnn)
 
-We consider a modified version of the Friedman 1 dataset [@friedman1991multivariate] to examine the performance of  our adaptive annealing scheduler in a high-dimensional context. According to the original model in [@friedman1991multivariate], the data are generated as
+We consider a modified version of the Friedman 1 dataset [@friedman1991multivariate] to examine the performance of  our adaptive annealing scheduler in a high-dimensional context. According to the original model in @friedman1991multivariate, the data are generated as
 \begin{equation}\label{eqn:friedman1}
 \textstyle y_i = \mu_i(\boldsymbol{\beta})+ \epsilon_i, \mbox{ where }
 \mu_i(\boldsymbol{\beta})=\beta_1\text{sin}(\pi x_{i,1}x_{i,2})+ \beta_2(x_{i,3}-\beta_3)^2+\sum_{j=4}^{10}\beta_jx_{i,j}, 
