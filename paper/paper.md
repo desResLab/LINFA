@@ -287,8 +287,8 @@ where $\epsilon_i\sim\mathcal{N}(0,1)$. We made a slight modification to the mod
 \end{equation}
 and set the true parameter combination to $\boldsymbol{\beta}=(\beta_1,\ldots,\beta_{10})=(10,\pm \sqrt{20}, 0.5, 10, 5, 0, 0, 0, 0, 0)$. Note that both \eqref{eqn:friedman1} and \eqref{eqn:friedman1_modified} contain linear, nonlinear, and interaction terms of the input variables $X_1$ to $X_{10}$, five of which ($X_6$ to $X_{10}$) are irrelevant to $Y$. Each $X$ is drawn independently from $\mathcal{U}(0,1)$. We used R package `tgp` [@gramacy2007tgp] to generate a Friedman1 dataset with a sample size of $n$=1000. We impose a non-informative uniform prior $p(\boldsymbol{\beta})$ and, unlike the original modal, we now expect a bimodal posterior distribution of $\boldsymbol{\beta}$. Results in terms of marginal statistics and their convergence for the mode with positive $z_{K,2}$ are illustrated in \autoref{table:Friedman_bimodal_stats} and \autoref{fig:adaann_res}.
 
-\begin{center}
 \begin{table}
+\centering
 \begin{tabular}[2in]{l c c c c}
 \toprule
 \textbf{True} & \multicolumn{2}{c}{\textbf{Mode 1}}\\
@@ -308,8 +308,6 @@ $\beta_{10} = 0$ & 0.1192 & 0.0463\\
 \end{tabular}
 \caption{Posterior mean and standard deviation for positive mode in the modified Friedman test case.}\label{table:Friedman_bimodal_stats}    
 \end{table}
-\end{center}
-
 
 ![](../docs/content/imgs/adaann/log_plot-1.png){height=430px}![](../docs/content/imgs/adaann/adaann-1.png){height=430px}
 \begin{figure}
@@ -319,7 +317,7 @@ $\beta_{10} = 0$ & 0.1192 & 0.0463\\
 
 ### Hyperparameters in LINFA
 
-This section contains the list of all hyperparameters in the library, their default values, and a description of the functionalities they control. General hyperparameters are listed in Table \ref{tab:par_general}, those related to the optimization process in Table \autoref{tab:par_optimizers}, and to the output folder and files in Table \autoref{tab:par_output}. Hyperparameters for the proposed NoFAS and AdaAnn approaches are listed in Table \autoref{tab:surr_optimizers} and \autoref{tab:adaann}, respectively.  Finally, a hyperparameter used to select the hardware device is described in Table \autoref{tab:par_device}.
+This section contains the list of all hyperparameters in the library, their default values, and a description of the functionalities they control. General hyperparameters are listed in \autoref{tab:par_general}, those related to the optimization process in \autoref{tab:par_optimizers}, and to the output folder and files in \autoref{tab:par_output}. Hyperparameters for the proposed NoFAS and AdaAnn approaches are listed in \autoref{tab:surr_optimizers} and \autoref{tab:adaann}, respectively.  Finally, a hyperparameter used to select the hardware device is described in \autoref{tab:par_device}.
 
 \begin{table}[H]
 \centering
