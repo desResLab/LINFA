@@ -307,7 +307,7 @@ $\beta_{10} = 0$ & 0.1192 & 0.0463\\
 \end{table}
 
 
-![](../docs/content/imgs/adaann/log_plot-1.png)![](../docs/content/imgs/adaann/adaann-1.png) 
+![](../docs/content/imgs/adaann/log_plot-1.png){height=430px}![](../docs/content/imgs/adaann/adaann-1.png){height=430px}
 \begin{figure}
 \caption{Loss profile (left) and posterior marginal statistics (right) for positive mode in the modified Friedman test case.}\label{fig:adaann_res}
 \end{figure}
@@ -320,6 +320,7 @@ This section contains the list of all hyperparameters in the library, their defa
 \begin{table}[!h]
 \centering
 \caption{Output parameters}\label{tab:par_output}
+\resizebox{\textwidth}{!}{%
 \begin{tabular}{p{4cm} p{2cm} p{8cm}} 
 \toprule
 {\bf Option} & {\bf Type} & {\bf Description}\\
@@ -328,12 +329,13 @@ This section contains the list of all hyperparameters in the library, their defa
 \emph{\texttt{log\_file}} & string & Name of the log file which stores the iteration number, annealing temperature, and value of the loss function at each iteration.\\
 \emph{\texttt{seed}} & int & Seed for the random number generator.\\
 \bottomrule
-\end{tabular}
+\end{tabular}}
 \end{table}
 
 \begin{table}[!h]
 \centering
 \caption{Surrogate model parameters (NoFAS)}\label{tab:surr_optimizers}
+\resizebox{\textwidth}{!}{%
 \begin{tabular}{p{4cm} p{2cm} p{8cm}} 
 \toprule
 {\bf Option} & {\bf Type} & {\bf Description}\\
@@ -347,24 +349,26 @@ This section contains the list of all hyperparameters in the library, their defa
 \emph{\texttt{use\_new\_surr}} & bool & Start by pre-training a new surrogate and ignore existing surrogates (default \emph{\texttt{True}}).\\
 \emph{\texttt{store\_surr\_interval}} & int & Save interval for surrogate model (\emph{\texttt{None}} for no save, default \emph{\texttt{None}}).\\
 \bottomrule
-\end{tabular}
+\end{tabular}}
 \end{table}
 
 \begin{table}[!h]
 \centering
 \caption{Device parameters}\label{tab:par_device}
+\resizebox{\textwidth}{!}{%
 \begin{tabular}{p{4cm} p{2cm} p{8cm}} 
 \toprule
 {\bf Option} & {\bf Type} & {\bf Description}\\
 \midrule
 \emph{\texttt{no\_cuda}} & bool & Do not use GPU acceleration.\\
 \bottomrule
-\end{tabular}
+\end{tabular}}
 \end{table}
 
 \begin{table}[!h]
 \centering
 \caption{Optimizer and learning rate parameters}\label{tab:par_optimizers}
+\resizebox{\textwidth}{!}{%
 \begin{tabular}{p{4cm} p{2cm} p{8cm}} 
 \toprule
 {\bf Option} & {\bf Type} & {\bf Description}\\
@@ -377,12 +381,13 @@ This section contains the list of all hyperparameters in the library, their defa
 \emph{\texttt{lr\_step}} & int & Number of steps before learning rate reduction for the step scheduler.\\
 \emph{\texttt{log\_interval}} & int & Number of iterations between successive loss printouts (default \emph{\texttt{10}}).\\
 \bottomrule
-\end{tabular}
+\end{tabular}}
 \end{table}
 
 \begin{table}[!h]
 \centering
 \caption{General parameters}\label{tab:par_general}
+\resizebox{\textwidth}{!}{%
 \begin{tabular}{p{4cm} p{2cm} p{8cm}} 
 \toprule
 {\bf Option} & {\bf Type} & {\bf Description}\\
@@ -401,12 +406,13 @@ This section contains the list of all hyperparameters in the library, their defa
 \emph{\texttt{true\_data\_num}} & int & Number of additional true model evaluations at each surrogate model update (default \emph{\texttt{2}}).\\
 \emph{\texttt{n\_iter}} & int & Total number of NF iterations (default \emph{\texttt{25001}}).\\
 \bottomrule
-\end{tabular}
+\end{tabular}}
 \end{table}
 
 \begin{table}[!h]
 \centering
 \caption{Parameters for the adaptive annealing scheduler (AdaAnn)}\label{tab:adaann}
+\resizebox{\textwidth}{!}{%
 \begin{tabular}{p{4cm} p{2cm} p{8cm}} 
 \toprule
 {\bf Option} & {\bf Type} & {\bf Description}\\
@@ -422,7 +428,7 @@ This section contains the list of all hyperparameters in the library, their defa
 \emph{\texttt{T\_1}} & int & Number of parameter updates at $t=1$\\
 \emph{\texttt{M}} & int & Number of Monte Carlo samples used to evaluate the denominator in equation \eqref{equ:adaann}.\\
 \bottomrule
-\end{tabular}
+\end{tabular}}
 \end{table}
 
 # References
