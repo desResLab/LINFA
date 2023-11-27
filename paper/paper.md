@@ -48,7 +48,7 @@ Variational inference is an increasingly popular method in statistics and machin
 We developed LINFA (Library for Inference with Normalizing Flow and Annealing), a Python library for variational inference to accommodate computationally expensive models and difficult-to-sample distributions with dependent parameters. 
 We discuss the theoretical background, capabilities, and performance of LINFA in various benchmarks. LINFA is publicly available on GitHub at [https://github.com/desResLab/LINFA](https://github.com/desResLab/LINFA).
 
-# Introduction
+# Statement of need
 
 Generating samples from a posterior distribution is a fundamental task in Bayesian inference. The development of sampling-based algorithms from the Markov chain Monte Carlo family [@metropolis1953equation; @hastings1970monte; @geman1984stochastic; @gelfand1990sampling] has made solving Bayesian inverse problems accessible to a wide audience of both researchers and practitioners. However, the number of samples required by these approaches is typically significant and the convergence of Markov chains to their stationary distribution can be slow especially in high-dimensions. Additionally, satisfactory convergence may not be always easy to quantify, even if a number of metrics have been proposed in the literature over the years. More recent paradigms have been proposed in the context of variational inference [@wainwright2008graphical], where an optimization problem is formulated to determine the optimal member of a parametric family of distributions that can approximate a target posterior density. In addition, flexible approaches to parametrize variational distributions through a composition of transformations (closely related to the concept of _trasport maps_, see, e.g., @villani2009optimal) have reached popularity under the name of \emph{normalizing flows} [@rezende2015variational; @dinh2016density; @kingma2016improved; @kobyzev2020normalizing; @papamakarios2021normalizing]. The combination of variational inference and normalizing flow has received significant recent interest in the context of general algorithms for solving inverse problems [@el2012bayesian; @rezende2015variational].
 
@@ -57,7 +57,7 @@ The LINFA library is specifically designed for cases where the model evaluation 
 
 <!-- This paper is organized as follows. The main features of the LINFA library are discussed in Section \ref{sec:capabilities}, followed by a brief outline of a few selected numerical tests in Section \autoref{sec:benchmarks}. Conclusions and future work are finally discussed in Section \autoref{sec:conclusions}. The paper is completed by a brief description of the background theory and reference to the relevant papers in Appendix \autoref{sec:background}, a detailed presentation of a four benchmarks in Appendix \autoref{sec:detailed_benchmarks}, and a list of all the relevant hyperparameters in Appendix \autoref{sec:hyper}. -->
 
-# Capabilities {#sec:capabilities}
+# Capabilities
 
 LINFA is designed as a general inference engine and allows the user to define custom input transformations, computational models, surrogates, and likelihood functions.
 
@@ -107,7 +107,7 @@ Likelihood from pre-defined families will be defined in future versions of LINFA
 
 6. **User-defined hyperparameters** - A complete list of hyperparameters with a description of their functionality can be found in Appendix \autoref{sec:hyper}.
 
-# Numerical benchmarks {#sec:benchmarks}
+# Numerical benchmarks
 
 We tested LINFA on multiple problems. These include inference on unimodal and multi-modal posterior distributions specified in closed form, ordinary differential models and dynamical systems with gradients directly computed through automatic differentiation in PyTorch, identifiable and non-identifiable physics-based models with fixed and adaptive surrogates, and high-dimensional statistical models. Some of the above tests are included with the library and systematically tested using GitHub Actions. A detailed discussion of these test cases is provided in Appendix \autoref{sec:detailed_benchmarks}. To run the test type
 ```
@@ -115,7 +115,7 @@ python -m unittest linfa.linfa\_test\_suite.NAME\_example
 ```
 where `NAME` is the name of the test case, either `trivial`, `highdim`, `rc`, `rcr`, `adaann` or `rcr_nofas_adaann`.
 
-# Conclusion and Future Work {#sec:conclusions}
+# Conclusion and Future Work
 
 In this paper, we have introduced the LINFA library for variational inference, briefly discussed the relevant background, its capabilities, and report its performance on a number of test cases. Some interesting directions for future work are mentioned below.
 
@@ -128,7 +128,7 @@ NSF CAREER grant #1942662.
 
 # Appendix
 
-## Background theory {#sec:background}
+## Background theory
 
 ### Variational inference with normalizing flow
 
@@ -185,7 +185,7 @@ The AdaAnn scheduler determines the increment $\epsilon_{k}$ that approximately 
 
 The denominator is large when the support of the annealed distribution $p^{t_{k}}(\symbfit{z},\symbfit{x})$ is wider than the support of the target $p(\symbfit{z},\symbfit{x})$, and progressively reduces with increasing $t_{k}$. Further detail on the derivation of the expression for $\epsilon_{k}$ can be found in [@cobian2023adaann].
 
-## Numerical benchmarks {#sec:detailed_benchmarks}
+## Numerical benchmarks
 
 ### Simple two-dimensional map with Gaussian likelihood
 
@@ -313,7 +313,7 @@ $\beta_{10} = 0$ & 0.1192 & 0.0463\\
 \end{figure}
 
 
-### Hyperparameters in LINFA {#sec:hyper}
+### Hyperparameters in LINFA
 
 This section contains the list of all hyperparameters in the library, their default values, and a description of the functionalities they control. General hyperparameters are listed in Table \ref{tab:par_general}, those related to the optimization process in Table \autoref{tab:par_optimizers}, and to the output folder and files in Table \autoref{tab:par_output}. Hyperparameters for the proposed NoFAS and AdaAnn approaches are listed in Table \autoref{tab:surr_optimizers} and \autoref{tab:adaann}, respectively.  Finally, a hyperparameter used to select the hardware device is described in Table \autoref{tab:par_device}.
 
