@@ -231,7 +231,7 @@ $$
 Results are shown in Figure \autoref{fig:highdim}.
 %
 
-![](../docs/content/imgs/highdim/log_plot-1.png){height=420px}![](../docs/content/imgs/highdim/data_plot_highdim_25000_0_2-1.png){height=420px}![](../docs/content/imgs/highdim/data_plot_highdim_25000_2_3-1.png){height=420px}
+![](../docs/content/imgs/highdim/log_plot-1.png){height=430px}![](../docs/content/imgs/highdim/data_plot_highdim_25000_0_2-1.png){height=430px}![](../docs/content/imgs/highdim/data_plot_highdim_25000_2_3-1.png){height=430px}
 
 ![](../docs/content/imgs/highdim/params_plot_highdim_25000_0_1-1.png){height=350px}![](../docs/content/imgs/highdim/params_plot_highdim_25000_1_2-1.png){height=350px}![](../docs/content/imgs/highdim/params_plot_highdim_25000_3_4-1.png){height=350px}
 \begin{figure}
