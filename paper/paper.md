@@ -317,7 +317,7 @@ $\beta_{10} = 0$ & 0.1192 & 0.0463\\
 
 This section contains the list of all hyperparameters in the library, their default values, and a description of the functionalities they control. General hyperparameters are listed in Table \ref{tab:par_general}, those related to the optimization process in Table \autoref{tab:par_optimizers}, and to the output folder and files in Table \autoref{tab:par_output}. Hyperparameters for the proposed NoFAS and AdaAnn approaches are listed in Table \autoref{tab:surr_optimizers} and \autoref{tab:adaann}, respectively.  Finally, a hyperparameter used to select the hardware device is described in Table \autoref{tab:par_device}.
 
-\begin{table}[!h]
+\begin{table}[H]
 \centering
 \caption{Output parameters}\label{tab:par_output}
 \resizebox{\textwidth}{!}{%
@@ -332,7 +332,7 @@ This section contains the list of all hyperparameters in the library, their defa
 \end{tabular}}
 \end{table}
 
-\begin{table}[!h]
+\begin{table}[H]
 \centering
 \caption{Surrogate model parameters (NoFAS)}\label{tab:surr_optimizers}
 \resizebox{\textwidth}{!}{%
@@ -352,7 +352,7 @@ This section contains the list of all hyperparameters in the library, their defa
 \end{tabular}}
 \end{table}
 
-\begin{table}[!h]
+\begin{table}[H]
 \centering
 \caption{Device parameters}\label{tab:par_device}
 \resizebox{\textwidth}{!}{%
@@ -365,7 +365,7 @@ This section contains the list of all hyperparameters in the library, their defa
 \end{tabular}}
 \end{table}
 
-\begin{table}[!h]
+\begin{table}[H]
 \centering
 \caption{Optimizer and learning rate parameters}\label{tab:par_optimizers}
 \resizebox{\textwidth}{!}{%
@@ -384,7 +384,7 @@ This section contains the list of all hyperparameters in the library, their defa
 \end{tabular}}
 \end{table}
 
-\begin{table}[!h]
+\begin{table}[H]
 \centering
 \caption{General parameters}\label{tab:par_general}
 \resizebox{\textwidth}{!}{%
@@ -409,7 +409,7 @@ This section contains the list of all hyperparameters in the library, their defa
 \end{tabular}}
 \end{table}
 
-\begin{table}[!h]
+\begin{table}[H]
 \centering
 \caption{Parameters for the adaptive annealing scheduler (AdaAnn)}\label{tab:adaann}
 \resizebox{\textwidth}{!}{%
