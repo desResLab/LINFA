@@ -19,7 +19,7 @@ def run_test():
     exp.activation_fn       = 'relu'        # str: Activation function used (default 'relu')
     exp.input_order         = 'sequential'  # str: Input oder for create_mask (default 'sequential')
     exp.batch_norm_order    = True          # bool: Order to decide if batch_norm is used (default True)
-    exp.save_interval       = 5000          # int: How often to sample from normalizing flow
+    exp.save_interval       = 1000          # int: How often to sample from normalizing flow
     
     exp.input_size          = 2             # int: Dimensionalty of input (default 2)
     exp.batch_size          = 200           # int: Number of samples generated (default 100)
