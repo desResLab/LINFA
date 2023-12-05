@@ -29,7 +29,6 @@ def run_test():
     exp.lr_decay            = 0.9999        # float:  Learning rate decay (default 0.9999)
     exp.log_interal         = 10            # int: How often to show loss stat (default 10)
 
-    #### HAD TO TURN THIS OFF FOR NOW
     exp.run_nofas           = True          # normalizing flow with adaptive surrogate
     exp.surrogate_type      = 'discrepancy' # type of surrogate we are using
     exp.surr_pre_it         = 1000          # int: Number of pre-training iterations for surrogate model
@@ -197,7 +196,7 @@ def generate_data(use_true_model=False,num_observations=50):
 # Main code
 if __name__ == "__main__":
     
-    generate_data(use_true_model=True,num_observations=1)
+    generate_data(use_true_model=True, num_observations=1)
     
     run_test()
 
