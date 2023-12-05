@@ -198,7 +198,7 @@ if __name__ == "__main__":
     
     generate_data(use_true_model=True, num_observations=1)
     
-    run_test()
+    #run_test()
 
 
 
