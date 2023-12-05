@@ -10,7 +10,7 @@ from linfa.models.discrepancy_models import PhysChem
 def run_test():
 
     exp = experiment()
-    exp.name = "lf_no_disc_lf_data_tp15"
+    exp.name = "lf_no_disc_lf_data_tp15_rep_meas"
     exp.flow_type           = 'maf'         # str: Type of flow (default 'realnvp')
     exp.n_blocks            = 15            # int: Number of hidden layers   
     exp.hidden_size         = 100           # int: Hidden layer size for MADE in each layer (default 100)
@@ -89,8 +89,7 @@ def run_test():
 
         # Initialize negative log likelihood
         total_nll = torch.zeros((calib_inputs.size(0), 1))
-        
-        # HAD TO MOVE THIS UP BEFORE EVALUATE DISCREPANCY            
+                 
         # Evaluate model response - (num_var x num_batch)
         modelOut = langmuir_model.solve_t(transform.forward(calib_inputs)).t()
 
@@ -143,7 +142,7 @@ def generate_data():
     model = PhysChem(var_grid)
     
     # Generate data
-    model.genDataFile(use_true_model=False,num_observations=1)
+    model.genDataFile(use_true_model=False, num_observations = 2)
 
 # Main code
 if __name__ == "__main__":

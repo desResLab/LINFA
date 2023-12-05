@@ -24,7 +24,7 @@ def run_test():
     exp.input_size          = 2             # int: Dimensionalty of input (default 2)
     exp.batch_size          = 200           # int: Number of samples generated (default 100)
     exp.true_data_num       = 2             # double: Number of true model evaluted (default 2)
-    exp.n_iter              = 2501         # int: Number of iterations (default 25001)
+    exp.n_iter              = 25001         # int: Number of iterations (default 25001)
     exp.lr                  = 0.001         # float: Learning rate (default 0.003)
     exp.lr_decay            = 0.9999        # float:  Learning rate decay (default 0.9999)
     exp.log_interal         = 10            # int: How often to show loss stat (default 10)
@@ -35,7 +35,7 @@ def run_test():
     exp.surr_upd_it         = 2000          # int: Number of iterations for the surrogate model update
     exp.calibrate_interval  = 1000          #:int:    How often the surrogate model is updated
 
-    exp.annealing           = False         # TODO : turn this on eventually
+    exp.annealing           = False         
     exp.budget              = 216           # int: Total number of true model evaulations
     exp.surr_folder         = "./" 
     exp.use_new_surr        = True
