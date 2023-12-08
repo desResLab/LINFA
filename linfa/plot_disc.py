@@ -3,35 +3,83 @@ import matplotlib.pyplot as plt
 from linfa.discrepancy import Discrepancy
 import numpy as np
 import os
+import argparse
 
-# directory = 'results'
-# iteration = '25000'
-# experiment = 'test_lf_with_disc_hf_data_prior_TP1'
-# filename1 = 'outputs_lf'
-# filename2 = 'outputs_lf+discr'pi
-# filename3 = 'outputs_lf+discr+noise'
+def scale_limits(min,max,factor):
+    if(min>max):
+        temp = max
+        max = min
+        min = temp
+    center = 0.5*(min+max)
+    range = max - min
+    return center - factor*0.5*range, center + factor*0.5*range
 
-# path1 = os.path.join(directory, experiment, experiment + '_' + filename1 + '_' + iteration)
-# path2 = os.path.join(directory, experiment, experiment + '_' + filename2 + '_' + iteration)
-# path3 = os.path.join(directory, experiment, experiment + '_' + filename3 + '_' + iteration)
+def plot_disr_histograms(lf_file,lf_dicr_file,lf_discr_noise_file):
 
-# lf_model = np.loadtxt(path1)
-# lf_model_plus_disc = np.loadtxt(path2)
-# lf_model_plus_disc_plus_noise = np.loadtxt(path3)
+    # Read result files
+    lf_model = np.loadtxt(lf_file)
+    lf_model_plus_disc = np.loadtxt(lf_dicr_file)
+    lf_model_plus_disc_plus_noise = np.loadtxt(lf_discr_noise_file)
 
-<<<<<<< Updated upstream
-# plt.hist(lf_model[:,0], label = 'LF')
-# plt.hist(lf_model_plus_disc[:,0],  label = 'LF + disc')
-# plt.hist(lf_model_plus_disc_plus_noise[:,0],  label = 'LF + disc + noise')
-# plt.xlabel('Coverage')
-# plt.ylabel('Frequency')
-# plt.legend()
-# plt.show()
+    # Plot histograms
+    plt.hist(lf_model, label = 'LF', alpha =0.5)
+    plt.hist(lf_model_plus_disc,  label = 'LF + disc', alpha =0.5)
+    plt.hist(lf_model_plus_disc_plus_noise,  label = 'LF + disc + noise', alpha = 0.5)
+    plt.xlabel('Coverage')
+    plt.ylabel('Frequency')
+    plt.legend()
+    plt.show()
 
-# shape: number of ___?___ (15) x Batch size (5000)
-# print(np.shape(lf_model))
+def plot_discr_surface_2d(file_path,data_file,num_1d_grid_points,data_limit_factor):
 
-def plot_discrepancy(file_path,train_grid_in,train_grid_out,test_grid):
+    exp_name = os.path.basename(file_path)
+    dir_name = os.path.dirname(file_path) 
+
+    print(exp_name)
+    print(dir_name)
+
+    # Create new discrepancy
+    dicr = Discrepancy(model_name=exp_name, 
+                       model_folder=dir_name,
+                       lf_model=None,
+                       input_size=None,
+                       output_size=None,
+                       var_grid_in=None,
+                       var_grid_out=None)
+    dicr.surrogate_load()
+
+    # Get the number of dimensions for the aux variable
+    num_dim = dicr.var_grid_in.size(1)
+    if(num_dim == 2):
+        min_dim_1 = torch.min(dicr.var_grid_in[:,0])
+        max_dim_1 = torch.max(dicr.var_grid_in[:,0])
+        min_dim_2 = torch.min(dicr.var_grid_in[:,1])
+        max_dim_2 = torch.max(dicr.var_grid_in[:,1])
+        min_dim_1,max_dim_1 = scale_limits(min_dim_1,max_dim_1,data_limit_factor)
+        min_dim_2,max_dim_2 = scale_limits(min_dim_2,max_dim_2,data_limit_factor)
+
+        test_grid_1 = torch.linspace(min_dim_1,max_dim_1,num_1d_grid_points)
+        test_grid_2 = torch.linspace(min_dim_2,max_dim_2,num_1d_grid_points)
+        grid_t,grid_p = torch.meshgrid(test_grid_1, test_grid_2, indexing='ij')
+        test_grid = torch.cat((grid_t.reshape(-1,1),grid_p.reshape(-1,1)),1)
+    
+        res = dicr.forward(test_grid)
+
+        x = test_grid[:,0].cpu().detach().numpy()
+        y = test_grid[:,1].cpu().detach().numpy()
+        z = res.cpu().detach().numpy().flatten()
+
+        print(x.shape,y.shape,z.shape)
+
+        ax = plt.figure().add_subplot(projection='3d')
+        ax.plot_trisurf(x,y,z,linewidth=0.2, antialiased=True)
+        plt.show()
+
+    else:
+        print('ERROR. Invalid number of dimensions. Should be 2. Instead is ',num_dim)
+        exit(-1)
+
+def eval_discrepancy_custom_grid(file_path,train_grid_in,train_grid_out,test_grid):
 
     exp_name = os.path.basename(file_path)
     dir_name = os.path.dirname(file_path) 
@@ -58,34 +106,122 @@ def plot_discrepancy(file_path,train_grid_in,train_grid_out,test_grid):
 # =========
 if __name__ == '__main__':
 
-    file_path = './tests/results/test_lf_with_disc_hf_data_TP1/test_lf_with_disc_hf_data_TP1'
-    obs_file = './tests/results/test_lf_with_disc_hf_data_TP1/test_lf_with_disc_hf_data_TP1_data'
-    train_grid_in = torch.from_numpy(np.loadtxt(obs_file).reshape(1,-1)[:,:2])
-    train_grid_out = torch.from_numpy(np.loadtxt(obs_file).reshape(1,-1)[:,2:])
+    # Init parser
+    parser = argparse.ArgumentParser(description='.')
 
-    # Create a testing grid    
-    t_test = torch.linspace(350.0,450.0,20)
-    p_test = torch.linspace(1.0,5.0,20)
-    grid_t,grid_p = torch.meshgrid(t_test, p_test, indexing='ij')
-    test_grid = torch.cat((grid_t.reshape(-1,1),grid_p.reshape(-1,1)),1)
+    # folder name
+    parser.add_argument('-f', '--folder',
+                        action=None,
+                        # nargs='+',
+                        const=None,
+                        default='./',
+                        type=str,
+                        required=False,
+                        help='Folder with experiment results',
+                        metavar='',
+                        dest='folder_name')
+
+
+    # folder name
+    parser.add_argument('-n', '--name',
+                        action=None,
+                        # nargs='+',
+                        const=None,
+                        default='./',
+                        type=str,
+                        required=True,
+                        help='Name of numerical experiment',
+                        metavar='',
+                        dest='exp_name')
+
+    # iteration number = 1
+    parser.add_argument('-i', '--iter',
+                        action=None,
+                        # nargs='+',
+                        const=None,
+                        default=1,
+                        type=int,
+                        choices=None,
+                        required=True,
+                        help='Iteration number',
+                        metavar='',
+                        dest='step_num')
+
+    # plot format
+    parser.add_argument('-p', '--picformat',
+                        action=None,
+                        const=None,
+                        default='png',
+                        type=str,
+                        choices=['png','pdf','jpg'],
+                        required=False,
+                        help='Output format for picture',
+                        metavar='',
+                        dest='img_format')
+
+    # Enable dark mode for pictures
+    parser.add_argument('-d', '--dark',
+                        action='store_true',
+                        default=False,
+                        required=False,
+                        help='Generate pictures for dark background',
+                        dest='use_dark_mode')
+
+    # Enable dark mode for pictures
+    parser.add_argument('-m', '--mode',
+                        action=None,
+                        const=None,
+                        default='histograms',
+                        type=str,
+                        choices=['histograms','discr_surface'],
+                        required=False,
+                        help='Type of plot/result to generate',
+                        metavar='',
+                        dest='result_mode')
     
-    res = plot_discrepancy(file_path,train_grid_in,train_grid_out,test_grid)
+    # folder name
+    parser.add_argument('-z', '--num_points',
+                        action=None,
+                        # nargs='+',
+                        const=None,
+                        default=10,
+                        type=int,
+                        required=False,
+                        help='Number of on-dimensional test grid points (same in every dimension)',
+                        metavar='',
+                        dest='num_1d_grid_points')
 
-    print(res)
+    # folder name
+    parser.add_argument('-y', '--limfactor',
+                        action=None,
+                        # nargs='+',
+                        const=None,
+                        default=1.0,
+                        type=float,
+                        required=False,
+                        help='Factor for test grid limits from data file',
+                        metavar='',
+                        dest='data_limit_factor')
+
+    # Parse Commandline Arguments
+    args = parser.parse_args()
+
+    # Set file name/path for lf and discr results
+    out_dir     = args.folder_name + args.exp_name + '/'
+    lf_file = out_dir + args.exp_name + '_outputs_lf_' + str(args.step_num)
+    lf_dicr_file = out_dir + args.exp_name + '_outputs_lf+discr_' + str(args.step_num) 
+    lf_discr_noise_file = out_dir + args.exp_name + '_outputs_lf+discr+noise_' + str(args.step_num)
+    discr_sur_file = out_dir + args.exp_name
+    data_file = out_dir + args.exp_name + '_data'
+
+    # out_info    = args.exp_name + '_' + str(args.step_num)
+
+    if(args.result_mode == 'histograms'):
+        plot_disr_histograms(lf_file,lf_dicr_file,lf_discr_noise_file)
+    elif(args.result_mode == 'discr_surface'):
+        plot_discr_surface_2d(discr_sur_file,data_file,args.num_1d_grid_points,args.data_limit_factor)
+    else:
+        print('ERROR. Invalid execution mode')
+        exit(-1)
 
 
-    # Draw histograms of lf+discr
-    # Draw histograms of lf
-    # Draw histograms of lf+discr+noise
-=======
-plt.hist(lf_model, label = 'LF', alpha =0.5)
-plt.hist(lf_model_plus_disc,  label = 'LF + disc', alpha =0.5)
-plt.hist(lf_model_plus_disc_plus_noise,  label = 'LF + disc + noise', alpha = 0.5)
-plt.xlabel('Coverage')
-plt.ylabel('Frequency')
-plt.legend()
-plt.show()
-
-# shape: number of no TP-pairs x Batch size (5000)
-print(np.shape(lf_model))
->>>>>>> Stashed changes

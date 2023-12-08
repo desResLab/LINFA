@@ -22,35 +22,55 @@ class Discrepancy(object):
                        model_folder='./', 
                        surrogate=None, 
                        device='cpu'):
-        
-        self.device = device
-        self.input_size = input_size
-        self.output_size = output_size
+
         self.model_name = model_name
         self.model_folder = model_folder
-        self.is_trained = False
 
-        # Assign LF model
-        self.lf_model = lf_model
+        if(var_grid_in is None):
 
-        # Store variable grid locations
-        self.var_grid_in=var_grid_in
-        # Output variables - multiple noisy observations 
-        # are available for each combination of variables
-        self.var_grid_out=var_grid_out
+            self.device = None
+            self.input_size = None
+            self.output_size = None
+            self.dnn_arch = None
+            self.is_trained = None
+            self.lf_model = None
+            self.var_grid_in = None
+            self.var_grid_out = None
+            self.var_in_avg = None
+            self.var_in_std = None
+            self.var_out_avg = None
+            self.var_out_std = None
+            self.surrogate = None
 
-        # Input/output statistics
-        self.var_in_avg = torch.mean(var_grid_in,dim=0)
-        if(len(self.var_grid_in) == 1):
-            self.var_in_std = torch.zeros_like(self.var_in_avg)
         else:
-            self.var_in_std = torch.std(var_grid_in,dim=0)
-        # If there are multiple outputs, we will define one file for each output
-        self.var_out_avg = torch.mean(var_grid_out)
-        self.var_out_std = torch.std(var_grid_out)
 
-        # Create surrogate
-        self.surrogate = FNN(input_size, output_size, arch=dnn_arch, device=self.device, init_zero=True) if surrogate is None else surrogate
+            self.device = device
+            self.input_size = input_size
+            self.output_size = output_size
+            self.dnn_arch = dnn_arch
+            self.is_trained = False
+
+            # Assign LF model
+            self.lf_model = lf_model
+
+            # Store variable grid locations
+            self.var_grid_in=var_grid_in
+            # Output variables - multiple noisy observations 
+            # are available for each combination of variables
+            self.var_grid_out=var_grid_out
+
+            # Input/output statistics
+            self.var_in_avg = torch.mean(var_grid_in,dim=0)
+            if(len(self.var_grid_in) == 1):
+                self.var_in_std = torch.zeros_like(self.var_in_avg)
+            else:
+                self.var_in_std = torch.std(var_grid_in,dim=0)
+            # If there are multiple outputs, we will define one file for each output
+            self.var_out_avg = torch.mean(var_grid_out)
+            self.var_out_std = torch.std(var_grid_out)
+
+            # Create surrogate
+            self.surrogate = FNN(input_size, output_size, arch=self.dnn_arch, device=self.device, init_zero=True) if surrogate is None else surrogate
         
     def surrogate_save(self):
         """Save surrogate model to [self.name].sur and [self.name].npz
@@ -60,7 +80,19 @@ class Discrepancy(object):
 
         """
         # Save model state dictionary
-        torch.save(self.surrogate.state_dict(), self.model_folder +'/'+ self.model_name + '.sur')
+        dict_to_save = {}
+        dict_to_save['weights'] = self.surrogate.state_dict()
+        dict_to_save['grid_in'] = self.var_grid_in
+        dict_to_save['grid_stats_in'] = [self.var_in_avg,self.var_in_std]
+        dict_to_save['grid_out'] = self.var_grid_out
+        dict_to_save['grid_stats_out'] = [self.var_out_avg,self.var_out_std]
+        dict_to_save['trained'] = self.is_trained
+        dict_to_save['input_size'] = self.input_size
+        dict_to_save['output_size'] = self.output_size
+        dict_to_save['dnn_arch'] = self.dnn_arch
+        dict_to_save['device'] = self.device
+        # Save entire dictionary
+        torch.save(dict_to_save, self.model_folder +'/'+ self.model_name + '.sur')
 
     def surrogate_load(self):
         """Load surrogate model from [self.name].sur and [self.name].npz
@@ -69,7 +101,18 @@ class Discrepancy(object):
             None
         """
         # Read back the state dictionary from file
-        self.surrogate.load_state_dict(torch.load(self.model_folder +'/'+ self.model_name + '.sur'))
+        load_dict = torch.load(self.model_folder +'/'+ self.model_name + '.sur')
+        self.var_grid_in = load_dict['grid_in']
+        self.var_in_avg,self.var_in_std = load_dict['grid_stats_in']
+        self.var_grid_out = load_dict['grid_out']
+        self.var_out_avg,self.var_out_std = load_dict['grid_stats_out']
+        self.is_trained = load_dict['trained']
+        self.input_size = load_dict['input_size']
+        self.output_size = load_dict['output_size']
+        self.dnn_arch = load_dict['dnn_arch']
+        self.device = load_dict['device']
+        self.surrogate = FNN(self.input_size, self.output_size, arch=self.dnn_arch, device=self.device, init_zero=True)
+        self.surrogate.load_state_dict(load_dict['weights'])
 
     def update(self, batch_x, max_iters=10000, lr=0.01, lr_exp=0.999, record_interval=50, store=True, reg=False, reg_penalty=0.0001):
         """Train surrogate model with pre-grid.
