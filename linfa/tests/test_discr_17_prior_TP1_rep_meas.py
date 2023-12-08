@@ -61,8 +61,8 @@ def run_test():
     exp.transform = trsf
 
     # Add temperatures and pressures for each evaluation
-    variable_inputs = [[350.0, 400.0, 450.0],
-                       [1.0, 2.0, 3.0, 4.0, 5.0]]
+    variable_inputs = [[350.0],
+                       [1.0]]
 
     # Define model
     langmuir_model = PhysChem(variable_inputs)

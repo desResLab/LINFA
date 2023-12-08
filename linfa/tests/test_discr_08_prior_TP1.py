@@ -35,7 +35,7 @@ def run_test():
     exp.surr_upd_it         = 2000          # int: Number of iterations for the surrogate model update
     exp.calibrate_interval  = 1000          #:int:    How often the surrogate model is updated
 
-    exp.annealing           = False         # TODO : turn this on eventually
+    exp.annealing           = False         
     exp.budget              = 216           # int: Total number of true model evaulations
     exp.surr_folder         = "./" 
     exp.use_new_surr        = True
@@ -61,8 +61,8 @@ def run_test():
     exp.transform = trsf
 
     # Add temperatures and pressures for each evaluation
-    variable_inputs = [[350.0, 400.0, 450.0],
-                       [1.0, 2.0, 3.0, 4.0, 5.0]]
+    variable_inputs = [[350.0],
+                       [1.0]]
 
     # Define model
     langmuir_model = PhysChem(variable_inputs)
@@ -108,8 +108,7 @@ def run_test():
         
         # Initialize total number of variable inputs
         total_var_inputs = len(model.var_in)
-
-        # HAD TO MOVE THIS UP BEFORE EVALUATE DISCREPANCY            
+           
         # Evaluate model response - (num_var x num_batch)
         modelOut = langmuir_model.solve_t(transform.forward(calib_inputs)).t()
 
@@ -131,8 +130,6 @@ def run_test():
         # Loop on the available observations
         for loopA in range(num_obs):
             l1 = -0.5 * np.prod(langmuir_model.data.shape) * np.log(2.0 * np.pi)
-            
-            # TODO: generalize to multiple inputs
             l2 = (-0.5 * langmuir_model.data.shape[1] * torch.log(torch.prod(stds))).item()
             l3 = -0.5 * torch.sum(((modelOut + discrepancy.t() - Data[:,loopA].unsqueeze(0)) / stds.t())**2, dim = 1)
 
@@ -198,7 +195,7 @@ if __name__ == "__main__":
     
     generate_data(use_true_model=True, num_observations=1)
     
-    #run_test()
+    run_test()
 
 
 

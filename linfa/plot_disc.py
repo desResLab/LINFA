@@ -19,6 +19,7 @@ import os
 # lf_model_plus_disc = np.loadtxt(path2)
 # lf_model_plus_disc_plus_noise = np.loadtxt(path3)
 
+<<<<<<< Updated upstream
 # plt.hist(lf_model[:,0], label = 'LF')
 # plt.hist(lf_model_plus_disc[:,0],  label = 'LF + disc')
 # plt.hist(lf_model_plus_disc_plus_noise[:,0],  label = 'LF + disc + noise')
@@ -76,3 +77,15 @@ if __name__ == '__main__':
     # Draw histograms of lf+discr
     # Draw histograms of lf
     # Draw histograms of lf+discr+noise
+=======
+plt.hist(lf_model, label = 'LF', alpha =0.5)
+plt.hist(lf_model_plus_disc,  label = 'LF + disc', alpha =0.5)
+plt.hist(lf_model_plus_disc_plus_noise,  label = 'LF + disc + noise', alpha = 0.5)
+plt.xlabel('Coverage')
+plt.ylabel('Frequency')
+plt.legend()
+plt.show()
+
+# shape: number of no TP-pairs x Batch size (5000)
+print(np.shape(lf_model))
+>>>>>>> Stashed changes
