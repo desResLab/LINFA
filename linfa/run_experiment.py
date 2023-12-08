@@ -176,7 +176,7 @@ class experiment:
                     zk, _ = nf(z0)
                     log_qk = self.model_logdensity(zk)
                     dt = self.tol / torch.sqrt(log_qk.var())
-                    dt = dt.detach()# .numpy()
+                    dt = dt.detach().cpu().numpy()
 
                 if self.scheduler == 'Linear':
                     dt = self.linear_step

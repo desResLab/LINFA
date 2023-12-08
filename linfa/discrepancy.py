@@ -60,7 +60,7 @@ class Discrepancy(object):
 
         """
         # Save model state dictionary
-        torch.save(self.surrogate.state_dict(), self.model_folder + self.model_name + '.sur')
+        torch.save(self.surrogate.state_dict(), self.model_folder +'/'+ self.model_name + '.sur')
 
     def surrogate_load(self):
         """Load surrogate model from [self.name].sur and [self.name].npz
@@ -69,7 +69,7 @@ class Discrepancy(object):
             None
         """
         # Read back the state dictionary from file
-        self.surrogate.load_state_dict(torch.load(self.model_folder + self.model_name + '.sur'))
+        self.surrogate.load_state_dict(torch.load(self.model_folder +'/'+ self.model_name + '.sur'))
 
     def update(self, batch_x, max_iters=10000, lr=0.01, lr_exp=0.999, record_interval=50, store=True, reg=False, reg_penalty=0.0001):
         """Train surrogate model with pre-grid.
