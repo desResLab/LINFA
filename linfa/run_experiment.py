@@ -174,6 +174,8 @@ class experiment:
                     z0 = nf.base_dist.sample([self.M])
                     zk, _ = nf(z0)
                     log_qk = self.model_logdensity(zk)
+                    if torch.isnan(log_qk.var()):
+                        log_qk = torch.nan_to_num(log_qk, 0, 0, np.nextafter(-np.inf, 0))
                     dt = self.tol / torch.sqrt(log_qk.var())
                     dt = dt.detach()# .numpy()
 
