@@ -49,7 +49,6 @@ def plot_disr_histograms(lf_file, lf_dicr_file, lf_discr_noise_file, data_file, 
         sample = np.zeros([len(temps), len(pressures), sample_size]) # Initialize
 
          # For plotting
-        x_range = [2, 3]
         clrs = ['b', 'm', 'r'] # Line colors for each temperature
         lines = []  # List to store Line2D objects for legend lines
             
