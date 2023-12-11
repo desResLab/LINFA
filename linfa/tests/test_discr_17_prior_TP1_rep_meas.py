@@ -108,8 +108,7 @@ def run_test():
         
         # Initialize total number of variable inputs
         total_var_inputs = len(model.var_in)
-
-        # HAD TO MOVE THIS UP BEFORE EVALUATE DISCREPANCY            
+          
         # Evaluate model response - (num_var x num_batch)
         modelOut = langmuir_model.solve_t(transform.forward(calib_inputs)).t()
 
