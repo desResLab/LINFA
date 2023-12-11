@@ -4,6 +4,8 @@ from linfa.discrepancy import Discrepancy
 import numpy as np
 import os
 import argparse
+from numpy import random
+import array
 
 def scale_limits(min,max,factor):
     if(min>max):
@@ -14,21 +16,69 @@ def scale_limits(min,max,factor):
     range = max - min
     return center - factor*0.5*range, center + factor*0.5*range
 
-def plot_disr_histograms(lf_file,lf_dicr_file,lf_discr_noise_file):
+def plot_disr_histograms(lf_file, lf_dicr_file, lf_discr_noise_file, data_file, sample_size = 500):
 
     # Read result files
     lf_model = np.loadtxt(lf_file)
     lf_model_plus_disc = np.loadtxt(lf_dicr_file)
     lf_model_plus_disc_plus_noise = np.loadtxt(lf_discr_noise_file)
+    data = np.loadtxt(data_file)
 
-    # Plot histograms
-    plt.hist(lf_model, label = 'LF', alpha =0.5)
-    plt.hist(lf_model_plus_disc,  label = 'LF + disc', alpha =0.5)
-    plt.hist(lf_model_plus_disc_plus_noise,  label = 'LF + disc + noise', alpha = 0.5)
-    plt.xlabel('Coverage')
-    plt.ylabel('Frequency')
-    plt.legend()
-    plt.show()
+    # Check for multiple TP-pairs
+    ## shape : no. var inputs pairs x no. batches
+    num_dim = len(np.shape(lf_model))
+    
+    if num_dim == 1:
+        # Plot histograms
+        plt.hist(lf_model, label = 'LF', alpha = 0.5, density = True)
+        plt.hist(lf_model_plus_disc,  label = 'LF + disc', alpha = 0.5, density = True)
+        plt.hist(lf_model_plus_disc_plus_noise,  label = 'LF + disc + noise', alpha = 0.5, density = True)
+        plt.xlabel('Coverage')
+        plt.ylabel('Density')
+        plt.legend()
+        plt.show()
+   
+    else:
+
+        batch_size = len(lf_model_plus_disc[0])
+        temps = np.unique(data[:, 0])
+        pressures = np.unique(data[:, 1])
+        
+        ## Prepare for random sampling of batches
+        lf_model_plus_disc = lf_model_plus_disc.reshape(len(temps), len(pressures), batch_size)
+        random_array = np.random.randint(low = 0, high = batch_size, size = sample_size) # Randomly sample batch numbers without replacement
+        sample = np.zeros([len(temps), len(pressures), sample_size]) # Initialize
+        
+        # For plotting
+        clrs = ['b', 'm', 'r'] # Line colors for each temperature
+        lines = []  # List to store Line2D objects for legend lines
+        
+        # Loop over temperatures
+        for loopA, temp in enumerate(temps):
+            
+            # Loop over pressures
+            for loopB, pressure in enumerate(pressures):
+
+                # Evalute random sample of true process posterior
+                sample[loopA, loopB] = lf_model_plus_disc[loopA, loopB, random_array]
+
+            # Plot function & save line properties for legend
+            line = plt.plot(np.tile(pressures, (sample_size, 1)).transpose(),
+                            sample[loopA],
+                            linewidth=0.05,
+                            color=clrs[loopA])[0]
+            lines.append(line)
+        
+        # Manually create the legend with custom linewidth
+        legend = plt.legend(lines, ['{} K'.format(temp) for temp in temps])
+
+        # Set the linewidth for the legend lines
+        for line in legend.get_lines():
+            line.set_linewidth(2.0)  # Adjust the linewidth as needed
+            
+        plt.xlabel('Pressure, [Pa]')
+        plt.ylabel('Coverage, [ ]')
+        plt.show()
 
 def plot_discr_surface_2d(file_path,data_file,num_1d_grid_points,data_limit_factor):
 
@@ -217,7 +267,7 @@ if __name__ == '__main__':
     # out_info    = args.exp_name + '_' + str(args.step_num)
 
     if(args.result_mode == 'histograms'):
-        plot_disr_histograms(lf_file,lf_dicr_file,lf_discr_noise_file)
+        plot_disr_histograms(lf_file,lf_dicr_file,lf_discr_noise_file,data_file)
     elif(args.result_mode == 'discr_surface'):
         plot_discr_surface_2d(discr_sur_file,data_file,args.num_1d_grid_points,args.data_limit_factor)
     else:
