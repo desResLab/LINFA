@@ -5,7 +5,6 @@ import numpy as np
 import os
 import argparse
 from numpy import random
-import array
 
 def scale_limits(min,max,factor):
     if(min>max):
@@ -16,7 +15,7 @@ def scale_limits(min,max,factor):
     range = max - min
     return center - factor*0.5*range, center + factor*0.5*range
 
-def plot_disr_histograms(lf_file, lf_dicr_file, lf_discr_noise_file, data_file, sample_size = 500):
+def plot_disr_histograms(lf_file, lf_dicr_file, lf_discr_noise_file, data_file, sample_size = 10):
 
     # Read result files
     lf_model = np.loadtxt(lf_file)
@@ -39,20 +38,21 @@ def plot_disr_histograms(lf_file, lf_dicr_file, lf_discr_noise_file, data_file, 
         plt.show()
    
     else:
-
+        
         batch_size = len(lf_model_plus_disc[0])
         temps = np.unique(data[:, 0])
         pressures = np.unique(data[:, 1])
         
-        ## Prepare for random sampling of batches
+         ## Prepare for random sampling of batches
         lf_model_plus_disc = lf_model_plus_disc.reshape(len(temps), len(pressures), batch_size)
         random_array = np.random.randint(low = 0, high = batch_size, size = sample_size) # Randomly sample batch numbers without replacement
         sample = np.zeros([len(temps), len(pressures), sample_size]) # Initialize
-        
-        # For plotting
+
+         # For plotting
+        x_range = [2, 3]
         clrs = ['b', 'm', 'r'] # Line colors for each temperature
         lines = []  # List to store Line2D objects for legend lines
-        
+            
         # Loop over temperatures
         for loopA, temp in enumerate(temps):
             
@@ -62,11 +62,12 @@ def plot_disr_histograms(lf_file, lf_dicr_file, lf_discr_noise_file, data_file, 
                 # Evalute random sample of true process posterior
                 sample[loopA, loopB] = lf_model_plus_disc[loopA, loopB, random_array]
 
-            # Plot function & save line properties for legend
-            line = plt.plot(np.tile(pressures, (sample_size, 1)).transpose(),
-                            sample[loopA],
-                            linewidth=0.05,
-                            color=clrs[loopA])[0]
+            # Plot function & save line psroperties for legend
+            line = plt.plot(np.tile(pressures, 
+                                    (sample_size, 1)).transpose(),
+                                    sample[loopA],
+                                    linewidth=0.01,
+                                    color=clrs[loopA])[0]
             lines.append(line)
         
         # Manually create the legend with custom linewidth
@@ -78,6 +79,7 @@ def plot_disr_histograms(lf_file, lf_dicr_file, lf_discr_noise_file, data_file, 
             
         plt.xlabel('Pressure, [Pa]')
         plt.ylabel('Coverage, [ ]')
+
         plt.show()
 
 def plot_discr_surface_2d(file_path,data_file,num_1d_grid_points,data_limit_factor):
