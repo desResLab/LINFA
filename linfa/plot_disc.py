@@ -5,6 +5,7 @@ import numpy as np
 import os
 import argparse
 from numpy import random
+from matplotlib.ticker import AutoMinorLocator, FormatStrFormatter
 
 def scale_limits(min,max,factor):
     if(min>max):
@@ -15,7 +16,7 @@ def scale_limits(min,max,factor):
     range = max - min
     return center - factor*0.5*range, center + factor*0.5*range
 
-def plot_disr_histograms(lf_file, lf_dicr_file, lf_discr_noise_file, data_file, out_dir, sample_size = 500):
+def plot_disr_histograms(lf_file, lf_dicr_file, lf_discr_noise_file, data_file, out_dir, sample_size = 250):
 
     # Read result files
     lf_model = np.loadtxt(lf_file)
@@ -29,15 +30,20 @@ def plot_disr_histograms(lf_file, lf_dicr_file, lf_discr_noise_file, data_file, 
     
     if num_dim == 1:
         # Plot histograms
-        plt.figure(figsize = (4,4))
-        plt.hist(lf_model, label = 'LF', alpha = 0.5, density = True)
-        plt.hist(lf_model_plus_disc,  label = 'LF + disc', alpha = 0.5, density = True)
-        plt.hist(lf_model_plus_disc_plus_noise,  label = 'LF + disc + noise', alpha = 0.5, density = True)
-        plt.xlabel('Coverage')
-        plt.ylabel('Density')
-        plt.legend()
+        plt.figure(figsize = (6,4))
+        plt.hist(lf_model,  label = r'$\eta \vert \mathbf{\theta}$', alpha = 0.5, density = True, hatch = '/')
+        plt.hist(lf_model_plus_disc,  label = r'$\zeta \vert \mathbf{\theta}, \delta$', alpha = 0.5, density = True)
+        plt.hist(lf_model_plus_disc_plus_noise,  label = r'$y \vert \mathbf{\theta}, \delta, \epsilon$', alpha = 0.5, density = True, hatch = '.')
+        plt.xlabel('Coverage', fontweight = 'bold', fontsize = 16)
+        plt.ylabel('Density', fontweight = 'bold', fontsize = 16)
+        plt.axvline(data[2], label = r'$y$', color = 'k', linewidth = 3)
+        plt.legend(fontsize = 14)
+        plt.gca().xaxis.set_minor_locator(AutoMinorLocator())
+        plt.gca().yaxis.set_minor_locator(AutoMinorLocator())
+        plt.gca().xaxis.set_major_formatter(FormatStrFormatter("%.2f"))
+        plt.gca().tick_params(axis = 'both', which = 'both', direction = 'in', top = True, right = True, labelsize = 15)
         plt.tight_layout()
-        plt.savefig(out_dir+'hist.png', bbox_inches = 'tight', dpi = 200)
+        plt.savefig(out_dir+'hist.png', bbox_inches = 'tight', dpi = 300)
         plt.close()
    
     else:
@@ -45,7 +51,7 @@ def plot_disr_histograms(lf_file, lf_dicr_file, lf_discr_noise_file, data_file, 
         batch_size = len(lf_model_plus_disc[0])
         temps = np.unique(data[:, 0])
         pressures = np.unique(data[:, 1])
-        
+
          ## Prepare for random sampling of batches
         lf_model_plus_disc = lf_model_plus_disc.reshape(len(temps), len(pressures), batch_size)
         random_array = np.random.randint(low = 0, high = batch_size, size = sample_size) # Randomly sample batch numbers without replacement
@@ -125,9 +131,10 @@ def plot_discr_surface_2d(file_path, data_file, num_1d_grid_points, data_limit_f
         z = res.cpu().detach().numpy().flatten()
 
         ax = plt.figure(figsize = (4,4)).add_subplot(projection='3d')
-        ax.plot_trisurf(x,y,z,linewidth=0.2, antialiased=True)
-        plt.xlabel('Temperature, [K]')
-        plt.ylabel('Pressure, [Pa]')
+        ax.plot_trisurf(x, y, z, linewidth=0.2, antialiased = True)
+        plt.xlabel('Temperature [K]', fontsize = 16, fontweight = 'bold')
+        plt.ylabel('Pressure [Pa]', fontsize = 16, fontweight = 'bold')
+        ax.tick_params(axis = 'both', which = 'both', direction = 'in', top = True, right = True, labelsize = 15)
         plt.tight_layout()
         plt.savefig(out_dir+'disc_surf.png',bbox_inches='tight',dpi=200)
         plt.close()
