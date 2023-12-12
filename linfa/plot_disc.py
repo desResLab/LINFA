@@ -107,7 +107,6 @@ def plot_disr_histograms(lf_file, lf_dicr_file, lf_discr_noise_file, data_file, 
         ax.tick_params(axis = 'both', which = 'both', direction = 'in', top = True, right = True, labelsize = 15)
         plt.tight_layout()
         plt.savefig(out_dir+'hist.png', bbox_inches='tight', dpi = 300)
-        plt.show()
         plt.close()
 
 def plot_discr_surface_2d(file_path, data_file, num_1d_grid_points, data_limit_factor, out_dir):
@@ -115,7 +114,7 @@ def plot_discr_surface_2d(file_path, data_file, num_1d_grid_points, data_limit_f
     # Read in data
     exp_name = os.path.basename(file_path)
     dir_name = os.path.dirname(file_path)
-    observations = np.loadtxt(data_file)
+    data = np.loadtxt(data_file)
 
     # Create new discrepancy
     dicr = Discrepancy(model_name = exp_name, 
@@ -128,9 +127,14 @@ def plot_discr_surface_2d(file_path, data_file, num_1d_grid_points, data_limit_f
     dicr.surrogate_load()
 
     # Get the number of dimensions for the aux variable
-    num_var_ins = dicr.var_grid_in.size(1)      # no. of variable inputs
     num_var_pairs = dicr.var_grid_in.size(0)    # no. of variable input-pairs
+    num_var_ins   = dicr.var_grid_in.size(1)    # no. of variable inputs
     
+    # Extract observations from data
+    observations = data.transpose()[num_var_ins:]
+    
+    # Substract LF model evaluated at MAP from observations
+
     if num_var_ins == 2 & num_var_pairs > 1:
 
         # Normalize values of the variable inputs
@@ -183,10 +187,7 @@ def plot_discr_surface_2d(file_path, data_file, num_1d_grid_points, data_limit_f
 def eval_discrepancy_custom_grid(file_path,train_grid_in,train_grid_out,test_grid):
 
     exp_name = os.path.basename(file_path)
-    dir_name = os.path.dirname(file_path) 
-
-    print(exp_name)
-    print(dir_name)
+    dir_name = os.path.dirname(file_path)
 
     # Create new discrepancy
     dicr = Discrepancy(model_name = exp_name, 

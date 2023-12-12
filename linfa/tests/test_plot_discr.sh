@@ -9,7 +9,7 @@
 
 
 python3 -m linfa.plot_disc --folder results/ \
-							--name test_lf_with_disc_hf_data_prior_TP1 \
+							--name test_lf_with_disc_hf_data_prior_TP15_rep_meas \
 							--iter 2000 \
 							--mode discr_surface \
 							--num_points 40 \
