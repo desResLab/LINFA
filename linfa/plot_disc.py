@@ -112,9 +112,10 @@ def plot_disr_histograms(lf_file, lf_dicr_file, lf_discr_noise_file, data_file, 
 
 def plot_discr_surface_2d(file_path, data_file, num_1d_grid_points, data_limit_factor, out_dir):
 
-    # TODO: need to rewrite conditional statements to raise error message when there is only one measurement
+    # Read in data
     exp_name = os.path.basename(file_path)
     dir_name = os.path.dirname(file_path)
+    observations = np.loadtxt(data_file)
 
     # Create new discrepancy
     dicr = Discrepancy(model_name = exp_name, 
@@ -127,27 +128,37 @@ def plot_discr_surface_2d(file_path, data_file, num_1d_grid_points, data_limit_f
     dicr.surrogate_load()
 
     # Get the number of dimensions for the aux variable
-    num_dim = dicr.var_grid_in.size(1)
-   
-    if(num_dim == 2):
+    num_var_ins = dicr.var_grid_in.size(1)      # no. of variable inputs
+    num_var_pairs = dicr.var_grid_in.size(0)    # no. of variable input-pairs
+    
+    if num_var_ins == 2 & num_var_pairs > 1:
+
+        # Normalize values of the variable inputs
+        ## Variable input 1
         min_dim_1 = torch.min(dicr.var_grid_in[:,0])
         max_dim_1 = torch.max(dicr.var_grid_in[:,0])
+        min_dim_1, max_dim_1 = scale_limits(min_dim_1, max_dim_1, data_limit_factor)
+        
+        ## Variable input 2
         min_dim_2 = torch.min(dicr.var_grid_in[:,1])
         max_dim_2 = torch.max(dicr.var_grid_in[:,1])
-        min_dim_1,max_dim_1 = scale_limits(min_dim_1, max_dim_1, data_limit_factor)
-        min_dim_2,max_dim_2 = scale_limits(min_dim_2, max_dim_2, data_limit_factor)
+        min_dim_2, max_dim_2 = scale_limits(min_dim_2, max_dim_2, data_limit_factor)
 
+        # Create test grid of variable inputs to evaluate discrepancy surrogate
         test_grid_1 = torch.linspace(min_dim_1, max_dim_1, num_1d_grid_points)
         test_grid_2 = torch.linspace(min_dim_2, max_dim_2, num_1d_grid_points)
         grid_t, grid_p = torch.meshgrid(test_grid_1, test_grid_2, indexing='ij')
         test_grid = torch.cat((grid_t.reshape(-1,1), grid_p.reshape(-1,1)),1)
-    
+
+        # Evaluate discrepancy over test grid
         res = dicr.forward(test_grid)
 
-        x = test_grid[:,0].cpu().detach().numpy()
-        y = test_grid[:,1].cpu().detach().numpy()
-        z = res.cpu().detach().numpy().flatten()
+        # Prepare test grid and discpreancy for plotting
+        x = test_grid[:,0].cpu().detach().numpy() # Variable input 1
+        y = test_grid[:,1].cpu().detach().numpy() # Variable input 2
+        z = res.cpu().detach().numpy().flatten()  # Discrepancy
 
+        # Plot discrepancy surface as a function of variable inputs 1 & 2
         ax = plt.figure(figsize = (4,4)).add_subplot(projection='3d')
         ax.plot_trisurf(x, y, z, cmap = plt.cm.Spectral, linewidth = 0.2, antialiased = True)
         ax.set_xlabel('Temperature [K]', fontsize = 16, fontweight = 'bold', labelpad = 10)
@@ -159,8 +170,14 @@ def plot_discr_surface_2d(file_path, data_file, num_1d_grid_points, data_limit_f
         plt.savefig(out_dir+'disc_surf.png', bbox_inches = 'tight', dpi = 300)
         plt.close()
 
-    else:
-        print('ERROR. Invalid number of dimensions. Should be 2. Instead is ',num_dim)
+    # Check for invalid number of variable inputs
+    elif num_var_ins != 2:
+        print('ERROR. Invalid number of variable inputs. Should be 2. Instead is ', num_var_ins)
+        exit(-1)
+    
+    # Check for invalid number of variable input pairs
+    elif num_var_pairs <= 1:
+        print('ERROR. Invalid number of variable input pairs. Should be > 1. Instead is ', num_var_pairs)
         exit(-1)
 
 def eval_discrepancy_custom_grid(file_path,train_grid_in,train_grid_out,test_grid):
@@ -303,7 +320,7 @@ if __name__ == '__main__':
     if(args.result_mode == 'histograms'):
         plot_disr_histograms(lf_file, lf_dicr_file, lf_discr_noise_file, data_file, out_dir)
     elif(args.result_mode == 'discr_surface'):
-        plot_discr_surface_2d(discr_sur_file,data_file,args.num_1d_grid_points,args.data_limit_factor, out_dir)
+        plot_discr_surface_2d(discr_sur_file, data_file, args.num_1d_grid_points, args.data_limit_factor, out_dir)
     else:
         print('ERROR. Invalid execution mode')
         exit(-1)
