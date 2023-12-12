@@ -59,7 +59,7 @@ class PhysChem(object):
         e1Const  = e1Const.repeat(1, num_vars).t()
 
         # specify adsorption site two parameters
-        p02Const, e2Const, lambda1Const, lambda2Const = torch.tensor(5000.0), torch.tensor(-22000.0), torch.tensor(1.0), torch.tensor(0.5)
+        p02Const, e2Const, lambda1Const = torch.tensor(5000.0), torch.tensor(-22000.0), torch.tensor(0.5)
         p02Const = p02Const.repeat(1, num_vars).t()
         e2Const  = e2Const.repeat(1, num_vars).t()
 
@@ -70,7 +70,7 @@ class PhysChem(object):
         k2Const = 1.0/p02Const * torch.exp(-e2Const / self.RConst / T)
 
         # compute surface coverage fraction for two adsorption sites with different equilibrium conditions
-        cov_frac = lambda1Const * (k1Const*P/(1 + k1Const*P)) + lambda2Const * (k2Const*P/(1 + k2Const*P))
+        cov_frac = lambda1Const * (k1Const*P/(1 + k1Const*P)) + (1 - lambda1Const) * (k2Const*P/(1 + k2Const*P))
 
         # Return
         return cov_frac
