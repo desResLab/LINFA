@@ -172,7 +172,7 @@ def run_test():
         l3 = -0.5 * torch.sum(((phys_inputs - pr_avg)/pr_std)**2, dim = 1).unsqueeze(1)
         # Return 
         res = l1 + l2 + l3 + adjust
-        return res 
+        return res
 
     exp.model_logprior = lambda x: log_prior(x, exp.transform)
 
@@ -189,7 +189,7 @@ def generate_data(use_true_model=False,num_observations=50):
     model = PhysChem(var_grid)
     
     # Generate data
-    model.genDataFile(use_true_model=use_true_model,num_observations=num_observations)
+    model.genDataFile(use_true_model = use_true_model, num_observations = num_observations)
 
 # Main code
 if __name__ == "__main__":
