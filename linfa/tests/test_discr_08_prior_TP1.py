@@ -84,6 +84,7 @@ def run_test():
 
         # Create new discrepancy
         exp.surrogate = Discrepancy(model_name=exp.name, 
+                                    model_folder=exp.output_dir, 
                                     lf_model=exp.model.solve_t,
                                     input_size=exp.model.var_in.size(1),
                                     output_size=1,
@@ -93,7 +94,7 @@ def run_test():
         # exp.surrogate.update(langmuir_model.defParams, exp.surr_pre_it, 0.03, 0.9999, 100, store=True)
         # exp.surrogate.update(langmuir_model.defParams, 1, 0.03, 0.9999, 100, store=True)
         # Load the surrogate
-        # exp.surrogate.surrogate_load()
+        # exp.surrogate.surrogate_loaCCd()
     else:
         exp.surrogate = None
 

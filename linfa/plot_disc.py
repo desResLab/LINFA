@@ -15,7 +15,7 @@ def scale_limits(min,max,factor):
     range = max - min
     return center - factor*0.5*range, center + factor*0.5*range
 
-def plot_disr_histograms(lf_file, lf_dicr_file, lf_discr_noise_file, data_file, sample_size = 10):
+def plot_disr_histograms(lf_file, lf_dicr_file, lf_discr_noise_file, data_file, out_dir, sample_size = 500):
 
     # Read result files
     lf_model = np.loadtxt(lf_file)
@@ -29,13 +29,16 @@ def plot_disr_histograms(lf_file, lf_dicr_file, lf_discr_noise_file, data_file, 
     
     if num_dim == 1:
         # Plot histograms
+        plt.figure(figsize = (4,4))
         plt.hist(lf_model, label = 'LF', alpha = 0.5, density = True)
         plt.hist(lf_model_plus_disc,  label = 'LF + disc', alpha = 0.5, density = True)
         plt.hist(lf_model_plus_disc_plus_noise,  label = 'LF + disc + noise', alpha = 0.5, density = True)
         plt.xlabel('Coverage')
         plt.ylabel('Density')
         plt.legend()
-        plt.show()
+        plt.tight_layout()
+        plt.savefig(out_dir+'hist.png', bbox_inches = 'tight', dpi = 200)
+        plt.close()
    
     else:
         
@@ -49,6 +52,7 @@ def plot_disr_histograms(lf_file, lf_dicr_file, lf_discr_noise_file, data_file, 
         sample = np.zeros([len(temps), len(pressures), sample_size]) # Initialize
 
          # For plotting
+        plt.figure(figsize = (4,4))
         clrs = ['b', 'm', 'r'] # Line colors for each temperature
         lines = []  # List to store Line2D objects for legend lines
             
@@ -78,16 +82,15 @@ def plot_disr_histograms(lf_file, lf_dicr_file, lf_discr_noise_file, data_file, 
             
         plt.xlabel('Pressure, [Pa]')
         plt.ylabel('Coverage, [ ]')
+        plt.tight_layout()
+        plt.savefig(out_dir+'hist.png',bbox_inches='tight',dpi=200)
+        plt.close()
 
-        plt.show()
+def plot_discr_surface_2d(file_path, data_file, num_1d_grid_points, data_limit_factor, out_dir):
 
-def plot_discr_surface_2d(file_path,data_file,num_1d_grid_points,data_limit_factor):
-
+    # TODO: need to rewrite conditional statements to raise error message when there is only one measurement
     exp_name = os.path.basename(file_path)
-    dir_name = os.path.dirname(file_path) 
-
-    print(exp_name)
-    print(dir_name)
+    dir_name = os.path.dirname(file_path)
 
     # Create new discrepancy
     dicr = Discrepancy(model_name=exp_name, 
@@ -101,6 +104,7 @@ def plot_discr_surface_2d(file_path,data_file,num_1d_grid_points,data_limit_fact
 
     # Get the number of dimensions for the aux variable
     num_dim = dicr.var_grid_in.size(1)
+   
     if(num_dim == 2):
         min_dim_1 = torch.min(dicr.var_grid_in[:,0])
         max_dim_1 = torch.max(dicr.var_grid_in[:,0])
@@ -120,11 +124,13 @@ def plot_discr_surface_2d(file_path,data_file,num_1d_grid_points,data_limit_fact
         y = test_grid[:,1].cpu().detach().numpy()
         z = res.cpu().detach().numpy().flatten()
 
-        print(x.shape,y.shape,z.shape)
-
-        ax = plt.figure().add_subplot(projection='3d')
+        ax = plt.figure(figsize = (4,4)).add_subplot(projection='3d')
         ax.plot_trisurf(x,y,z,linewidth=0.2, antialiased=True)
-        plt.show()
+        plt.xlabel('Temperature, [K]')
+        plt.ylabel('Pressure, [Pa]')
+        plt.tight_layout()
+        plt.savefig(out_dir+'disc_surf.png',bbox_inches='tight',dpi=200)
+        plt.close()
 
     else:
         print('ERROR. Invalid number of dimensions. Should be 2. Instead is ',num_dim)
@@ -268,9 +274,9 @@ if __name__ == '__main__':
     # out_info    = args.exp_name + '_' + str(args.step_num)
 
     if(args.result_mode == 'histograms'):
-        plot_disr_histograms(lf_file,lf_dicr_file,lf_discr_noise_file,data_file)
+        plot_disr_histograms(lf_file, lf_dicr_file, lf_discr_noise_file, data_file, out_dir)
     elif(args.result_mode == 'discr_surface'):
-        plot_discr_surface_2d(discr_sur_file,data_file,args.num_1d_grid_points,args.data_limit_factor)
+        plot_discr_surface_2d(discr_sur_file,data_file,args.num_1d_grid_points,args.data_limit_factor, out_dir)
     else:
         print('ERROR. Invalid execution mode')
         exit(-1)
