@@ -76,7 +76,7 @@ class PhysChem(object):
         return cov_frac
 
     
-    def genDataFile(self, dataFileNamePrefix='observations', use_true_model=True, store=True, num_observations=10):
+    def genDataFile(self, dataFileNamePrefix='observations', use_true_model=True, store = True, num_observations = 10):
 
         # solve model
         if(use_true_model):
