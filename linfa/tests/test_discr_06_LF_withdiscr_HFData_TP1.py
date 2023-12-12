@@ -84,7 +84,7 @@ def run_test():
 
         # Create new discrepancy
         exp.surrogate = Discrepancy(model_name=exp.name, 
-                                    model_folder=exp.output_dir,
+                                    model_folder=exp.output_dir, 
                                     lf_model=exp.model.solve_t,
                                     input_size=exp.model.var_in.size(1),
                                     output_size=1,

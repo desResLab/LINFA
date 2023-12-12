@@ -24,7 +24,7 @@ def run_test():
     exp.input_size          = 2             # int: Dimensionalty of input (default 2)
     exp.batch_size          = 200           # int: Number of samples generated (default 100)
     exp.true_data_num       = 2             # double: Number of true model evaluted (default 2)
-    exp.n_iter              = 25001          # int: Number of iterations (default 25001)
+    exp.n_iter              = 2000          # int: Number of iterations (default 25001)
     exp.lr                  = 0.001         # float: Learning rate (default 0.003)
     exp.lr_decay            = 0.9999        # float:  Learning rate decay (default 0.9999)
     exp.log_interal         = 10            # int: How often to show loss stat (default 10)
@@ -84,6 +84,7 @@ def run_test():
 
         # Create new discrepancy
         exp.surrogate = Discrepancy(model_name=exp.name, 
+                                    model_folder=exp.output_dir, 
                                     lf_model=exp.model.solve_t,
                                     input_size=exp.model.var_in.size(1),
                                     output_size=1,
@@ -108,8 +109,7 @@ def run_test():
         
         # Initialize total number of variable inputs
         total_var_inputs = len(model.var_in)
-
-        # HAD TO MOVE THIS UP BEFORE EVALUATE DISCREPANCY            
+         
         # Evaluate model response - (num_var x num_batch)
         modelOut = langmuir_model.solve_t(transform.forward(calib_inputs)).t()
 

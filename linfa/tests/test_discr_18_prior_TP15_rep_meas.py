@@ -81,7 +81,7 @@ def run_test():
 
     # Define surrogate
     if(exp.run_nofas):
-
+        
         # Create new discrepancy
         exp.surrogate = Discrepancy(model_name=exp.name, 
                                     model_folder=exp.output_dir, 
