@@ -11,7 +11,7 @@ from linfa.models.discrepancy_models import PhysChem
 def run_test():
 
     exp = experiment()
-    exp.name = "test_lf_with_disc_hf_data_TP1"
+    exp.name = "test_06_lf_w_disc_TP1"
     exp.flow_type           = 'maf'         # str: Type of flow (default 'realnvp')
     exp.n_blocks            = 15            # int: Number of hidden layers   
     exp.hidden_size         = 100           # int: Hidden layer size for MADE in each layer (default 100)
@@ -32,7 +32,7 @@ def run_test():
     exp.run_nofas           = True          # normalizing flow with adaptive surrogate
     exp.surrogate_type      = 'discrepancy' # type of surrogate we are using
     exp.surr_pre_it         = 1000          # int: Number of pre-training iterations for surrogate model
-    exp.surr_upd_it         = 2000          # int: Number of iterations for the surrogate model update
+    exp.surr_upd_it         = 1000          # int: Number of iterations for the surrogate model update
     exp.calibrate_interval  = 1000          #:int:    How often the surrogate model is updated
 
     exp.annealing           = False
@@ -83,13 +83,13 @@ def run_test():
     if(exp.run_nofas):
 
         # Create new discrepancy
-        exp.surrogate = Discrepancy(model_name=exp.name, 
-                                    model_folder=exp.output_dir, 
-                                    lf_model=exp.model.solve_t,
-                                    input_size=exp.model.var_in.size(1),
-                                    output_size=1,
-                                    var_grid_in=var_grid_in,
-                                    var_grid_out=var_grid_out)
+        exp.surrogate = Discrepancy(model_name = exp.name, 
+                                    model_folder = exp.output_dir, 
+                                    lf_model = exp.model.solve_t,
+                                    input_size = exp.model.var_in.size(1),
+                                    output_size = 1,
+                                    var_grid_in = var_grid_in,
+                                    var_grid_out = var_grid_out)
         # Initially tune on the default values of the calibration variables
         # exp.surrogate.update(langmuir_model.defParams, exp.surr_pre_it, 0.03, 0.9999, 100, store=True)
         # exp.surrogate.update(langmuir_model.defParams, 1, 0.03, 0.9999, 100, store=True)
@@ -170,12 +170,12 @@ def generate_data(use_true_model=False,num_observations=50):
     model = PhysChem(var_grid)
     
     # Generate data
-    model.genDataFile(use_true_model=use_true_model,num_observations=num_observations)
+    model.genDataFile(use_true_model = use_true_model, num_observations = num_observations)
 
 # Main code
 if __name__ == "__main__":
     
-    generate_data(use_true_model=True, num_observations=1)
+    generate_data(use_true_model=True, num_observations = 1)
     
     run_test()
 
