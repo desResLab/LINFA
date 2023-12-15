@@ -1,6 +1,7 @@
 import os,torch
 from linfa.discrepancy import Discrepancy
 from linfa.maf import MAF, RealNVP
+from run_experiment import load_exp_from_file
 
 def eval_discrepancy(file_path,test_data):
 
@@ -21,12 +22,10 @@ def eval_discrepancy(file_path,test_data):
     # Evaluate discrepancy over test grid
     return dicr.forward(test_data) 
 
+def eval_model(exp_chkpt_file,nf_chkpt_file,discr_chkpt_file,num_calib_samples,test_data):
 
-def eval_model(exp,discr_chkpt_file,nf_chkpt_file,test_data):
-
-    # Evaluate discrepancy at tp data "test_data"
-    res_discr = eval_discrepancy(discr_chkpt_file,test_data)
-    # Sample from normalzing flow
+    # Load experiment from file
+    exp = load_exp_from_file(exp_chkpt_file)
 
     # Create NF model from experiment
     if exp.flow_type == 'maf':
@@ -43,19 +42,41 @@ def eval_model(exp,discr_chkpt_file,nf_chkpt_file,test_data):
     x00 = nf.base_dist.sample([num_calib_samples])
     xkk, _ = nf(x00)
 
+    # Evaluate discrepancy at tp data "test_data"
+    res_discr = eval_discrepancy(discr_chkpt_file,test_data)
+
     # Solve models 
-    res_lf = exp.model.solve_t(exp.transform.forward(xkk))
+    # Need to change this to be evaluated at arbitraty temperatures and pressures.
+    if(exp.transform is None):
+        res_lf = exp.model.solve_t(xkk)
+    else:
+        res_lf = exp.model.solve_t(exp.transform.forward(xkk))
 
     # return 
     return res_lf + res_discr
 
+# MAIN CODE
+if __name__ == "__main__":
 
+    # Assign files
+    exp_chkpt_file = './tests/results/test_lf_with_disc_hf_data_TP1/experiment.pt'
+    nf_chkpt_file = './tests/results/test_lf_with_disc_hf_data_TP1/test_lf_with_disc_hf_data_TP1_3000.nf'
+    discr_chkpt_file =  './tests/results/test_lf_with_disc_hf_data_TP1/test_lf_with_disc_hf_data_TP1'
+    # 
+    num_calib_samples = 100
 
+    # Set the grid for 
+    min_dim_1 = 400.0
+    max_dim_1 = 500.0
+    min_dim_2 = 2.0
+    max_dim_2 = 3.0
+    num_1d_grid_points = 5
+    #
+    test_grid_1 = torch.linspace(min_dim_1, max_dim_1, num_1d_grid_points)
+    test_grid_2 = torch.linspace(min_dim_2, max_dim_2, num_1d_grid_points)
+    grid_t, grid_p = torch.meshgrid(test_grid_1, test_grid_2, indexing='ij')
+    test_data = torch.cat((grid_t.reshape(-1,1), grid_p.reshape(-1,1)),1)
 
-    
+    res = eval_model(exp_chkpt_file,nf_chkpt_file,discr_chkpt_file,num_calib_samples,test_data)
 
-    res_model = eval_discrepancy(file_path,test_data_discr)
-
-
-
-
+    print(res.size())

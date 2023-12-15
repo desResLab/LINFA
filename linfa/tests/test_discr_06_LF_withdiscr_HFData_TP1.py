@@ -1,3 +1,4 @@
+from functools import partial
 from linfa.run_experiment import experiment
 from linfa.transform import Transformation
 from linfa.discrepancy import Discrepancy
