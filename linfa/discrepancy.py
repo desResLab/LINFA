@@ -222,7 +222,7 @@ def test_surrogate():
     
     # Define emulator and pre-train on global grid
     discrepancy = Discrepancy(model_name='discrepancy_test',
-                              lf_model=model.solve_lf,
+                              lf_model=model.solve_t,
                               input_size=2,
                               output_size=1,
                               var_grid_in=var_data_in,

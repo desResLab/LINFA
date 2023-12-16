@@ -109,7 +109,7 @@ def plot_disr_histograms(lf_file, lf_dicr_file, lf_discr_noise_file, data_file, 
         plt.savefig(out_dir+'hist.png', bbox_inches='tight', dpi = 300)
         plt.close()
 
-def plot_discr_surface_2d(file_path, data_file, num_1d_grid_points, data_limit_factor, out_dir):
+def plot_discr_surface_2d(file_path, lf_file, data_file, num_1d_grid_points, data_limit_factor, out_dir):
 
     # Read in data
     exp_name = os.path.basename(file_path)
@@ -130,13 +130,11 @@ def plot_discr_surface_2d(file_path, data_file, num_1d_grid_points, data_limit_f
     num_var_pairs = dicr.var_grid_in.size(0)    # no. of variable input-pairs
     num_var_ins   = dicr.var_grid_in.size(1)    # no. of variable inputs
     
-    # Extract observations from data
+    # Extract obsersations from data
     observations = data.transpose()[num_var_ins:]
-    
-    # Substract LF model evaluated at MAP from observations
 
     if num_var_ins == 2 & num_var_pairs > 1:
-
+        
         # Normalize values of the variable inputs
         ## Variable input 1
         min_dim_1 = torch.min(dicr.var_grid_in[:,0])
@@ -162,17 +160,27 @@ def plot_discr_surface_2d(file_path, data_file, num_1d_grid_points, data_limit_f
         y = test_grid[:,1].cpu().detach().numpy() # Variable input 2
         z = res.cpu().detach().numpy().flatten()  # Discrepancy
 
+        # Prepare to plot training data
+        lf_model = np.loadtxt(lf_file)
+        disc = observations.transpose() - lf_model
+        train_disc = np.average(disc, axis = 1)
+        t_train = data[:, 0]
+        p_train = data[:, 1]
+        disc_lower_bound = np.percentile(disc, 2.5, axis = 1)
+        disc_upper_bound = np.percentile(disc, 97.5, axis = 1)
+    
         # Plot discrepancy surface as a function of variable inputs 1 & 2
         ax = plt.figure(figsize = (4,4)).add_subplot(projection='3d')
         ax.plot_trisurf(x, y, z, cmap = plt.cm.Spectral, linewidth = 0.2, antialiased = True)
+        ax.scatter(t_train, p_train, train_disc, color = 'k', s = 8)
+        ax.errorbar(t_train, p_train, train_disc, zerr = [disc_lower_bound, disc_upper_bound], fmt='o', color='k', ecolor='k', capsize=3)
         ax.set_xlabel('Temperature [K]', fontsize = 16, fontweight = 'bold', labelpad = 10)
         ax.set_ylabel('Pressure [Pa]', fontsize = 16, fontweight = 'bold', labelpad = 10)
         ax.set_zlabel('Discrepancy [ ]', fontsize = 16, fontweight = 'bold', labelpad = 10)
-        ax.tick_params(axis = 'both', which = 'both', direction = 'in', top = True, right = True, labelsize = 15)
+        ax.tick_params(axis = 'both', which = 'both', direction = 'in', top = True, right = True)
         ax.yaxis.set_major_formatter(FormatStrFormatter("%.1f"))
         plt.tight_layout()
         plt.savefig(out_dir+'disc_surf.png', bbox_inches = 'tight', dpi = 300)
-        plt.close()
 
     # Check for invalid number of variable inputs
     elif num_var_ins != 2:
@@ -197,6 +205,7 @@ def eval_discrepancy_custom_grid(file_path,train_grid_in,train_grid_out,test_gri
                        output_size = 1,
                        var_grid_in = train_grid_in,
                        var_grid_out = train_grid_out)
+    
     # Load the surrogate
     dicr.surrogate_load()
 
@@ -321,7 +330,7 @@ if __name__ == '__main__':
     if(args.result_mode == 'histograms'):
         plot_disr_histograms(lf_file, lf_dicr_file, lf_discr_noise_file, data_file, out_dir)
     elif(args.result_mode == 'discr_surface'):
-        plot_discr_surface_2d(discr_sur_file, data_file, args.num_1d_grid_points, args.data_limit_factor, out_dir)
+        plot_discr_surface_2d(discr_sur_file, lf_dicr_file, data_file, args.num_1d_grid_points, args.data_limit_factor, out_dir)
     else:
         print('ERROR. Invalid execution mode')
         exit(-1)
