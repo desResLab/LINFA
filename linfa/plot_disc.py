@@ -19,12 +19,12 @@ def scale_limits(min,max,factor):
 def plot_disr_histograms(lf_file, lf_dicr_file, lf_discr_noise_file, data_file, out_dir, sample_size = 250):
 
     # Read result files
-    lf_model = np.loadtxt(lf_file)
-    lf_model_plus_disc = np.loadtxt(lf_dicr_file)
-    lf_model_plus_disc_plus_noise = np.loadtxt(lf_discr_noise_file)
-    data = np.loadtxt(data_file)
+    data                          = np.loadtxt(data_file)           # Experimental observations
+    lf_model                      = np.loadtxt(lf_file)             # Samples from low-fidelity posterior
+    lf_model_plus_disc            = np.loadtxt(lf_dicr_file)        # Samples from low-fidelity posterior + discrepancy
+    lf_model_plus_disc_plus_noise = np.loadtxt(lf_discr_noise_file) # Samples from low-fidelity posterior + discrepancy + noise
 
-    # Check for multiple TP-pairs
+    # Check for repated observations
     ## shape : no. var inputs pairs x no. batches
     num_dim = len(np.shape(lf_model))
     
@@ -32,13 +32,13 @@ def plot_disr_histograms(lf_file, lf_dicr_file, lf_discr_noise_file, data_file, 
         # Plot histograms
         plt.figure(figsize = (6,4))
         ax = plt.gca()
-        plt.hist(lf_model,  label = r'$\eta \vert \mathbf{\theta}$', alpha = 0.5, density = True, hatch = '/')
-        plt.hist(lf_model_plus_disc,  label = r'$\zeta \vert \mathbf{\theta}, \delta$', alpha = 0.5, density = True)
-        plt.hist(lf_model_plus_disc_plus_noise,  label = r'$y \vert \mathbf{\theta}, \delta, \epsilon$', alpha = 0.5, density = True, hatch = '.')
+        plt.hist(lf_model, label = r'$\eta \vert \mathbf{\theta}$', alpha = 0.5, density = True, hatch = '/')
+        plt.hist(lf_model_plus_disc, label = r'$\zeta \vert \mathbf{\theta}, \delta$', alpha = 0.5, density = True)
+        plt.hist(lf_model_plus_disc_plus_noise, label = r'$y \vert \mathbf{\theta}, \delta, \epsilon$', alpha = 0.5, density = True, hatch = '.')
         plt.axvline(data[2], label = r'$y$', color = 'k', linewidth = 3)
         plt.legend(fontsize = 14)
         ax.set_xlabel('Coverage [ ]', fontweight = 'bold', fontsize = 16)
-        ax.set_ylabel('Density', fontweight = 'bold', fontsize = 16)
+        ax.set_ylabel('Density',      fontweight = 'bold', fontsize = 16)
         ax.xaxis.set_minor_locator(AutoMinorLocator())
         ax.yaxis.set_minor_locator(AutoMinorLocator())
         ax.xaxis.set_major_formatter(FormatStrFormatter("%.2f"))
@@ -58,14 +58,14 @@ def plot_disr_histograms(lf_file, lf_dicr_file, lf_discr_noise_file, data_file, 
          ## Prepare for random sampling of batches
         lf_model_plus_disc = lf_model_plus_disc.reshape(len(temps), len(pressures), batch_size)
         random_array = np.random.randint(low = 0, high = batch_size, size = sample_size) # Randomly sample batch numbers without replacement
-        sample = np.zeros([len(temps), len(pressures), sample_size]) # Initialize
+        sample = np.zeros([len(temps), len(pressures), sample_size])                     # Initialize
 
          # For plotting
         plt.figure(figsize = (6,4))
         ax = plt.gca()
         clrs = ['b', 'm', 'r'] # Line colors for each temperature
         mkrs = ['v', 's', 'o'] # Line colors for each temperature
-        lines = []  # List to store Line2D objects for legend lines
+        lines = []             # List to store Line2D objects for legend lines
             
         # Loop over temperatures
         for loopA, temp in enumerate(temps):
@@ -100,7 +100,7 @@ def plot_disr_histograms(lf_file, lf_dicr_file, lf_discr_noise_file, data_file, 
             line.set_linewidth(2.0)  # Adjust the linewidth as needed
             
         ax.set_xlabel('Pressure [Pa]', fontsize = 16, fontweight = 'bold')
-        ax.set_ylabel('Coverage [ ]', fontsize = 16, fontweight = 'bold')
+        ax.set_ylabel('Coverage [ ]',  fontsize = 16, fontweight = 'bold')
         ax.xaxis.set_minor_locator(AutoMinorLocator())
         ax.yaxis.set_minor_locator(AutoMinorLocator())
         ax.xaxis.set_major_formatter(FormatStrFormatter("%.1f"))
@@ -109,12 +109,14 @@ def plot_disr_histograms(lf_file, lf_dicr_file, lf_discr_noise_file, data_file, 
         plt.savefig(out_dir+'hist.png', bbox_inches='tight', dpi = 300)
         plt.close()
 
-def plot_discr_surface_2d(file_path, lf_file, data_file, num_1d_grid_points, data_limit_factor, out_dir):
 
-    # Read in data
-    exp_name = os.path.basename(file_path)
-    dir_name = os.path.dirname(file_path)
-    data = np.loadtxt(data_file)
+def plot_discr_surface_2d(file_path, lf_file, data_file, num_1d_grid_points, data_limit_factor, out_dir, nom_coverage = 95.0):
+
+    # Load training data
+    exp_name = os.path.basename(file_path)       # Name of experiment
+    dir_name = os.path.dirname(file_path)        # Name of results directory
+    exp_data = np.loadtxt(data_file)             # Experimental data
+    lf_train = np.loadtxt(lf_file)               # Low-fidelity model posterior samples
 
     # Create new discrepancy
     dicr = Discrepancy(model_name = exp_name, 
@@ -127,11 +129,8 @@ def plot_discr_surface_2d(file_path, lf_file, data_file, num_1d_grid_points, dat
     dicr.surrogate_load()
 
     # Get the number of dimensions for the aux variable
-    num_var_pairs = dicr.var_grid_in.size(0)    # no. of variable input-pairs
-    num_var_ins   = dicr.var_grid_in.size(1)    # no. of variable inputs
-    
-    # Extract obsersations from data
-    observations = data.transpose()[num_var_ins:]
+    num_var_pairs = dicr.var_grid_in.size(0)    # No. of variable input-pairs
+    num_var_ins   = dicr.var_grid_in.size(1)    # No. of variable inputs
 
     if num_var_ins == 2 & num_var_pairs > 1:
         
@@ -159,25 +158,48 @@ def plot_discr_surface_2d(file_path, lf_file, data_file, num_1d_grid_points, dat
         x = test_grid[:,0].cpu().detach().numpy() # Variable input 1
         y = test_grid[:,1].cpu().detach().numpy() # Variable input 2
         z = res.cpu().detach().numpy().flatten()  # Discrepancy
+        
+         # Assign obsersations from data
+        observations = exp_data.transpose()[num_var_ins:]
 
-        # Prepare to plot training data
-        lf_model = np.loadtxt(lf_file)
-        disc = observations.transpose() - lf_model
+        # Assign variable inputs   
+        var_train = [exp_data[:, 0], exp_data[:, 1]]
+
+        # Check for repeated observations
+        if np.shape(observations)[0] > 1:
+            disc = np.average(observations) - lf_train
+        else:
+            disc = observations.transpose() - lf_train
+
+        # Computw average and percentiles
         train_disc = np.average(disc, axis = 1)
-        t_train = data[:, 0]
-        p_train = data[:, 1]
-        disc_lower_bound = np.percentile(disc, 2.5, axis = 1)
-        disc_upper_bound = np.percentile(disc, 97.5, axis = 1)
-    
+        discBnds = [np.percentile(disc, (100 - nom_coverage) / 2, axis = 1),    # Lower bound
+                    np.percentile(disc, (100 + nom_coverage) / 2, axis = 1)]    # Upper bound
+        
         # Plot discrepancy surface as a function of variable inputs 1 & 2
         ax = plt.figure(figsize = (4,4)).add_subplot(projection='3d')
         ax.plot_trisurf(x, y, z, cmap = plt.cm.Spectral, linewidth = 0.2, antialiased = True)
-        ax.scatter(t_train, p_train, train_disc, color = 'k', s = 8)
-        ax.errorbar(t_train, p_train, train_disc, zerr = [disc_lower_bound, disc_upper_bound], fmt='o', color='k', ecolor='k', capsize=3)
-        ax.set_xlabel('Temperature [K]', fontsize = 16, fontweight = 'bold', labelpad = 10)
-        ax.set_ylabel('Pressure [Pa]', fontsize = 16, fontweight = 'bold', labelpad = 10)
-        ax.set_zlabel('Discrepancy [ ]', fontsize = 16, fontweight = 'bold', labelpad = 10)
-        ax.tick_params(axis = 'both', which = 'both', direction = 'in', top = True, right = True)
+        ax.scatter(var_train[0],
+                   var_train[1],
+                   train_disc, color = 'k', s = 8)
+        ax.errorbar(var_train[0], 
+                    var_train[1],
+                    train_disc, 
+                    zerr = discBnds, 
+                    fmt = 'o', 
+                    color = 'k', 
+                    ecolor = 'k', 
+                    capsize = 3)
+        
+        ax.set_xlabel('Temperature [K]', fontsize = 16, fontweight = 'bold', labelpad = 15)
+        ax.set_ylabel('Pressure [Pa]',   fontsize = 16, fontweight = 'bold', labelpad = 15)
+        ax.set_zlabel('Discrepancy [ ]', fontsize = 16, fontweight = 'bold', labelpad = 15)
+        ax.tick_params(axis = 'both', 
+                       which = 'both', 
+                       direction = 'in', 
+                       top = True, 
+                       right = True,
+                       labelsize = 15)
         ax.yaxis.set_major_formatter(FormatStrFormatter("%.1f"))
         plt.tight_layout()
         plt.savefig(out_dir+'disc_surf.png', bbox_inches = 'tight', dpi = 300)
