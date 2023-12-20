@@ -109,7 +109,6 @@ def plot_disr_histograms(lf_file, lf_dicr_file, lf_discr_noise_file, data_file, 
         plt.savefig(out_dir+'hist.png', bbox_inches='tight', dpi = 300)
         plt.close()
 
-
 def plot_discr_surface_2d(file_path, lf_file, data_file, num_1d_grid_points, data_limit_factor, out_dir, nom_coverage = 95.0):
 
     # Load training data
@@ -235,6 +234,7 @@ def eval_discrepancy_custom_grid(file_path,train_grid_in,train_grid_out,test_gri
     return dicr.forward(test_grid)
 
 def plot_marginal_stats(marg_stats_file, step_num, saveinterval, out_dir):
+    
     iterations = np.arange(start=saveinterval, stop=step_num + saveinterval, step=saveinterval, dtype=int)
 
     fig, axes = plt.subplots(2, 2, figsize=(10, 8))
@@ -268,6 +268,32 @@ def plot_marginal_stats(marg_stats_file, step_num, saveinterval, out_dir):
     plt.tight_layout()
     plt.savefig(out_dir + 'marginal_stats', bbox_inches = 'tight', dpi = 300)
     plt.show()
+
+def plot_marginal_posterior(params_file, out_dir):
+    
+    params = np.loadtxt(params_file)
+    calInput1 = params[:, 0]
+    calInput2 = params[:, 1]
+
+    fig, axes = plt.subplots(1, 2, figsize=(8, 4))
+    axes = axes.flatten()
+    axes[0].hist(calInput1)
+    axes[1].hist(calInput2)
+
+    # Set common labels
+    for ax, xlabel in zip(axes, [r'$\theta_1$', r'$\theta_2$']):
+        ax.set_xlabel(xlabel, fontsize = 16, fontweight='bold')
+    
+    axes[0].set_ylabel('Frequency', fontsize = 16, fontweight='bold')
+    
+    # Adjust layout and save the figure
+    plt.tight_layout()
+    plt.savefig(out_dir + 'marginal_posterior', bbox_inches = 'tight', dpi = 300)
+    plt.show()
+    
+    
+
+
 
 # =========
 # MAIN CODE
@@ -341,7 +367,7 @@ if __name__ == '__main__':
                         const=None,
                         default='histograms',
                         type=str,
-                        choices=['histograms','discr_surface', 'marginal_stats'],
+                        choices=['histograms','discr_surface', 'marginal_stats', 'marginal_posterior'],
                         required=False,
                         help='Type of plot/result to generate',
                         metavar='',
@@ -393,6 +419,7 @@ if __name__ == '__main__':
     discr_sur_file = out_dir + args.exp_name
     data_file = out_dir + args.exp_name + '_data'
     marg_stats_file = out_dir + args.exp_name + '_marginal_stats_'
+    params_file = out_dir + args.exp_name + '_params_' + str(args.step_num)
 
     # out_info    = args.exp_name + '_' + str(args.step_num)
 
@@ -402,7 +429,8 @@ if __name__ == '__main__':
         plot_discr_surface_2d(discr_sur_file, lf_dicr_file, data_file, args.num_1d_grid_points, args.data_limit_factor, out_dir)
     elif(args.result_mode == 'marginal_stats'):
         plot_marginal_stats(marg_stats_file, args.step_num, args.saveinterval, out_dir)
-    
+    elif(args.result_mode == 'marginal_posterior'):
+        plot_marginal_posterior(params_file, out_dir)
     else:
         print('ERROR. Invalid execution mode')
         exit(-1)
