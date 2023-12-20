@@ -234,6 +234,41 @@ def eval_discrepancy_custom_grid(file_path,train_grid_in,train_grid_out,test_gri
     # Evaluate surrogate
     return dicr.forward(test_grid)
 
+def plot_marginal_stats(marg_stats_file, step_num, saveinterval, out_dir):
+    iterations = np.arange(start=saveinterval, stop=step_num + saveinterval, step=saveinterval, dtype=int)
+
+    fig, axes = plt.subplots(2, 2, figsize=(10, 8))
+    axes = axes.flatten()
+
+    for loopA in range(len(iterations)):
+        # Read file
+        stats = np.loadtxt(marg_stats_file + str(iterations[loopA]))
+        mean = stats[:, 0]
+        sd = stats[:, 1]
+
+        # Plot mean and sd of calibration parameters with adjusted data point label font size
+        axes[0].plot(iterations[loopA], mean[0], 'ko', markersize=8)
+        axes[1].plot(iterations[loopA], mean[1], 'kv', markersize=8)
+        axes[2].plot(iterations[loopA], sd[0], 'bo', markersize=8)
+        axes[3].plot(iterations[loopA], sd[1], 'bv', markersize=8)
+
+    # Set common labels
+    for ax, ylabel in zip(axes, [r'$\bar{\theta_1}$', r'$\bar{\theta_2}$', r'$se({\theta_1})$', r'$se({\theta_2})$']):
+        ax.set_ylabel(ylabel, fontsize=15, fontweight='bold')
+
+    # Set x-axis label only for the bottom two subplots
+    for ax in axes[-2:]:
+        ax.set_xlabel('Iterations', fontsize=15, fontweight='bold')
+
+    # Set tick label font size
+    for ax in axes:
+        ax.tick_params(axis='both', labelsize=15)
+
+    # Adjust layout and save the figure
+    plt.tight_layout()
+    plt.savefig(out_dir + 'marginal_stats', bbox_inches = 'tight', dpi = 300)
+    plt.show()
+
 # =========
 # MAIN CODE
 # =========
@@ -306,7 +341,7 @@ if __name__ == '__main__':
                         const=None,
                         default='histograms',
                         type=str,
-                        choices=['histograms','discr_surface'],
+                        choices=['histograms','discr_surface', 'marginal_stats'],
                         required=False,
                         help='Type of plot/result to generate',
                         metavar='',
@@ -335,6 +370,17 @@ if __name__ == '__main__':
                         help='Factor for test grid limits from data file',
                         metavar='',
                         dest='data_limit_factor')
+    
+    # save interval
+    parser.add_argument('-si', '--saveinterval',
+                        action=None,
+                        # nargs='+',
+                        const=None,
+                        default=1.0,
+                        type=float,
+                        required=False,
+                        help='Save interval to read for each iteration',
+                        metavar='',)
 
     # Parse Commandline Arguments
     args = parser.parse_args()
@@ -346,6 +392,7 @@ if __name__ == '__main__':
     lf_discr_noise_file = out_dir + args.exp_name + '_outputs_lf+discr+noise_' + str(args.step_num)
     discr_sur_file = out_dir + args.exp_name
     data_file = out_dir + args.exp_name + '_data'
+    marg_stats_file = out_dir + args.exp_name + '_marginal_stats_'
 
     # out_info    = args.exp_name + '_' + str(args.step_num)
 
@@ -353,6 +400,9 @@ if __name__ == '__main__':
         plot_disr_histograms(lf_file, lf_dicr_file, lf_discr_noise_file, data_file, out_dir)
     elif(args.result_mode == 'discr_surface'):
         plot_discr_surface_2d(discr_sur_file, lf_dicr_file, data_file, args.num_1d_grid_points, args.data_limit_factor, out_dir)
+    elif(args.result_mode == 'marginal_stats'):
+        plot_marginal_stats(marg_stats_file, args.step_num, args.saveinterval, out_dir)
+    
     else:
         print('ERROR. Invalid execution mode')
         exit(-1)
