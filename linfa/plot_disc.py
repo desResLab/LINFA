@@ -332,7 +332,7 @@ def plot_marginal_posterior(params_file, out_dir):
     plt.savefig(out_dir + 'marginal_posterior', bbox_inches = 'tight', dpi = 300)
     plt.show()
     
-    
+
 
 
 
@@ -412,6 +412,7 @@ if __name__ == '__main__':
                         help='Type of plot/result to generate',
                         metavar='',
                         dest='result_mode')
+    
     
     # folder name
     parser.add_argument('-z', '--num_points',
