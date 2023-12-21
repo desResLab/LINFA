@@ -5,7 +5,7 @@ import numpy as np
 import os
 import argparse
 from numpy import random
-from matplotlib.ticker import AutoMinorLocator, FormatStrFormatter
+from matplotlib.ticker import AutoMinorLocator, FormatStrFormatter, ScalarFormatter
 
 def scale_limits(min,max,factor):
     if(min > max):
@@ -243,38 +243,71 @@ def eval_discrepancy_custom_grid(file_path,train_grid_in,train_grid_out,test_gri
 
 def plot_marginal_stats(marg_stats_file, step_num, saveinterval, out_dir):
     
-    iterations = np.arange(start=saveinterval, stop=step_num + saveinterval, step=saveinterval, dtype=int)
-
-    fig, axes = plt.subplots(2, 2, figsize=(10, 8))
+    # Get array of iterations where marginal statistics were saved
+    iterations = np.arange(start = saveinterval, 
+                           stop = step_num + saveinterval, 
+                           step = saveinterval, 
+                           dtype = int)
+    
+    fig, axes = plt.subplots(2, 2, figsize=(10, 5))
     axes = axes.flatten()
 
+    # Loop over save intervals
     for loopA in range(len(iterations)):
+        
         # Read file
-        stats = np.loadtxt(marg_stats_file + str(iterations[loopA]))
-        mean = stats[:, 0]
-        sd = stats[:, 1]
+        stats = np.loadtxt(marg_stats_file + str(iterations[loopA])) 
+        
+        # Unpack sample statistics
+        mean = stats[:, 0]  # Sample mean
+        sd = stats[:, 1]    # Sample std. dev.
 
         # Plot mean and sd of calibration parameters with adjusted data point label font size
-        axes[0].plot(iterations[loopA], mean[0], 'ko', markersize=8)
-        axes[1].plot(iterations[loopA], mean[1], 'kv', markersize=8)
-        axes[2].plot(iterations[loopA], sd[0], 'bo', markersize=8)
-        axes[3].plot(iterations[loopA], sd[1], 'bv', markersize=8)
+        axes[0].plot(iterations[loopA], mean[0], 'o', color = 'r', markersize = 8)
+        axes[1].plot(iterations[loopA], mean[1], 'o', color = 'r', markersize = 8)
+        axes[2].plot(iterations[loopA], sd[0], 'v', color = 'b', markersize = 8)
+        axes[3].plot(iterations[loopA], sd[1], 'v', color = 'b', markersize = 8)
 
-    # Set common labels
-    for ax, ylabel in zip(axes, [r'$\bar{\theta_1}$', r'$\bar{\theta_2}$', r'$se({\theta_1})$', r'$se({\theta_2})$']):
-        ax.set_ylabel(ylabel, fontsize=15, fontweight='bold')
+    # Set common labels for the y-axis
+    for ax, ylabel in zip(axes, [r'$\mathbb{E}(\theta_1 \vert \mathcal{D})$',
+                                 r'$\mathbb{E}(\theta_2 \vert \mathcal{D})$', 
+                                 r'$\mathbb{V}(\theta_1 \vert \mathcal{D})$', 
+                                 r'$\mathbb{V}(\theta_2 \vert \mathcal{D})$']):
+        ax.set_ylabel(ylabel, fontsize = 16, fontweight = 'bold')
 
+    # Add ground truth parameters to the sample average plots
+    gtCalParams = np.array([1.0E3, -21.0E3])
+    axes[0].axhline(gtCalParams[0], color = 'k', linewidth = 3, label = r'$\theta_1$')
+    axes[1].axhline(gtCalParams[1], color = 'k', linewidth = 3, label = r'$\theta_2$')
+    axes[0].legend(fontsize = 14)
+    axes[1].legend(fontsize = 14)
+        
     # Set x-axis label only for the bottom two subplots
     for ax in axes[-2:]:
-        ax.set_xlabel('Iterations', fontsize=15, fontweight='bold')
+        ax.set_xlabel('Iterations', fontsize = 16, fontweight = 'bold')
 
     # Set tick label font size
     for ax in axes:
-        ax.tick_params(axis='both', labelsize=15)
+        ax.xaxis.set_minor_locator(AutoMinorLocator())
+        ax.yaxis.set_minor_locator(AutoMinorLocator())
+        ax.tick_params(axis = 'both', 
+                       which = 'both', 
+                       direction = 'in', 
+                       top = True, 
+                       right = True, 
+                       labelsize = 15)
+    
+    # Remove redundant tick labels
+    axes[0].tick_params(axis = 'x', labelbottom = False)
+    axes[1].tick_params(axis = 'x', labelbottom = False)
 
+    # Set specific formatting for parameter 2
+    axes[1].yaxis.set_major_formatter(ScalarFormatter(useMathText=True))
+    axes[1].ticklabel_format(axis = 'y', style = 'sci', scilimits = (0, 0))
+        
     # Adjust layout and save the figure
     plt.tight_layout()
-    plt.savefig(out_dir + 'marginal_stats', bbox_inches = 'tight', dpi = 300)
+    plt.savefig(out_dir + 'marginal_stats.png', bbox_inches = 'tight', dpi = 300)
     plt.show()
 
 def plot_marginal_posterior(params_file, out_dir):
@@ -322,7 +355,6 @@ if __name__ == '__main__':
                         help='Folder with experiment results',
                         metavar='',
                         dest='folder_name')
-
 
     # folder name
     parser.add_argument('-n', '--name',
