@@ -23,7 +23,7 @@ def plot_disr_histograms(lf_file, lf_dicr_file, lf_discr_noise_file, data_file, 
     lf_model                      = np.loadtxt(lf_file)             # Samples from low-fidelity posterior
     lf_model_plus_disc            = np.loadtxt(lf_dicr_file)        # Samples from low-fidelity posterior + discrepancy
     lf_model_plus_disc_plus_noise = np.loadtxt(lf_discr_noise_file) # Samples from low-fidelity posterior + discrepancy + noise
-
+    
     # Check for repated observations
     ## shape : no. var inputs pairs x no. batches
     num_dim = len(np.shape(lf_model))
@@ -35,7 +35,15 @@ def plot_disr_histograms(lf_file, lf_dicr_file, lf_discr_noise_file, data_file, 
         plt.hist(lf_model, label = r'$\eta \vert \mathbf{\theta}$', alpha = 0.5, density = True, hatch = '/')
         plt.hist(lf_model_plus_disc, label = r'$\zeta \vert \mathbf{\theta}, \delta$', alpha = 0.5, density = True)
         plt.hist(lf_model_plus_disc_plus_noise, label = r'$y \vert \mathbf{\theta}, \delta, \epsilon$', alpha = 0.5, density = True, hatch = '.')
-        plt.axvline(data[2], label = r'$y$', color = 'k', linewidth = 3)
+        
+        for loopA in range(len(data[2:])):
+            if loopA == 0:
+                # add label to legend
+                plt.axvline(data[2 + loopA], label = r'$y$', color = 'k', linewidth = 3)
+            else:
+                plt.axvline(data[2 + loopA], color = 'k', linewidth = 3)
+
+        
         plt.legend(fontsize = 14)
         ax.set_xlabel('Coverage [ ]', fontweight = 'bold', fontsize = 16)
         ax.set_ylabel('Density',      fontweight = 'bold', fontsize = 16)
