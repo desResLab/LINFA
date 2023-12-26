@@ -271,8 +271,8 @@ def plot_marginal_stats(marg_stats_file, step_num, saveinterval, out_dir):
     # Set common labels for the y-axis
     for ax, ylabel in zip(axes, [r'$\mathbb{E}(\theta_1 \vert \mathcal{D})$',
                                  r'$\mathbb{E}(\theta_2 \vert \mathcal{D})$', 
-                                 r'$\mathbb{V}(\theta_1 \vert \mathcal{D})$', 
-                                 r'$\mathbb{V}(\theta_2 \vert \mathcal{D})$']):
+                                 r'$\sqrt{\mathbb{V}(\theta_1 \vert \mathcal{D})}$', 
+                                 r'$\sqrt{\mathbb{V}(\theta_2 \vert \mathcal{D})}$']):
         ax.set_ylabel(ylabel, fontsize = 16, fontweight = 'bold')
 
     # Add ground truth parameters to the sample average plots
