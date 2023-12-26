@@ -35,7 +35,7 @@ def run_test():
     exp.surr_upd_it         = 2000          # int: Number of iterations for the surrogate model update
     exp.calibrate_interval  = 1000          #:int:    How often the surrogate model is updated
 
-    exp.annealing           = False         # TODO : turn this on eventually
+    exp.annealing           = False         
     exp.budget              = 216           # int: Total number of true model evaulations
     exp.surr_folder         = "./" 
     exp.use_new_surr        = True
@@ -53,7 +53,7 @@ def run_test():
     exp.device = torch.device('cuda:0' if torch.cuda.is_available() and not exp.no_cuda else 'cpu')
 
     # Define transformation
-    trsf_info = [['tanh', -7.0, 7.0, 100.0, 1500.0],
+    trsf_info = [['tanh', -7.0, 7.0, 250.0, 1500.0],
                  ['tanh', -7.0, 7.0, -30000.0, -15000.0]]
     trsf = Transformation(trsf_info)
     
@@ -191,7 +191,7 @@ def generate_data(use_true_model=False,num_observations=50):
     model = PhysChem(var_grid)
     
     # Generate data
-    model.genDataFile(use_true_model=use_true_model,num_observations=num_observations)
+    model.genDataFile(use_true_model = use_true_model, num_observations = num_observations)
 
 # Main code
 if __name__ == "__main__":
