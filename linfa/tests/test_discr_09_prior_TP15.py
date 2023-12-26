@@ -167,7 +167,7 @@ def run_test():
         phys_inputs = transform.forward(calib_inputs)
         # Define prior moments
         pr_avg = torch.tensor([[1E3, -21E3]])
-        pr_std = torch.tensor([[1E2, 5E3]])
+        pr_std = torch.tensor([[1E2, 2E3]])
         # Eval log prior
         l1 = -0.5 * calib_inputs.size(1) * np.log(2.0 * np.pi)            
         l2 = (-0.5 * torch.log(torch.prod(pr_std))).item()
