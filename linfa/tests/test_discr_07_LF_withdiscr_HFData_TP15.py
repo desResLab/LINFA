@@ -24,7 +24,7 @@ def run_test():
     exp.input_size          = 2             # int: Dimensionalty of input (default 2)
     exp.batch_size          = 200           # int: Number of samples generated (default 100)
     exp.true_data_num       = 2             # double: Number of true model evaluted (default 2)
-    exp.n_iter              = 25001         # int: Number of iterations (default 25001)
+    exp.n_iter              = 50000         # int: Number of iterations (default 25001)
     exp.lr                  = 0.001         # float: Learning rate (default 0.003)
     exp.lr_decay            = 0.9999        # float:  Learning rate decay (default 0.9999)
     exp.log_interal         = 10            # int: How often to show loss stat (default 10)
@@ -53,7 +53,7 @@ def run_test():
     exp.device = torch.device('cuda:0' if torch.cuda.is_available() and not exp.no_cuda else 'cpu')
 
     # Define transformation
-    trsf_info = [['tanh', -7.0, 7.0, 500.0, 1500.0],
+    trsf_info = [['tanh', -7.0, 7.0, 100.0, 1500.0],
                  ['tanh', -7.0, 7.0, -30000.0, -15000.0]]
     trsf = Transformation(trsf_info)
     
@@ -132,8 +132,6 @@ def run_test():
         # Loop on the available observations
         for loopA in range(num_obs):
             l1 = -0.5 * np.prod(langmuir_model.data.shape) * np.log(2.0 * np.pi)
-            
-            # TODO: generalize to multiple inputs
             l2 = (-0.5 * langmuir_model.data.shape[1] * torch.log(torch.prod(stds))).item()
             l3 = -0.5 * torch.sum(((modelOut + discrepancy.t() - Data[:,loopA].unsqueeze(0)) / stds.t())**2, dim = 1)
 
