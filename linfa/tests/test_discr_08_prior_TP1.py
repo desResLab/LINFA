@@ -164,8 +164,8 @@ def run_test():
         # Compute the calibration inputs in the physical domain
         phys_inputs = transform.forward(calib_inputs)
         # Define prior moments
-        pr_avg = torch.tensor([[1e3, -21e3]])
-        pr_std = torch.tensor([[1e3*0.1, 21e3*0.1]])
+        pr_avg = torch.tensor([[1E3, -21E3]])
+        pr_std = torch.tensor([[1E2, 5E3]])
         # Eval log prior
         l1 = -0.5 * calib_inputs.size(1) * np.log(2.0 * np.pi)            
         l2 = (-0.5 * torch.log(torch.prod(pr_std))).item()
