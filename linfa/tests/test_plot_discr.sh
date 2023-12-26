@@ -1,6 +1,6 @@
 # True process posterior
 python3 -m linfa.plot_disc --folder results/ \
-							--name test_08_lf_w_disc_TP1_prior \
+							--name test_09_lf_w_disc_TP15_prior \
 							--iter 50000 \
 							--mode histograms \
 							--num_points 10 \
@@ -8,7 +8,7 @@ python3 -m linfa.plot_disc --folder results/ \
 
 # Discrepancy surface
 python3 -m linfa.plot_disc --folder results/ \
-							--name test_08_lf_w_disc_TP1_prior \
+							--name test_09_lf_w_disc_TP15_prior \
 							--iter 50000 \
 							--mode discr_surface \
 							--num_points 40 \
@@ -16,11 +16,12 @@ python3 -m linfa.plot_disc --folder results/ \
 
 # Marginal statistics
 python3 -m linfa.plot_disc --folder results/ \
-							--name test_08_lf_w_disc_TP1_prior \
+							--name test_09_lf_w_disc_TP15_prior \
 							--iter 50000 \
 							--mode marginal_stats \
 							--saveinterval 1000 \
 
+# Marginal statistics for groups to study
 # python3 -m linfa.plot_disc_groups --folder results/ \
 # 								--names 'test_15_lf_w_disc_TP1_rep_meas' 'test_16_lf_w_disc_TP15_rep_meas' 'test_17_lf_w_disc_TP1_prior_rep_meas' 'test_18_lf_w_disc_TP15_prior_rep_meas' \
 # 								--iter 25000 \
@@ -31,5 +32,5 @@ python3 -m linfa.plot_disc --folder results/ \
 
 # Loss vs. iterations plot, calibration parameters posterior
 python3 -m linfa.plot_res --folder results/ \
-						--name test_08_lf_w_disc_TP1_prior \
+						--name test_09_lf_w_disc_TP15_prior \
 						--iter 50000 \
