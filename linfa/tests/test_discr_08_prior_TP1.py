@@ -83,13 +83,13 @@ def run_test():
     if(exp.run_nofas):
 
         # Create new discrepancy
-        exp.surrogate = Discrepancy(model_name=exp.name, 
-                                    model_folder=exp.output_dir, 
-                                    lf_model=exp.model.solve_t,
-                                    input_size=exp.model.var_in.size(1),
-                                    output_size=1,
-                                    var_grid_in=var_grid_in,
-                                    var_grid_out=var_grid_out)
+        exp.surrogate = Discrepancy(model_name = exp.name, 
+                                    model_folder = exp.output_dir, 
+                                    lf_model = exp.model.solve_t,
+                                    input_size = exp.model.var_in.size(1),
+                                    output_size = 1,
+                                    var_grid_in = var_grid_in,
+                                    var_grid_out = var_grid_out)
         # Initially tune on the default values of the calibration variables
         # exp.surrogate.update(langmuir_model.defParams, exp.surr_pre_it, 0.03, 0.9999, 100, store=True)
         # exp.surrogate.update(langmuir_model.defParams, 1, 0.03, 0.9999, 100, store=True)
@@ -165,7 +165,7 @@ def run_test():
         phys_inputs = transform.forward(calib_inputs)
         # Define prior moments
         pr_avg = torch.tensor([[1E3, -21E3]])
-        pr_std = torch.tensor([[1E2, 5E3]])
+        pr_std = torch.tensor([[1E2, 3E3]])
         # Eval log prior
         l1 = -0.5 * calib_inputs.size(1) * np.log(2.0 * np.pi)            
         l2 = (-0.5 * torch.log(torch.prod(pr_std))).item()

@@ -1,6 +1,6 @@
 # True process posterior
 python3 -m linfa.plot_disc --folder results/ \
-							--name lf_no_disc_lf_data_tp1_rep_meas \
+							--name test_06_lf_w_disc_TP1 \
 							--iter 25000 \
 							--mode histograms \
 							--num_points 10 \
@@ -8,7 +8,7 @@ python3 -m linfa.plot_disc --folder results/ \
 
 # Discrepancy surface
 python3 -m linfa.plot_disc --folder results/ \
-							--name lf_no_disc_lf_data_tp1_rep_meas \
+							--name test_06_lf_w_disc_TP1 \
 							--iter 25000 \
 							--mode discr_surface \
 							--num_points 40 \
@@ -16,7 +16,7 @@ python3 -m linfa.plot_disc --folder results/ \
 
 # Marginal statistics
 python3 -m linfa.plot_disc --folder results/ \
-							--name lf_no_disc_lf_data_tp1_rep_meas \
+							--name test_06_lf_w_disc_TP1 \
 							--iter 25000 \
 							--mode marginal_stats \
 							--saveinterval 1000 \

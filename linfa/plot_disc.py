@@ -16,7 +16,7 @@ def scale_limits(min,max,factor):
     range = max - min
     return center - factor * 0.5 * range, center + factor * 0.5 * range
 
-def plot_disr_histograms(lf_file, lf_dicr_file, lf_discr_noise_file, data_file, out_dir, sample_size = 250):
+def plot_disr_histograms(lf_file, lf_dicr_file, lf_discr_noise_file, data_file, step_num, out_dir, img_format = 'png', sample_size = 250):
 
     # Read result files
     data                          = np.loadtxt(data_file)           # Experimental observations
@@ -43,7 +43,6 @@ def plot_disr_histograms(lf_file, lf_dicr_file, lf_discr_noise_file, data_file, 
             else:
                 plt.axvline(data[2 + loopA], color = 'k', linewidth = 3)
 
-        
         plt.legend(fontsize = 14)
         ax.set_xlabel('Coverage [ ]', fontweight = 'bold', fontsize = 16)
         ax.set_ylabel('Density',      fontweight = 'bold', fontsize = 16)
@@ -52,7 +51,8 @@ def plot_disr_histograms(lf_file, lf_dicr_file, lf_discr_noise_file, data_file, 
         ax.xaxis.set_major_formatter(FormatStrFormatter("%.2f"))
         ax.tick_params(axis = 'both', which = 'both', direction = 'in', top = True, right = True, labelsize = 15)
         plt.tight_layout()
-        plt.savefig(out_dir+'hist.png', bbox_inches = 'tight', dpi = 300)
+        #fig.savefig('test.%s' % fmt, format=fmt)
+        plt.savefig(out_dir + 'hist_' + str(step_num) +'.%s' % img_format, format = img_format, bbox_inches = 'tight', dpi = 300)
         plt.close()
    
     else:
@@ -114,10 +114,10 @@ def plot_disr_histograms(lf_file, lf_dicr_file, lf_discr_noise_file, data_file, 
         ax.xaxis.set_major_formatter(FormatStrFormatter("%.1f"))
         ax.tick_params(axis = 'both', which = 'both', direction = 'in', top = True, right = True, labelsize = 15)
         plt.tight_layout()
-        plt.savefig(out_dir+'hist.png', bbox_inches='tight', dpi = 300)
+        plt.savefig(out_dir+'hist' + str(step_num) +'.%s' % img_format, format = img_format, bbox_inches = 'tight', dpi = 300)
         plt.close()
 
-def plot_discr_surface_2d(file_path, lf_file, data_file, num_1d_grid_points, data_limit_factor, out_dir, nom_coverage = 95.0):
+def plot_discr_surface_2d(file_path, lf_file, data_file, num_1d_grid_points, data_limit_factor, step_num, out_dir, nom_coverage = 95.0, img_format = 'png'):
 
     # Load training data
     exp_name = os.path.basename(file_path)       # Name of experiment
@@ -209,7 +209,7 @@ def plot_discr_surface_2d(file_path, lf_file, data_file, num_1d_grid_points, dat
                        labelsize = 15)
         ax.yaxis.set_major_formatter(FormatStrFormatter("%.1f"))
         plt.tight_layout()
-        plt.savefig(out_dir+'disc_surf.png', bbox_inches = 'tight', dpi = 300)
+        plt.savefig(out_dir+'disc_surf_'+ str(step_num) +'.%s' % img_format, format = img_format, bbox_inches = 'tight', dpi = 300)
 
     # Check for invalid number of variable inputs
     elif num_var_ins != 2:
@@ -241,7 +241,7 @@ def eval_discrepancy_custom_grid(file_path,train_grid_in,train_grid_out,test_gri
     # Evaluate surrogate
     return dicr.forward(test_grid)
 
-def plot_marginal_stats(marg_stats_file, step_num, saveinterval, out_dir):
+def plot_marginal_stats(marg_stats_file, step_num, saveinterval, img_format, out_dir):
     
     # Get array of iterations where marginal statistics were saved
     iterations = np.arange(start = saveinterval, 
@@ -307,10 +307,9 @@ def plot_marginal_stats(marg_stats_file, step_num, saveinterval, out_dir):
         
     # Adjust layout and save the figure
     plt.tight_layout()
-    plt.savefig(out_dir + 'marginal_stats.png', bbox_inches = 'tight', dpi = 300)
-    plt.show()
+    plt.savefig(out_dir + 'marginal_stats_' + str(step_num) +'.%s' % img_format, format = img_format, bbox_inches = 'tight', dpi = 300)
 
-def plot_marginal_posterior(params_file, out_dir):
+def plot_marginal_posterior(params_file, step_num, out_dir, img_format = 'png'):
     
     params = np.loadtxt(params_file)
     calInput1 = params[:, 0]
@@ -323,17 +322,14 @@ def plot_marginal_posterior(params_file, out_dir):
 
     # Set common labels
     for ax, xlabel in zip(axes, [r'$\theta_1$', r'$\theta_2$']):
-        ax.set_xlabel(xlabel, fontsize = 16, fontweight='bold')
+        ax.set_xlabel(xlabel, fontsize = 16, fontweight = 'bold')
     
-    axes[0].set_ylabel('Frequency', fontsize = 16, fontweight='bold')
+    axes[0].set_ylabel('Frequency', fontsize = 16, fontweight = 'bold')
     
     # Adjust layout and save the figure
     plt.tight_layout()
-    plt.savefig(out_dir + 'marginal_posterior', bbox_inches = 'tight', dpi = 300)
-    plt.show()
+    plt.savefig(out_dir + 'marginal_posterior_' + str(step_num) +'.%s' % img_format, format = img_format, bbox_inches = 'tight', dpi = 300)
     
-
-
 
 
 # =========
@@ -359,7 +355,6 @@ if __name__ == '__main__':
     # folder name
     parser.add_argument('-n', '--name',
                         action=None,
-                        # nargs='+',
                         const=None,
                         default='./',
                         type=str,
@@ -459,16 +454,14 @@ if __name__ == '__main__':
     marg_stats_file = out_dir + args.exp_name + '_marginal_stats_'
     params_file = out_dir + args.exp_name + '_params_' + str(args.step_num)
 
-    # out_info    = args.exp_name + '_' + str(args.step_num)
-
     if(args.result_mode == 'histograms'):
-        plot_disr_histograms(lf_file, lf_dicr_file, lf_discr_noise_file, data_file, out_dir)
+        plot_disr_histograms(lf_file, lf_dicr_file, lf_discr_noise_file, data_file, args.step_num, out_dir, args.img_format)
     elif(args.result_mode == 'discr_surface'):
-        plot_discr_surface_2d(discr_sur_file, lf_dicr_file, data_file, args.num_1d_grid_points, args.data_limit_factor, out_dir)
+        plot_discr_surface_2d(discr_sur_file, lf_dicr_file, data_file, args.num_1d_grid_points, args.data_limit_factor, args.step_num, out_dir, args.img_format)
     elif(args.result_mode == 'marginal_stats'):
-        plot_marginal_stats(marg_stats_file, args.step_num, args.saveinterval, out_dir)
+        plot_marginal_stats(marg_stats_file, args.step_num, args.saveinterval, args.img_format, out_dir)
     elif(args.result_mode == 'marginal_posterior'):
-        plot_marginal_posterior(params_file, out_dir)
+        plot_marginal_posterior(params_file, args.step_num, out_dir, args.img_format)
     else:
         print('ERROR. Invalid execution mode')
         exit(-1)
