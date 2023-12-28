@@ -196,7 +196,7 @@ def generate_data(use_true_model=False,num_observations=50):
 # Main code
 if __name__ == "__main__":
     
-    generate_data(use_true_model=True, num_observations=2)
+    generate_data(use_true_model = True, num_observations = 10)
     
     run_test()
 

@@ -316,7 +316,7 @@ def plot_marginal_posterior(params_file, out_dir):
     calInput1 = params[:, 0]
     calInput2 = params[:, 1]
 
-    fig, axes = plt.subplots(1, 2, figsize=(8, 4))
+    fig, axes = plt.subplots(1, 2, figsize = (8, 4))
     axes = axes.flatten()
     axes[0].hist(calInput1)
     axes[1].hist(calInput2)
@@ -403,51 +403,48 @@ if __name__ == '__main__':
 
     # Enable dark mode for pictures
     parser.add_argument('-m', '--mode',
-                        action=None,
-                        const=None,
-                        default='histograms',
-                        type=str,
-                        choices=['histograms','discr_surface', 'marginal_stats', 'marginal_posterior'],
+                        action = None,
+                        const = None,
+                        default = 'histograms',
+                        type = str,
+                        choices = ['histograms','discr_surface', 'marginal_stats', 'marginal_posterior'],
                         required=False,
-                        help='Type of plot/result to generate',
-                        metavar='',
-                        dest='result_mode')
+                        help = 'Type of plot/result to generate',
+                        metavar = '',
+                        dest = 'result_mode')
     
     
     # folder name
     parser.add_argument('-z', '--num_points',
-                        action=None,
-                        # nargs='+',
-                        const=None,
-                        default=10,
-                        type=int,
-                        required=False,
-                        help='Number of on-dimensional test grid points (same in every dimension)',
-                        metavar='',
-                        dest='num_1d_grid_points')
+                        action = None,
+                        const = None,
+                        default = 10,
+                        type = int,
+                        required = False,
+                        help = 'Number of on-dimensional test grid points (same in every dimension)',
+                        metavar = '',
+                        dest = 'num_1d_grid_points')
 
     # folder name
     parser.add_argument('-y', '--limfactor',
-                        action=None,
-                        # nargs='+',
-                        const=None,
-                        default=1.0,
-                        type=float,
-                        required=False,
-                        help='Factor for test grid limits from data file',
-                        metavar='',
-                        dest='data_limit_factor')
+                        action = None,
+                        const = None,
+                        default = 1.0,
+                        type = float,
+                        required = False,
+                        help = 'Factor for test grid limits from data file',
+                        metavar = '',
+                        dest = 'data_limit_factor')
     
     # save interval
     parser.add_argument('-si', '--saveinterval',
-                        action=None,
-                        # nargs='+',
-                        const=None,
-                        default=1.0,
-                        type=float,
-                        required=False,
-                        help='Save interval to read for each iteration',
-                        metavar='',)
+                        action = None,
+                        const = None,
+                        default = 1.0,
+                        type = float,
+                        required = False,
+                        help = 'Save interval to read for each iteration',
+                        metavar = '',)
 
     # Parse Commandline Arguments
     args = parser.parse_args()

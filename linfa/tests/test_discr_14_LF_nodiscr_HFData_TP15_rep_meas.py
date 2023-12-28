@@ -139,7 +139,7 @@ def generate_data():
     model = PhysChem(var_grid)
     
     # Generate data
-    model.genDataFile(use_true_model=True,num_observations=1)
+    model.genDataFile(use_true_model = True, num_observations = 10)
 
 # Main code
 if __name__ == "__main__":
