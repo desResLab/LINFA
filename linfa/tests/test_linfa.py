@@ -687,7 +687,7 @@ class linfa_test_suite(unittest.TestCase):
         exp.surrogate.surrogate_load()
 
         # Define log density
-        def log_density(x, model, surrogate, transform):
+        def log_density(x, model, surrogate, transform, t=1):
 
             # Compute transformation log Jacobian
             adjust = transform.compute_log_jacob_func(x)
@@ -708,13 +708,13 @@ class linfa_test_suite(unittest.TestCase):
             for i in range(3):
                 ll3 += - 0.5 * torch.sum(((modelOut[:, i].unsqueeze(1) - Data[i, :].unsqueeze(0)) / stds[0, i]) ** 2, dim=1)
             negLL = -(ll1 + ll2 + ll3)
-            res = -negLL.reshape(x.size(0), 1) + adjust
+            res = -t*negLL.reshape(x.size(0), 1) + adjust
 
             # Return LL
             return res
 
         # Assign logdensity model
-        exp.model_logdensity = lambda x: log_density(x, model, exp.surrogate, trsf)
+        exp.model_logdensity = lambda x, t: log_density(x, model, exp.surrogate, trsf, t)
 
         # Run VI
         exp.run()
