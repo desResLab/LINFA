@@ -174,7 +174,7 @@ class experiment:
                 if self.scheduler == 'AdaAnn':
                     z0 = nf.base_dist.sample([self.M])
                     zk, _ = nf(z0)
-                    log_qk = self.model_logdensity(zk)
+                    log_qk = self.model_logdensity(zk, 1)
                     dt = self.tol / torch.sqrt(log_qk.var())
                     dt = dt.detach()# .numpy()
 
@@ -242,7 +242,7 @@ class experiment:
             np.savetxt(self.output_dir + '/' + self.name + '_marginal_stats_' + str(iteration), np.concatenate((xkk_samples.mean(axis=0).reshape(-1,1),xkk_samples.std(axis=0).reshape(-1,1)),axis=1), newline="\n")
             
             # Save log density at the same samples
-            np.savetxt(self.output_dir + '/' + self.name + '_logdensity_' + str(iteration), self.model_logdensity(xkk).data.cpu().numpy(), newline="\n")
+            np.savetxt(self.output_dir + '/' + self.name + '_logdensity_' + str(iteration), self.model_logdensity(xkk, t).data.cpu().numpy(), newline="\n")
             
             # Save model outputs at the samples - If a model is defined
             if self.transform:
@@ -317,9 +317,9 @@ class experiment:
 
         # Free energy bound
         if(self.model_logprior is None):
-            loss = (- torch.sum(sum_log_abs_det_jacobians, 1) - t * self.model_logdensity(xk)).mean()
+            loss = (- torch.sum(sum_log_abs_det_jacobians, 1) - self.model_logdensity(xk, t)).mean()
         else:
-            loss = (- torch.sum(sum_log_abs_det_jacobians, 1) - t * (self.model_logdensity(xk) + self.model_logprior(xk))).mean()
+            loss = (- torch.sum(sum_log_abs_det_jacobians, 1) - (self.model_logdensity(xk, t) + self.model_logprior(xk))).mean()
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
