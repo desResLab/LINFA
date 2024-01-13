@@ -114,10 +114,10 @@ def plot_disr_histograms(lf_file, lf_dicr_file, lf_discr_noise_file, data_file, 
         ax.xaxis.set_major_formatter(FormatStrFormatter("%.1f"))
         ax.tick_params(axis = 'both', which = 'both', direction = 'in', top = True, right = True, labelsize = 15)
         plt.tight_layout()
-        plt.savefig(out_dir+'hist' + str(step_num) +'.%s' % img_format, format = img_format, bbox_inches = 'tight', dpi = 300)
+        plt.savefig(out_dir + 'hist_' + str(step_num) +'.%s' % img_format, format = img_format, bbox_inches = 'tight', dpi = 300)
         plt.close()
 
-def plot_discr_surface_2d(file_path, lf_file, data_file, num_1d_grid_points, data_limit_factor, step_num, out_dir, nom_coverage = 95.0, img_format = 'png'):
+def plot_discr_surface_2d(file_path, lf_file, data_file, num_1d_grid_points, data_limit_factor, step_num, out_dir, img_format = 'png', nom_coverage = 95.0):
 
     # Load training data
     exp_name = os.path.basename(file_path)       # Name of experiment
