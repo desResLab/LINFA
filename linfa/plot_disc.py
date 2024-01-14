@@ -311,6 +311,8 @@ def plot_marginal_stats(marg_stats_file, step_num, saveinterval, img_format, out
 
 def plot_marginal_posterior(params_file, step_num, out_dir, img_format = 'png'):
     
+
+    gtCalParams = np.array([1.0E3, -21.0E3])
     params = np.loadtxt(params_file)
     calInput1 = params[:, 0]
     calInput2 = params[:, 1]
@@ -319,6 +321,10 @@ def plot_marginal_posterior(params_file, step_num, out_dir, img_format = 'png'):
     axes = axes.flatten()
     axes[0].hist(calInput1)
     axes[1].hist(calInput2)
+    
+    # Add groundtruth parameter
+    axes[0].axvline(gtCalParams[0], color = 'k', linewidth = 3)
+    axes[1].axvline(gtCalParams[1], color = 'k', linewidth = 3)
 
     # Set common labels
     for ax, xlabel in zip(axes, [r'$\theta_1$', r'$\theta_2$']):
