@@ -52,6 +52,8 @@ def eval_model(exp_chkpt_file,nf_chkpt_file,discr_chkpt_file,num_calib_samples,t
     else:
         res_lf = exp.model.solve_t(exp.transform.forward(xkk))
 
+    # CURRENTLY NO NOISE IS ADDED, NEED TO BE IMPLEMENTED IF APPROPRIATE!!!
+
     # return 
     return res_lf + res_discr
 

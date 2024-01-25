@@ -5,3 +5,4 @@ results/
 *.npz
 *.sur
 *.csv
+.linfa/

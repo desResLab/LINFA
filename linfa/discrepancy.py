@@ -19,6 +19,7 @@ class Discrepancy(object):
                        var_grid_out,
                        dnn_arch=None, 
                        dnn_activation='relu', 
+                       dnn_dropout=None,
                        model_folder='./', 
                        surrogate=None, 
                        device='cpu'):
@@ -32,6 +33,8 @@ class Discrepancy(object):
             self.input_size = None
             self.output_size = None
             self.dnn_arch = None
+            self.dnn_activation = None
+            self.dnn_dropout = None
             self.is_trained = None
             self.lf_model = None
             self.var_grid_in = None
@@ -48,6 +51,8 @@ class Discrepancy(object):
             self.input_size = input_size
             self.output_size = output_size
             self.dnn_arch = dnn_arch
+            self.dnn_activation = dnn_activation
+            self.dnn_dropout = dnn_dropout
             self.is_trained = False
 
             # Assign LF model
@@ -70,7 +75,7 @@ class Discrepancy(object):
             self.var_out_std = torch.std(var_grid_out)
 
             # Create surrogate
-            self.surrogate = FNN(input_size, output_size, arch=self.dnn_arch, device=self.device, init_zero=True) if surrogate is None else surrogate
+            self.surrogate = FNN(input_size, output_size, arch=self.dnn_arch, device=self.device, init_zero=True, dropout=dnn_dropout) if surrogate is None else surrogate
         
     def surrogate_save(self):
         """Save surrogate model to [self.name].sur and [self.name].npz
@@ -122,6 +127,7 @@ class Discrepancy(object):
         print('--- Training model discrepancy')
         print('')
 
+        # Set it as trained
         self.is_trained = True
 
         # LF model output at the current batch
@@ -147,6 +153,7 @@ class Discrepancy(object):
         for i in range(max_iters):
             # Set surrogate in training mode
             self.surrogate.train()          
+
             # Surrogate returns a table with rows as batches and columns as variables considered            
             disc = self.surrogate(var_grid)
 
@@ -176,8 +183,14 @@ class Discrepancy(object):
         print('')
         print('--- Surrogate model pre-train complete')
         print('')        
+        # Save if needed
         if store:
             self.surrogate_save()
+        # Put it in eval model if no dropouts are present
+        if(self.dnn_dropout is not None):
+            self.surrogate.train()
+        else:
+            self.surrogate.eval()
 
     def forward(self, var):
         """Function to evaluate the surrogate
@@ -200,7 +213,7 @@ class Discrepancy(object):
         else:
             return res
 
-def test_surrogate():
+def test_discrepancy():
     
     import matplotlib.pyplot as plt
     from linfa.models.discrepancy_models import PhysChem
@@ -213,7 +226,7 @@ def test_surrogate():
     model = PhysChem(var_grid)
 
     # Generate true data
-    model.genDataFile(dataFileNamePrefix='observations', use_true_model=True, store=True, num_observations=10)  
+    model.genDataFile(dataFileNamePrefix='observations', use_true_model=True, store=True, num_observations=3)  
 
     # Get data from true model at the same TP conditions    
     var_data = np.loadtxt('observations.csv',skiprows=1,delimiter=',')
@@ -222,22 +235,29 @@ def test_surrogate():
     
     # Define emulator and pre-train on global grid
     discrepancy = Discrepancy(model_name='discrepancy_test',
-                              lf_model=model.solve_lf,
+                              lf_model=model.solve_t,
                               input_size=2,
                               output_size=1,
                               var_grid_in=var_data_in,
-                              var_grid_out=var_data_out)
-    
+                              var_grid_out=var_data_out,
+                              dnn_arch=[64,64],
+                              dnn_activation='relu',
+                              dnn_dropout=[0.2,0.5],                              
+                              activation='silu')
+       
     # Create a batch of samples for the calibration parameters
     batch_x = model.defParams
 
     # Update the discrepancy model
-    discrepancy.update(batch_x, max_iters=1000, lr=0.001, lr_exp=0.9999, record_interval=100)
+    discrepancy.update(batch_x, max_iters=10000, lr=0.001, lr_exp=0.9999, record_interval=100)
 
     # Plot discrepancy
     fig = plt.figure()
     ax = fig.add_subplot(projection='3d')
-    ax.scatter(model.var_in[:,0].detach().numpy(), model.var_in[:,1].detach().numpy(), discrepancy.forward(model.var_in).detach().numpy(), marker='o')
+    for loopA in range(50):
+        ax.scatter(model.var_in[:,0].detach().numpy(), model.var_in[:,1].detach().numpy(), model.solve_t(batch_x)+discrepancy.forward(model.var_in).detach().numpy(), color='blue', marker='o')
+    for loopA in range(var_data_out.size(1)):
+        ax.scatter(model.var_in[:,0].detach().numpy(), model.var_in[:,1].detach().numpy(), var_data_out[:,loopA].detach().numpy(), color='red', marker='D', s=5)
     ax.set_xlabel('Temperature')
     ax.set_ylabel('Pressure')
     ax.set_zlabel('Coverage')
@@ -246,5 +266,5 @@ def test_surrogate():
 # TEST SURROGATE
 if __name__ == '__main__':
   
-  test_surrogate()
+  test_discrepancy()
     
