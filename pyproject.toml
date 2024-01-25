@@ -21,6 +21,7 @@ dependencies = [
     "torch==1.13.1",
     "numpy==1.21.6",
     "matplotlib==3.5.3",
+    "dill",
     'tomli; python_version < "3.11"',    
 ]
 requires-python = ">=3.7"

@@ -1,4 +1,3 @@
-from functools import partial
 from linfa.run_experiment import experiment
 from linfa.transform import Transformation
 from linfa.discrepancy import Discrepancy
@@ -12,7 +11,7 @@ from linfa.models.discrepancy_models import PhysChem
 def run_test():
 
     exp = experiment()
-    exp.name = "test_lf_with_disc_hf_data_TP1"
+    exp.name = "test_lf_with_disc_hf_data_TP15_rep_meas"
     exp.flow_type           = 'maf'         # str: Type of flow (default 'realnvp')
     exp.n_blocks            = 15            # int: Number of hidden layers   
     exp.hidden_size         = 100           # int: Hidden layer size for MADE in each layer (default 100)
@@ -25,7 +24,7 @@ def run_test():
     exp.input_size          = 2             # int: Dimensionalty of input (default 2)
     exp.batch_size          = 200           # int: Number of samples generated (default 100)
     exp.true_data_num       = 2             # double: Number of true model evaluted (default 2)
-    exp.n_iter              = 25001         # int: Number of iterations (default 25001)
+    exp.n_iter              = 2000          # int: Number of iterations (default 25001)
     exp.lr                  = 0.001         # float: Learning rate (default 0.003)
     exp.lr_decay            = 0.9999        # float:  Learning rate decay (default 0.9999)
     exp.log_interal         = 10            # int: How often to show loss stat (default 10)
@@ -62,8 +61,8 @@ def run_test():
     exp.transform = trsf
 
     # Add temperatures and pressures for each evaluation
-    variable_inputs = [[350.0],
-                       [1.0]]
+    variable_inputs = [[350.0, 400.0, 450.0],
+                       [1.0, 2.0, 3.0, 4.0, 5.0]]
 
     # Define model
     langmuir_model = PhysChem(variable_inputs)
@@ -132,6 +131,8 @@ def run_test():
         # Loop on the available observations
         for loopA in range(num_obs):
             l1 = -0.5 * np.prod(langmuir_model.data.shape) * np.log(2.0 * np.pi)
+            
+            # TODO: generalize to multiple inputs
             l2 = (-0.5 * langmuir_model.data.shape[1] * torch.log(torch.prod(stds))).item()
             l3 = -0.5 * torch.sum(((modelOut + discrepancy.t() - Data[:,loopA].unsqueeze(0)) / stds.t())**2, dim = 1)
 
@@ -164,8 +165,8 @@ def run_test():
 def generate_data(use_true_model=False,num_observations=50):
 
     # Set variable grid
-    var_grid = [[350.0],
-                [1.0]]
+    var_grid = [[350.0, 400.0, 450.0],
+                [1.0, 2.0, 3.0, 4.0, 5.0]]
 
     # Create model
     model = PhysChem(var_grid)
@@ -176,7 +177,7 @@ def generate_data(use_true_model=False,num_observations=50):
 # Main code
 if __name__ == "__main__":
     
-    generate_data(use_true_model=True, num_observations=1)
+    generate_data(use_true_model=True, num_observations=2)
     
     run_test()
 

@@ -1,4 +1,3 @@
-from functools import partial
 from linfa.run_experiment import experiment
 from linfa.transform import Transformation
 from linfa.discrepancy import Discrepancy
@@ -12,7 +11,7 @@ from linfa.models.discrepancy_models import PhysChem
 def run_test():
 
     exp = experiment()
-    exp.name = "test_lf_with_disc_hf_data_TP1"
+    exp.name = "test_lf_with_disc_hf_data_prior_TP1"
     exp.flow_type           = 'maf'         # str: Type of flow (default 'realnvp')
     exp.n_blocks            = 15            # int: Number of hidden layers   
     exp.hidden_size         = 100           # int: Hidden layer size for MADE in each layer (default 100)
@@ -36,7 +35,7 @@ def run_test():
     exp.surr_upd_it         = 2000          # int: Number of iterations for the surrogate model update
     exp.calibrate_interval  = 1000          #:int:    How often the surrogate model is updated
 
-    exp.annealing           = False
+    exp.annealing           = False         
     exp.budget              = 216           # int: Total number of true model evaulations
     exp.surr_folder         = "./" 
     exp.use_new_surr        = True
@@ -95,7 +94,7 @@ def run_test():
         # exp.surrogate.update(langmuir_model.defParams, exp.surr_pre_it, 0.03, 0.9999, 100, store=True)
         # exp.surrogate.update(langmuir_model.defParams, 1, 0.03, 0.9999, 100, store=True)
         # Load the surrogate
-        # exp.surrogate.surrogate_load()
+        # exp.surrogate.surrogate_loaCCd()
     else:
         exp.surrogate = None
 
@@ -110,7 +109,7 @@ def run_test():
         
         # Initialize total number of variable inputs
         total_var_inputs = len(model.var_in)
-         
+           
         # Evaluate model response - (num_var x num_batch)
         modelOut = langmuir_model.solve_t(transform.forward(calib_inputs)).t()
 
@@ -158,6 +157,25 @@ def run_test():
     # Assign log density model
     exp.model_logdensity = lambda x: log_density(x, exp.model, exp.surrogate, exp.transform)
 
+    # Define log prior
+    def log_prior(calib_inputs, transform):
+        # Compute transformation log Jacobian
+        adjust = transform.compute_log_jacob_func(calib_inputs)
+        # Compute the calibration inputs in the physical domain
+        phys_inputs = transform.forward(calib_inputs)
+        # Define prior moments
+        pr_avg = torch.tensor([[1e3, -21e3]])
+        pr_std = torch.tensor([[1e3*0.01, 21e3*0.01]])
+        # Eval log prior
+        l1 = -0.5 * calib_inputs.size(1) * np.log(2.0 * np.pi)            
+        l2 = (-0.5 * torch.log(torch.prod(pr_std))).item()
+        l3 = -0.5 * torch.sum(((phys_inputs - pr_avg)/pr_std)**2, dim = 1).unsqueeze(1)
+        # Return 
+        res = l1 + l2 + l3 + adjust
+        return res
+
+    exp.model_logprior = lambda x: log_prior(x, exp.transform)
+
     # Run VI
     exp.run()
 
@@ -171,7 +189,7 @@ def generate_data(use_true_model=False,num_observations=50):
     model = PhysChem(var_grid)
     
     # Generate data
-    model.genDataFile(use_true_model=use_true_model,num_observations=num_observations)
+    model.genDataFile(use_true_model = use_true_model, num_observations = num_observations)
 
 # Main code
 if __name__ == "__main__":

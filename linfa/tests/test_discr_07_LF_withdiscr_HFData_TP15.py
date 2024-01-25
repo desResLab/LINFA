@@ -19,7 +19,7 @@ def run_test():
     exp.activation_fn       = 'relu'        # str: Activation function used (default 'relu')
     exp.input_order         = 'sequential'  # str: Input oder for create_mask (default 'sequential')
     exp.batch_norm_order    = True          # bool: Order to decide if batch_norm is used (default True)
-    exp.save_interval       = 5000          # int: How often to sample from normalizing flow
+    exp.save_interval       = 1000          # int: How often to sample from normalizing flow
     
     exp.input_size          = 2             # int: Dimensionalty of input (default 2)
     exp.batch_size          = 200           # int: Number of samples generated (default 100)
@@ -29,14 +29,13 @@ def run_test():
     exp.lr_decay            = 0.9999        # float:  Learning rate decay (default 0.9999)
     exp.log_interal         = 10            # int: How often to show loss stat (default 10)
 
-    #### HAD TO TURN THIS OFF FOR NOW
     exp.run_nofas           = True          # normalizing flow with adaptive surrogate
     exp.surrogate_type      = 'discrepancy' # type of surrogate we are using
     exp.surr_pre_it         = 1000          # int: Number of pre-training iterations for surrogate model
     exp.surr_upd_it         = 2000          # int: Number of iterations for the surrogate model update
     exp.calibrate_interval  = 1000          #:int:    How often the surrogate model is updated
 
-    exp.annealing           = False         # TODO : turn this on eventually
+    exp.annealing           = False
     exp.budget              = 216           # int: Total number of true model evaulations
     exp.surr_folder         = "./" 
     exp.use_new_surr        = True
@@ -85,6 +84,7 @@ def run_test():
 
         # Create new discrepancy
         exp.surrogate = Discrepancy(model_name=exp.name, 
+                                    model_folder=exp.output_dir, 
                                     lf_model=exp.model.solve_t,
                                     input_size=exp.model.var_in.size(1),
                                     output_size=1,
@@ -178,7 +178,7 @@ def generate_data(use_true_model=False,num_observations=50):
 # Main code
 if __name__ == "__main__":
     
-    generate_data(use_true_model=True,num_observations=1)
+    generate_data(use_true_model=True, num_observations=1)
     
     run_test()
 

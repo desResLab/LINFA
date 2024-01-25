@@ -33,7 +33,7 @@ def run_test():
     exp.surr_pre_it         = 1000          # int: Number of pre-training iterations for surrogate model
     exp.surr_upd_it         = 1000          # int: Number of iterations for the surrogate model update
 
-    exp.annealing           = False         # TODO : turn this on eventually
+    exp.annealing           = False
     exp.calibrate_interval  = 300           # int: How often to update the surrogate model (default 1000)
     exp.budget              = 216           # int: Total number of true model evaulations
     exp.surr_folder         = "./" 

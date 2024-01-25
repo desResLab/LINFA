@@ -1,4 +1,3 @@
-from functools import partial
 from linfa.run_experiment import experiment
 from linfa.transform import Transformation
 from linfa.discrepancy import Discrepancy
@@ -12,7 +11,7 @@ from linfa.models.discrepancy_models import PhysChem
 def run_test():
 
     exp = experiment()
-    exp.name = "test_lf_with_disc_hf_data_TP1"
+    exp.name = "test_lf_with_disc_hf_data_TP1_rep_meas"
     exp.flow_type           = 'maf'         # str: Type of flow (default 'realnvp')
     exp.n_blocks            = 15            # int: Number of hidden layers   
     exp.hidden_size         = 100           # int: Hidden layer size for MADE in each layer (default 100)
@@ -176,7 +175,7 @@ def generate_data(use_true_model=False,num_observations=50):
 # Main code
 if __name__ == "__main__":
     
-    generate_data(use_true_model=True, num_observations=1)
+    generate_data(use_true_model=True, num_observations=2)
     
     run_test()
 

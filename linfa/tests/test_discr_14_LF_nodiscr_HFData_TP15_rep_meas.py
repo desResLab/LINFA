@@ -1,7 +1,5 @@
-from functools import partial
 from linfa.run_experiment import experiment
 from linfa.transform import Transformation
-from linfa.discrepancy import Discrepancy
 import torch
 import random
 import numpy as np
@@ -12,7 +10,7 @@ from linfa.models.discrepancy_models import PhysChem
 def run_test():
 
     exp = experiment()
-    exp.name = "test_lf_with_disc_hf_data_TP1"
+    exp.name = "lf_no_disc_hf_data_tp15_rep_meas"
     exp.flow_type           = 'maf'         # str: Type of flow (default 'realnvp')
     exp.n_blocks            = 15            # int: Number of hidden layers   
     exp.hidden_size         = 100           # int: Hidden layer size for MADE in each layer (default 100)
@@ -30,13 +28,13 @@ def run_test():
     exp.lr_decay            = 0.9999        # float:  Learning rate decay (default 0.9999)
     exp.log_interal         = 10            # int: How often to show loss stat (default 10)
 
-    exp.run_nofas           = True          # normalizing flow with adaptive surrogate
+    exp.run_nofas           = False         # normalizing flow with adaptive surrogate
     exp.surrogate_type      = 'discrepancy' # type of surrogate we are using
     exp.surr_pre_it         = 1000          # int: Number of pre-training iterations for surrogate model
-    exp.surr_upd_it         = 2000          # int: Number of iterations for the surrogate model update
-    exp.calibrate_interval  = 1000          #:int:    How often the surrogate model is updated
+    exp.surr_upd_it         = 1000          # int: Number of iterations for the surrogate model update
 
     exp.annealing           = False
+    exp.calibrate_interval  = 300           # int: How often to update the surrogate model (default 1000)
     exp.budget              = 216           # int: Total number of true model evaulations
     exp.surr_folder         = "./" 
     exp.use_new_surr        = True
@@ -62,8 +60,8 @@ def run_test():
     exp.transform = trsf
 
     # Add temperatures and pressures for each evaluation
-    variable_inputs = [[350.0],
-                       [1.0]]
+    variable_inputs = [[350.0, 400.0, 450.0],
+                       [1.0, 2.0, 3.0, 4.0, 5.0]]
 
     # Define model
     langmuir_model = PhysChem(variable_inputs)
@@ -76,28 +74,8 @@ def run_test():
     if(len(exp.model.data.shape) < 2):
         exp.model.data = np.expand_dims(exp.model.data, axis=0)
     
-    # Form tensors for variables and results in observations
-    var_grid_in = torch.tensor(exp.model.data[:,:2])
-    var_grid_out = torch.tensor(exp.model.data[:,2:])
-
-    # Define surrogate
-    if(exp.run_nofas):
-
-        # Create new discrepancy
-        exp.surrogate = Discrepancy(model_name=exp.name, 
-                                    model_folder=exp.output_dir, 
-                                    lf_model=exp.model.solve_t,
-                                    input_size=exp.model.var_in.size(1),
-                                    output_size=1,
-                                    var_grid_in=var_grid_in,
-                                    var_grid_out=var_grid_out)
-        # Initially tune on the default values of the calibration variables
-        # exp.surrogate.update(langmuir_model.defParams, exp.surr_pre_it, 0.03, 0.9999, 100, store=True)
-        # exp.surrogate.update(langmuir_model.defParams, 1, 0.03, 0.9999, 100, store=True)
-        # Load the surrogate
-        # exp.surrogate.surrogate_load()
-    else:
-        exp.surrogate = None
+    # No surrogate
+    exp.surrogate = None
 
     # Define log density
     def log_density(calib_inputs, model, surrogate, transform):
@@ -108,9 +86,7 @@ def run_test():
         # Initialize negative log likelihood
         total_nll = torch.zeros((calib_inputs.size(0), 1))
         
-        # Initialize total number of variable inputs
-        total_var_inputs = len(model.var_in)
-         
+        # HAD TO MOVE THIS UP BEFORE EVALUATE DISCREPANCY            
         # Evaluate model response - (num_var x num_batch)
         modelOut = langmuir_model.solve_t(transform.forward(calib_inputs)).t()
 
@@ -132,18 +108,10 @@ def run_test():
         # Loop on the available observations
         for loopA in range(num_obs):
             l1 = -0.5 * np.prod(langmuir_model.data.shape) * np.log(2.0 * np.pi)
+            
+            # TODO: generalize to multiple inputs
             l2 = (-0.5 * langmuir_model.data.shape[1] * torch.log(torch.prod(stds))).item()
             l3 = -0.5 * torch.sum(((modelOut + discrepancy.t() - Data[:,loopA].unsqueeze(0)) / stds.t())**2, dim = 1)
-
-            if(False):
-                print('Compare')
-                print('%15s %15s %15s %15s' % ('lf out','discrep','lf+discr','obs'))
-                for loopB in range(discrepancy.size(0)):
-                    test1 = modelOut[0,:]
-                    test2 = discrepancy[:,0]
-                    test3 = Data[:,loopA]
-                    print('%15.3f %15.3f %15.3f %15.3f' % (modelOut[0,loopB],discrepancy[loopB,0],modelOut[0,loopB]+discrepancy[loopB,0],Data[loopB,loopA]))
-                print('')
             
             # Compute negative ll (num_batch x 1)
             negLL = -(l1 + l2 + l3) # sum contributions
@@ -161,22 +129,22 @@ def run_test():
     # Run VI
     exp.run()
 
-def generate_data(use_true_model=False,num_observations=50):
+def generate_data():
 
     # Set variable grid
-    var_grid = [[350.0],
-                [1.0]]
+    var_grid = [[350.0, 400.0, 450.0],
+                [1.0, 2.0, 3.0, 4.0, 5.0]]
 
     # Create model
     model = PhysChem(var_grid)
     
     # Generate data
-    model.genDataFile(use_true_model=use_true_model,num_observations=num_observations)
+    model.genDataFile(use_true_model=True,num_observations=1)
 
 # Main code
 if __name__ == "__main__":
     
-    generate_data(use_true_model=True, num_observations=1)
+    generate_data()
     
     run_test()
 
