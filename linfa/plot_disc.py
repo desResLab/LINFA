@@ -7,13 +7,13 @@ import argparse
 from numpy import random
 from matplotlib.ticker import AutoMinorLocator, FormatStrFormatter, ScalarFormatter
 
-def scale_limits(min,max,factor):
+def scale_limits(min, max, factor):
     if(min > max):
         temp = max
         max = min
         min = temp
-    center = 0.5 * (min + max)
     range = max - min
+    center = 0.5 * (max + min)
     return center - factor * 0.5 * range, center + factor * 0.5 * range
 
 def plot_disr_histograms(lf_file, lf_dicr_file, lf_discr_noise_file, data_file, step_num, out_dir, img_format = 'png', sample_size = 250):
@@ -51,7 +51,6 @@ def plot_disr_histograms(lf_file, lf_dicr_file, lf_discr_noise_file, data_file, 
         ax.xaxis.set_major_formatter(FormatStrFormatter("%.2f"))
         ax.tick_params(axis = 'both', which = 'both', direction = 'in', top = True, right = True, labelsize = 15)
         plt.tight_layout()
-        #fig.savefig('test.%s' % fmt, format=fmt)
         plt.savefig(out_dir + 'hist_' + str(step_num) +'.%s' % img_format, format = img_format, bbox_inches = 'tight', dpi = 300)
         plt.close()
    
@@ -117,6 +116,47 @@ def plot_disr_histograms(lf_file, lf_dicr_file, lf_discr_noise_file, data_file, 
         plt.savefig(out_dir + 'hist_' + str(step_num) +'.%s' % img_format, format = img_format, bbox_inches = 'tight', dpi = 300)
         plt.close()
 
+def prep_test_grid(vars, limit_factor, no_grid_pts):
+    
+    ## Get min and max values of the variable inputs
+    # Variable input 1
+    min_dim_1 = torch.min(vars[:,0])
+    max_dim_1 = torch.max(vars[:,0])
+    min_dim_1, max_dim_1 = scale_limits(min_dim_1, max_dim_1, limit_factor)
+    
+    # Variable input 2
+    min_dim_2 = torch.min(vars[:,1])
+    max_dim_2 = torch.max(vars[:,1])
+    min_dim_2, max_dim_2 = scale_limits(min_dim_2, max_dim_2, limit_factor)
+
+    # Create test grid of variable inputs to evaluate discrepancy surrogate
+    test_grid_1 = torch.linspace(min_dim_1, max_dim_1, no_grid_pts)
+    test_grid_2 = torch.linspace(min_dim_2, max_dim_2, no_grid_pts)
+    grid_t, grid_p = torch.meshgrid(test_grid_1, test_grid_2, indexing='ij')
+    test_grid = torch.cat((grid_t.reshape(-1,1), grid_p.reshape(-1,1)),1)
+
+    return test_grid
+
+def print_disc_stats(avg_disc, disc_bounds):
+    print('\n')
+    print('Avg. Disc.\t LB \t\t UB')
+    print('----------------------------------------')
+    for loopA in range(len(disc_bounds[0])):
+        print('{:<10}\t{:<10}\t{:<10}'.format(round(avg_disc[loopA], 4), round(disc_bounds[0][loopA], 4), round(disc_bounds[1][loopA], 4)))
+        # Check for violation of bounds
+        if avg_disc[loopA] < disc_bounds[0][loopA] or avg_disc[loopA] > disc_bounds[1][loopA]:
+            print('Error in percentile calculation. Exiting...')
+            exit()
+
+def compare_disc(train, test):
+    print('\n')
+    print('Train Disc. \t Test Disc.')
+    print('----------------------------')
+    for loopA in range(len(train)):
+        avg_disc_str = '{:<10}'.format(round(train.tolist()[loopA], 4))
+        pred_disc_str = '{:<10}'.format(round(test[loopA].item(), 4))  # Access the element directly
+        print(f'{avg_disc_str}\t{pred_disc_str}')
+
 def plot_discr_surface_2d(file_path, lf_file, data_file, num_1d_grid_points, data_limit_factor, step_num, out_dir, img_format = 'png', nom_coverage = 95.0):
 
     # Load training data
@@ -125,7 +165,7 @@ def plot_discr_surface_2d(file_path, lf_file, data_file, num_1d_grid_points, dat
     exp_data = np.loadtxt(data_file)             # Experimental data
     lf_train = np.loadtxt(lf_file)               # Low-fidelity model posterior samples
 
-    # Create new discrepancy
+    # Create an instance of the discrepancy class
     dicr = Discrepancy(model_name = exp_name, 
                        model_folder = dir_name,
                        lf_model = None,
@@ -133,86 +173,19 @@ def plot_discr_surface_2d(file_path, lf_file, data_file, num_1d_grid_points, dat
                        output_size = None,
                        var_grid_in = None,
                        var_grid_out = None)
+    
+    # Load trained FNN from experiment
     dicr.surrogate_load()
+
+    # Print discrepancy surrogate
+    dicr.pretty_print(print_data = True)
 
     # Get the number of dimensions for the aux variable
     num_var_pairs = dicr.var_grid_in.size(0)    # No. of variable input-pairs
     num_var_ins   = dicr.var_grid_in.size(1)    # No. of variable inputs
 
-    if num_var_ins == 2 & num_var_pairs > 1:
-        
-        # Normalize values of the variable inputs
-        ## Variable input 1
-        min_dim_1 = torch.min(dicr.var_grid_in[:,0])
-        max_dim_1 = torch.max(dicr.var_grid_in[:,0])
-        min_dim_1, max_dim_1 = scale_limits(min_dim_1, max_dim_1, data_limit_factor)
-        
-        ## Variable input 2
-        min_dim_2 = torch.min(dicr.var_grid_in[:,1])
-        max_dim_2 = torch.max(dicr.var_grid_in[:,1])
-        min_dim_2, max_dim_2 = scale_limits(min_dim_2, max_dim_2, data_limit_factor)
-
-        # Create test grid of variable inputs to evaluate discrepancy surrogate
-        test_grid_1 = torch.linspace(min_dim_1, max_dim_1, num_1d_grid_points)
-        test_grid_2 = torch.linspace(min_dim_2, max_dim_2, num_1d_grid_points)
-        grid_t, grid_p = torch.meshgrid(test_grid_1, test_grid_2, indexing='ij')
-        test_grid = torch.cat((grid_t.reshape(-1,1), grid_p.reshape(-1,1)),1)
-
-        # Evaluate discrepancy over test grid
-        res = dicr.forward(test_grid)
-
-        # Prepare test grid and discpreancy for plotting
-        x = test_grid[:,0].cpu().detach().numpy() # Variable input 1
-        y = test_grid[:,1].cpu().detach().numpy() # Variable input 2
-        z = res.cpu().detach().numpy().flatten()  # Discrepancy
-        
-         # Assign obsersations from data
-        observations = exp_data.transpose()[num_var_ins:]
-
-        # Assign variable inputs   
-        var_train = [exp_data[:, 0], exp_data[:, 1]]
-
-        # Check for repeated observations
-        if np.shape(observations)[0] > 1:
-            disc = np.average(observations) - lf_train
-        else:
-            disc = observations.transpose() - lf_train
-
-        # Computw average and percentiles
-        train_disc = np.average(disc, axis = 1)
-        discBnds = [np.percentile(disc, (100 - nom_coverage) / 2, axis = 1),    # Lower bound
-                    np.percentile(disc, (100 + nom_coverage) / 2, axis = 1)]    # Upper bound
-        
-        # Plot discrepancy surface as a function of variable inputs 1 & 2
-        ax = plt.figure(figsize = (4,4)).add_subplot(projection='3d')
-        ax.plot_trisurf(x, y, z, cmap = plt.cm.Spectral, linewidth = 0.2, antialiased = True)
-        ax.scatter(var_train[0],
-                   var_train[1],
-                   train_disc, color = 'k', s = 8)
-        ax.errorbar(var_train[0], 
-                    var_train[1],
-                    train_disc, 
-                    zerr = discBnds, 
-                    fmt = 'o', 
-                    color = 'k', 
-                    ecolor = 'k', 
-                    capsize = 3)
-        
-        ax.set_xlabel('Temperature [K]', fontsize = 16, fontweight = 'bold', labelpad = 15)
-        ax.set_ylabel('Pressure [Pa]',   fontsize = 16, fontweight = 'bold', labelpad = 15)
-        ax.set_zlabel('Discrepancy [ ]', fontsize = 16, fontweight = 'bold', labelpad = 15)
-        ax.tick_params(axis = 'both', 
-                       which = 'both', 
-                       direction = 'in', 
-                       top = True, 
-                       right = True,
-                       labelsize = 15)
-        ax.yaxis.set_major_formatter(FormatStrFormatter("%.1f"))
-        plt.tight_layout()
-        plt.savefig(out_dir+'disc_surf_'+ str(step_num) +'.%s' % img_format, format = img_format, bbox_inches = 'tight', dpi = 300)
-
     # Check for invalid number of variable inputs
-    elif num_var_ins != 2:
+    if num_var_ins != 2:
         print('ERROR. Invalid number of variable inputs. Should be 2. Instead is ', num_var_ins)
         exit(-1)
     
@@ -221,25 +194,79 @@ def plot_discr_surface_2d(file_path, lf_file, data_file, num_1d_grid_points, dat
         print('ERROR. Invalid number of variable input pairs. Should be > 1. Instead is ', num_var_pairs)
         exit(-1)
 
-def eval_discrepancy_custom_grid(file_path,train_grid_in,train_grid_out,test_grid):
+    else:
+        # Define test grid
+        test_grid = prep_test_grid(dicr.var_grid_in, data_limit_factor, num_1d_grid_points)
+        
+        # Evaluate discrepancy over test grid
+        res = dicr.forward(test_grid)
+        
+         # Assign obsersations from data
+        observations = exp_data.transpose()[num_var_ins:]
 
-    exp_name = os.path.basename(file_path)
-    dir_name = os.path.dirname(file_path)
+        # Assign variable inputs   
+        var_train = [exp_data[:, 0], exp_data[:, 1]]
 
-    # Create new discrepancy
-    dicr = Discrepancy(model_name = exp_name, 
-                       model_folder = dir_name,
-                       lf_model = None,
-                       input_size = train_grid_in.size(1),
-                       output_size = 1,
-                       var_grid_in = train_grid_in,
-                       var_grid_out = train_grid_out)
+        ## Assign discrepancy
+        # Check for repeated observations
+        if np.shape(observations)[0] > 1:
+            print('code needs to be debugged here') # TODO
+            disc = np.average(observations) - lf_train
+            exit()
+        else:
+            disc = []
+            for loopA in range(len(observations.flatten())):
+                disc.append(observations[0][loopA] - lf_train[loopA])
+
+        # Compute average discrepancy across batches used for training
+        train_disc = np.average(disc, axis = 1)
+        
+        # Compute error bars for averaged discrepancy
+        discBnds = [np.percentile(disc, nom_coverage/ 2, axis = 1),           # Lower bound
+                    np.percentile(disc, 100 - nom_coverage / 2, axis = 1)]    # Upper bound
+        
+        # For debugging
+        if True:
+            print_disc_stats(train_disc, discBnds)
+            compare_disc(train_disc, res)
+                    
+        # Prepare test grid and discpreancy for plotting
+        x = test_grid[:,0].cpu().detach().numpy() # Variable input 1
+        y = test_grid[:,1].cpu().detach().numpy() # Variable input 2
+        z = res.cpu().detach().numpy().flatten()  # Discrepancy
+
+        # Plot discrepancy surface as a function of variable inputs 1 & 2
+        ax = plt.figure(figsize = (4,4)).add_subplot(projection='3d')
+        ax.plot_trisurf(x, y, z, cmap = plt.cm.Spectral, linewidth = 0.2, antialiased = True)
+        ax.scatter(var_train[0], var_train[1], train_disc, color = 'k', s = 8)
+        ax.errorbar(var_train[0], var_train[1], train_disc, zerr = discBnds, fmt = 'o', color = 'k', ecolor = 'k', capsize = 3)
+        ax.set_xlabel('Temperature [K]', fontsize = 16, fontweight = 'bold', labelpad = 15)
+        ax.set_ylabel('Pressure [Pa]',   fontsize = 16, fontweight = 'bold', labelpad = 15)
+        ax.set_zlabel('Discrepancy [ ]', fontsize = 16, fontweight = 'bold', labelpad = 15)
+        ax.tick_params(axis = 'both', which = 'both', direction = 'in', top = True, right = True, labelsize = 15)
+        ax.yaxis.set_major_formatter(FormatStrFormatter("%.1f"))
+        plt.tight_layout()
+        plt.savefig(out_dir+'disc_surf_'+ str(step_num) +'.%s' % img_format, format = img_format, bbox_inches = 'tight', dpi = 300)
+
+# def eval_discrepancy_custom_grid(file_path, train_grid_in, train_grid_out, test_grid):
+
+#     exp_name = os.path.basename(file_path)
+#     dir_name = os.path.dirname(file_path)
+
+#     # Create an instance of discrepancy
+#     dicr = Discrepancy(model_name = exp_name, 
+#                        model_folder = dir_name,
+#                        lf_model = None,
+#                        input_size = train_grid_in.size(1),
+#                        output_size = 1,
+#                        var_grid_in = train_grid_in,
+#                        var_grid_out = train_grid_out)
     
-    # Load the surrogate
-    dicr.surrogate_load()
+#     # Load the surrogate
+#     dicr.surrogate_load()
 
-    # Evaluate surrogate
-    return dicr.forward(test_grid)
+#     # Evaluate surrogate
+#     return dicr.forward(test_grid)
 
 def plot_marginal_stats(marg_stats_file, step_num, saveinterval, img_format, out_dir):
     
