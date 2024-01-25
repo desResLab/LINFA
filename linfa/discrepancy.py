@@ -8,9 +8,49 @@ from linfa.mlp import FNN
 torch.set_default_tensor_type(torch.DoubleTensor)
 
 class Discrepancy(object):
-    """Class to create surrogate models for discrepancy estimatio
-       TO BE COMPLETED!!!
-    """
+    '''Class to create surrogate models for discrepancy estimation.
+    
+    This class is designed to create surrogate models for estimating discrepancies 
+    in a model using a neural network (FNN). The discrepancy model is trained on a 
+    pre-defined grid of variable inputs and corresponding outputs.
+    
+    Args:
+        model_name (str):                   Name of the model.
+        lf_model (object):                  Low-fidelity model with a `solve_t` function.
+        input_size (int):                   Input size for FNN.
+        output_size (int):                  Output size for FNN.
+        var_grid_in (list of lists):        Variable grid locations for training.
+        var_grid_out (list):                Output variables.
+        dnn_arch (list of int, optional):   List containing the number of neurons for each hidden layer.
+        dnn_activation (str, optional):     Activation function for the neural network.
+        model_folder (str, optional):       Folder to save the model in.
+        surrogate (object, optional):       Pre-existing surrogate model.
+        device (str, optional):             Computational device.
+    
+    Attributes:
+        model_name (str):                   Name of the model.
+        model_folder (str):                 Folder to save the model in.
+        device (str):                       Computational device.
+        input_size (int):                   Input size for FNN.
+        output_size (int):                  Output size for FNN.
+        dnn_arch (list of int):             List containing the number of neurons for each hidden layer.
+        is_trained (boolean):               Flag for trained FNN.
+        lf_model (object):                  Low-fidelity model with a `solve_t` function.
+        var_grid_in (list of lists):        Store variable grid locations.
+        var_grid_out (list):                Output variables - multiple noisy observations are available for each combination of variables.
+        var_in_avg (torch.Tensor):          Average of variable inputs.
+        var_in_std (torch.Tensor):          Standard deviation of variable inputs.
+        var_out_avg (torch.Tensor):         Average of variable outputs.
+        var_out_std (torch.Tensor):         Standard deviation of variable outputs.
+        surrogate (object):                 Surrogate model (FNN).
+
+    Methods:
+        surrogate_save():                   Save the surrogate model to files.
+        surrogate_load():                   Load the surrogate model from files.
+        pretty_print():                     Print formatted information about the surrogate.
+        update():                           Train the surrogate model with a pre-grid.
+        forward():                          Evaluate the surrogate model.
+    '''
     def __init__(self, model_name,
                        lf_model,
                        input_size,
@@ -24,8 +64,8 @@ class Discrepancy(object):
                        surrogate=None, 
                        device='cpu'):
 
-        self.model_name = model_name
-        self.model_folder = model_folder
+        self.model_name = model_name # (str): Name of the model
+        self.model_folder = model_folder # (str): Folder to save the model in
 
         if(var_grid_in is None):
 
@@ -47,22 +87,22 @@ class Discrepancy(object):
 
         else:
 
-            self.device = device
-            self.input_size = input_size
-            self.output_size = output_size
-            self.dnn_arch = dnn_arch
+            self.device = device # (string): Computational device
+            self.input_size = input_size # (int): Input size for FNN
+            self.output_size = output_size # (int): Output size for FNN
+            self.dnn_arch = dnn_arch # (list of int): List containing the number of neurons for each hidden layer
             self.dnn_activation = dnn_activation
             self.dnn_dropout = dnn_dropout
-            self.is_trained = False
+            self.is_trained = False # (boolean): Flag for trained FNN 
 
-            # Assign LF model
-            self.lf_model = lf_model
+            # Assign LF model 
+            self.lf_model = lf_model # (object): Low-fidelity model with function solve_t
 
             # Store variable grid locations
-            self.var_grid_in=var_grid_in
+            self.var_grid_in=var_grid_in # (list of lists): Store variable grid locations
             # Output variables - multiple noisy observations 
             # are available for each combination of variables
-            self.var_grid_out=var_grid_out
+            self.var_grid_out=var_grid_out # (list): Output variables - multiple noisy observations are available for each combination of variables
 
             # Input/output statistics
             self.var_in_avg = torch.mean(var_grid_in,dim=0)
@@ -205,6 +245,7 @@ class Discrepancy(object):
         if(len(self.var_grid_in) == 1):
             res = self.surrogate(torch.zeros_like(var))
         else:
+            # TODO : Does var_in_avg need to be updated for new vars to predict over? 
             res = self.surrogate((var - self.var_in_avg) / self.var_in_std)
 
         if not(self.is_trained):
@@ -212,8 +253,48 @@ class Discrepancy(object):
             return zero_res
         else:
             return res
+        
+    def pretty_print(self, print_data = False):
 
-def test_discrepancy():
+        '''Print formatted information about the surrogate.
+
+        This method prints various statistics and information about the surrogate model.
+
+        Args:
+            print_data (bool, optional): If True, also print the data used for training. Default is False.
+
+        Returns:
+            None'''
+        
+        print('\n')
+        print('Input dimensionality \t', self.var_grid_in.shape[1])
+        print('Ouput dimensionality \t', self.var_grid_out.shape[1])
+        print('Model is trained \t', self.is_trained)
+        print('Neurons per layer \t', self.dnn_arch)
+        print('Running on device \t', self.device)
+
+        print('\n')
+        print('Input stats | \t Avg. \t | Std. Dev.')
+        print("-------------------------------------")
+        for loopA in range(self.var_grid_in.shape[1]):
+            print('Variable', loopA + 1, '\t',round(self.var_in_avg[loopA].tolist(), 4), '\t', round(self.var_in_std[loopA].tolist(),4))
+        
+        print('\n')
+        print('Output stats | \t Avg. \t | Std. Dev.')
+        print("-------------------------------------")
+        print('\t \t', round(self.var_out_avg.tolist(),4), ' \t', round(self.var_out_std.tolist(),4))
+
+        if print_data:
+            # initialize
+            i = 0
+            print('\n')
+            print("Temp.\t| Pres.\t|Coverage")
+            print("--------------------------")
+            for [T, P] in self.var_grid_in.tolist():
+                print(T, '\t', P, '\t', round(self.var_grid_out.flatten().tolist()[i], 3))
+                i += 1
+
+def test_surrogate():
     
     import matplotlib.pyplot as plt
     from linfa.models.discrepancy_models import PhysChem
