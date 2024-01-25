@@ -24,7 +24,7 @@ def run_test():
     exp.input_size          = 2             # int: Dimensionalty of input (default 2)
     exp.batch_size          = 200           # int: Number of samples generated (default 100)
     exp.true_data_num       = 2             # double: Number of true model evaluted (default 2)
-    exp.n_iter              = 50000         # int: Number of iterations (default 25001)
+    exp.n_iter              = 25000         # int: Number of iterations (default 25001)
     exp.lr                  = 0.001         # float: Learning rate (default 0.003)
     exp.lr_decay            = 0.9999        # float:  Learning rate decay (default 0.9999)
     exp.log_interal         = 10            # int: How often to show loss stat (default 10)
@@ -53,9 +53,14 @@ def run_test():
     exp.device = torch.device('cuda:0' if torch.cuda.is_available() and not exp.no_cuda else 'cpu')
 
     # Define transformation
-    trsf_info = [['tanh', -7.0, 7.0, 500.0, 1500.0],
-                 ['tanh', -7.0, 7.0, -30000.0, -15000.0]]
+    trsf_info = [['tanh', -20.0, 20.0, 500.0, 1500.0],
+                 ['tanh', -20.0, 20.0, -30000.0, -15000.0]]
     trsf = Transformation(trsf_info)
+
+    # # Define transformation
+    # trsf_info = [['linear', -20.0, 20.0, 500.0, 1500.0],
+    #              ['linear', -20.0, 20.0, -30000.0, -15000.0]]
+    # trsf = Transformation(trsf_info)
     
     # Apply the transformation
     exp.transform = trsf
@@ -66,6 +71,7 @@ def run_test():
 
     # Define model
     langmuir_model = PhysChem(variable_inputs)
+    
     # Assign as experiment model
     exp.model = langmuir_model
 
@@ -109,8 +115,7 @@ def run_test():
         
         # Initialize total number of variable inputs
         total_var_inputs = len(model.var_in)
-
-        # HAD TO MOVE THIS UP BEFORE EVALUATE DISCREPANCY            
+                   
         # Evaluate model response - (num_var x num_batch)
         modelOut = langmuir_model.solve_t(transform.forward(calib_inputs)).t()
 
