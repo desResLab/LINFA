@@ -1,3 +1,4 @@
+import os
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -69,21 +70,21 @@ class Discrepancy(object):
 
         if(var_grid_in is None):
 
-            self.device = None
-            self.input_size = None
-            self.output_size = None
-            self.dnn_arch = None
+            self.device         = None
+            self.input_size     = None
+            self.output_size    = None
+            self.dnn_arch       = None
             self.dnn_activation = None
-            self.dnn_dropout = None
-            self.is_trained = None
-            self.lf_model = None
-            self.var_grid_in = None
-            self.var_grid_out = None
-            self.var_in_avg = None
-            self.var_in_std = None
-            self.var_out_avg = None
-            self.var_out_std = None
-            self.surrogate = None
+            self.dnn_dropout    = None
+            self.is_trained     = None
+            self.lf_model       = None
+            self.var_grid_in    = None
+            self.var_grid_out   = None
+            self.var_in_avg     = None
+            self.var_in_std     = None
+            self.var_out_avg    = None
+            self.var_out_std    = None
+            self.surrogate      = None
 
         else:
 
@@ -190,9 +191,14 @@ class Discrepancy(object):
         optimizer = torch.optim.RMSprop(self.surrogate.parameters(), lr=lr)
         scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, lr_exp)
 
+        # Set surrogate in training mode
+        self.surrogate.train()
+
+        # Init weights
+        self.surrogate.init_weight()
+
+        # Loop on iterations - epochs with fill batch
         for i in range(max_iters):
-            # Set surrogate in training mode
-            self.surrogate.train()          
 
             # Surrogate returns a table with rows as batches and columns as variables considered            
             disc = self.surrogate(var_grid)
@@ -201,7 +207,7 @@ class Discrepancy(object):
             # Mean over the columns (batches)
             # Mean over the rows (variables)
             # Also we need to account for the number of repeated observations
-            loss = torch.tensor(0.0)            
+            loss = torch.tensor(0.0)        
             # Loop over the number of observations
             for loopA in range(var_out.size(1)):
                 loss += torch.sum((disc.flatten() - var_out[:,loopA]) ** 2)

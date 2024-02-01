@@ -2,6 +2,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+def init_weights(m):
+    if isinstance(m, nn.Linear):
+        nn.init.xavier_uniform_(m.weight)
+        m.bias.data.fill_(0.0)
+
 class FNN(nn.Module):
     """Fully Connected Neural Network"""
 
@@ -38,6 +43,8 @@ class FNN(nn.Module):
             self.dropout_visible = nn.Dropout(p=self.dropout[0])
             self.dropout_hidden = nn.Dropout(p=self.dropout[1])
 
+    def init_weight(self):
+        self.apply(init_weights)
 
     def forward(self, x):
         """

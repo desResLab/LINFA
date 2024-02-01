@@ -1,1 +1,2 @@
 from linfa.tests.test_linfa import linfa_test_suite
+from linfa.tests.test_linfa_discrepancy import linfa_test_suite_discrepancy
