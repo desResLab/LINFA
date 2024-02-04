@@ -362,5 +362,6 @@ def test_surrogate():
 # TEST SURROGATE
 if __name__ == '__main__':
   
-  test_discrepancy()
+  test_surrogate()
+  #test_discrepancy()
     
