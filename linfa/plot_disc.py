@@ -27,15 +27,18 @@ def plot_disr_histograms(lf_file, lf_dicr_file, lf_discr_noise_file, data_file, 
     # Check for repated observations
     ## shape : no. var inputs pairs x no. batches
     num_dim = len(np.shape(lf_model))
-    
-    if num_dim == 1:
+
+    if(num_dim == 1):
+
+        # DES: NEED TO TEST FOR TP1 I THINK !!!
+
         # Plot histograms
         plt.figure(figsize = (6,4))
         ax = plt.gca()
         plt.hist(lf_model, label = r'$\eta \vert \mathbf{\theta}$', alpha = 0.5, density = True, hatch = '/')
         plt.hist(lf_model_plus_disc, label = r'$\zeta \vert \mathbf{\theta}, \delta$', alpha = 0.5, density = True)
         plt.hist(lf_model_plus_disc_plus_noise, label = r'$y \vert \mathbf{\theta}, \delta, \epsilon$', alpha = 0.5, density = True, hatch = '.')
-        
+
         for loopA in range(len(data[2:])):
             if loopA == 0:
                 # add label to legend
@@ -84,10 +87,7 @@ def plot_disr_histograms(lf_file, lf_dicr_file, lf_discr_noise_file, data_file, 
                 sample[loopA, loopB] = lf_model_plus_disc[loopA, loopB, random_array]
 
             # Plot function & save line psroperties for legend
-            plt.plot(np.tile(pressures, (sample_size, 1)).transpose(),
-                    sample[loopA],
-                    linewidth=0.01,
-                    color=clrs[loopA])
+            plt.plot(np.tile(pressures, (sample_size, 1)).transpose(), sample[loopA], linewidth=0.1, color=clrs[loopA])
             
             for loopC in range(no_reps):
                 line = plt.plot(np.tile(pressures, (sample_size, 1)).transpose(), 
@@ -197,34 +197,45 @@ def plot_discr_surface_2d(file_path, lf_file, data_file, num_1d_grid_points, dat
     else:
         # Define test grid
         test_grid = prep_test_grid(dicr.var_grid_in, data_limit_factor, num_1d_grid_points)
+
+        ## Variable input 1
+        min_dim_1 = torch.min(dicr.var_grid_in[:,0])
+        max_dim_1 = torch.max(dicr.var_grid_in[:,0])
+        min_dim_1, max_dim_1 = scale_limits(min_dim_1, max_dim_1, data_limit_factor)
         
+        ## Variable input 2
+        min_dim_2 = torch.min(dicr.var_grid_in[:,1])
+        max_dim_2 = torch.max(dicr.var_grid_in[:,1])
+        min_dim_2, max_dim_2 = scale_limits(min_dim_2, max_dim_2, data_limit_factor)
+
+        # Create test grid of variable inputs to evaluate discrepancy surrogate
+        test_grid_1 = torch.linspace(min_dim_1, max_dim_1, num_1d_grid_points)
+        test_grid_2 = torch.linspace(min_dim_2, max_dim_2, num_1d_grid_points)
+        grid_t, grid_p = torch.meshgrid(test_grid_1, test_grid_2, indexing='ij')
+        test_grid = torch.cat((grid_t.reshape(-1,1), grid_p.reshape(-1,1)),1)
+
         # Evaluate discrepancy over test grid
         res = dicr.forward(test_grid)
-        
+
          # Assign obsersations from data
-        observations = exp_data.transpose()[num_var_ins:]
+        observations = exp_data[:,num_var_ins:]
 
         # Assign variable inputs   
         var_train = [exp_data[:, 0], exp_data[:, 1]]
 
-        ## Assign discrepancy
-        # Check for repeated observations
-        if np.shape(observations)[0] > 1:
-            print('code needs to be debugged here') # TODO
-            disc = np.average(observations) - lf_train
-            exit()
-        else:
-            disc = []
-            for loopA in range(len(observations.flatten())):
-                disc.append(observations[0][loopA] - lf_train[loopA])
+        # Assign discrepancy target, i.e., obs - lf model predictions for each batch
+        disc = observations - lf_train
 
         # Compute average discrepancy across batches used for training
-        train_disc = np.average(disc, axis = 1)
+        train_disc = disc.mean(axis=1)
         
         # Compute error bars for averaged discrepancy
-        discBnds = [np.percentile(disc, nom_coverage/ 2, axis = 1),           # Lower bound
-                    np.percentile(disc, 100 - nom_coverage / 2, axis = 1)]    # Upper bound
+        discBnds = [np.percentile(disc, 100 - nom_coverage, axis = 1), # 5 percentile
+                    np.percentile(disc, nom_coverage, axis = 1)] # 95 percentile
         
+        errBnds = [train_disc - np.percentile(disc, 100 - nom_coverage, axis = 1), # 5 percentile
+                   np.percentile(disc, nom_coverage, axis = 1) -  train_disc] # 95 percentile
+                
         # For debugging
         if True:
             print_disc_stats(train_disc, discBnds)
@@ -239,14 +250,16 @@ def plot_discr_surface_2d(file_path, lf_file, data_file, num_1d_grid_points, dat
         ax = plt.figure(figsize = (4,4)).add_subplot(projection='3d')
         ax.plot_trisurf(x, y, z, cmap = plt.cm.Spectral, linewidth = 0.2, antialiased = True)
         ax.scatter(var_train[0], var_train[1], train_disc, color = 'k', s = 8)
-        ax.errorbar(var_train[0], var_train[1], train_disc, zerr = discBnds, fmt = 'o', color = 'k', ecolor = 'k', capsize = 3)
+        ax.errorbar(var_train[0], var_train[1], train_disc, zerr = errBnds, fmt = 'o', color = 'k', ecolor = 'k', capsize = 3)
         ax.set_xlabel('Temperature [K]', fontsize = 16, fontweight = 'bold', labelpad = 15)
         ax.set_ylabel('Pressure [Pa]',   fontsize = 16, fontweight = 'bold', labelpad = 15)
         ax.set_zlabel('Discrepancy [ ]', fontsize = 16, fontweight = 'bold', labelpad = 15)
         ax.tick_params(axis = 'both', which = 'both', direction = 'in', top = True, right = True, labelsize = 15)
         ax.yaxis.set_major_formatter(FormatStrFormatter("%.1f"))
         plt.tight_layout()
+        print('Generating plot...: ',out_dir+'disc_surf_'+ str(step_num) +'.%s' % img_format)
         plt.savefig(out_dir+'disc_surf_'+ str(step_num) +'.%s' % img_format, format = img_format, bbox_inches = 'tight', dpi = 300)
+        # plt.show()
 
 # def eval_discrepancy_custom_grid(file_path, train_grid_in, train_grid_out, test_grid):
 
@@ -479,18 +492,18 @@ if __name__ == '__main__':
 
     # Set file name/path for lf and discr results
     out_dir     = args.folder_name + args.exp_name + '/'
-    lf_file = out_dir + args.exp_name + '_outputs_lf_' + str(args.step_num)
-    lf_dicr_file = out_dir + args.exp_name + '_outputs_lf+discr_' + str(args.step_num) 
+    lf_file      = out_dir + args.exp_name + '_outputs_lf_' + str(args.step_num)
+    lf_dicr_file        = out_dir + args.exp_name + '_outputs_lf+discr_' + str(args.step_num) 
     lf_discr_noise_file = out_dir + args.exp_name + '_outputs_lf+discr+noise_' + str(args.step_num)
-    discr_sur_file = out_dir + args.exp_name
-    data_file = out_dir + args.exp_name + '_data'
-    marg_stats_file = out_dir + args.exp_name + '_marginal_stats_'
-    params_file = out_dir + args.exp_name + '_params_' + str(args.step_num)
+    discr_sur_file      = out_dir + args.exp_name
+    data_file           = out_dir + args.exp_name + '_data'
+    marg_stats_file     = out_dir + args.exp_name + '_marginal_stats_'
+    params_file         = out_dir + args.exp_name + '_params_' + str(args.step_num)
 
     if(args.result_mode == 'histograms'):
         plot_disr_histograms(lf_file, lf_dicr_file, lf_discr_noise_file, data_file, args.step_num, out_dir, args.img_format)
     elif(args.result_mode == 'discr_surface'):
-        plot_discr_surface_2d(discr_sur_file, lf_dicr_file, data_file, args.num_1d_grid_points, args.data_limit_factor, args.step_num, out_dir, args.img_format)
+        plot_discr_surface_2d(discr_sur_file, lf_file, data_file, args.num_1d_grid_points, args.data_limit_factor, args.step_num, out_dir, args.img_format)
     elif(args.result_mode == 'marginal_stats'):
         plot_marginal_stats(marg_stats_file, args.step_num, args.saveinterval, args.img_format, out_dir)
     elif(args.result_mode == 'marginal_posterior'):

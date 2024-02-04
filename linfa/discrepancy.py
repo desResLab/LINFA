@@ -1,3 +1,4 @@
+import os
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -51,20 +52,30 @@ class Discrepancy(object):
         update():                           Train the surrogate model with a pre-grid.
         forward():                          Evaluate the surrogate model.
     '''
-    
-    def __init__(self, model_name, lf_model, input_size, output_size, var_grid_in, var_grid_out,
-                dnn_arch = None, dnn_activation = 'relu', model_folder = './', surrogate = None, 
-                device = 'cpu'):
+    def __init__(self, model_name,
+                       lf_model,
+                       input_size,
+                       output_size,
+                       var_grid_in,
+                       var_grid_out,
+                       dnn_arch=None, 
+                       dnn_activation='relu', 
+                       dnn_dropout=None,
+                       model_folder='./', 
+                       surrogate=None, 
+                       device='cpu'):
 
-        self.model_name     = model_name        # (str): Name of the model
-        self.model_folder   = model_folder      # (str): Folder to save the model in
+        self.model_name = model_name # (str): Name of the model
+        self.model_folder = model_folder # (str): Folder to save the model in
 
         if(var_grid_in is None):
 
             self.device         = None
-            self.input_size     = None          
+            self.input_size     = None
             self.output_size    = None
             self.dnn_arch       = None
+            self.dnn_activation = None
+            self.dnn_dropout    = None
             self.is_trained     = None
             self.lf_model       = None
             self.var_grid_in    = None
@@ -77,14 +88,22 @@ class Discrepancy(object):
 
         else:
 
-            self.device         = device        # (string): Computational device
-            self.input_size     = input_size    # (int): Input size for FNN
-            self.output_size    = output_size   # (int): Output size for FNN
-            self.dnn_arch       = dnn_arch      # (list of int): List containing the number of neurons for each hidden layer
-            self.is_trained     = False         # (boolean): Flag for trained FNN 
-            self.lf_model       = lf_model      # (object): Low-fidelity model with function solve_t
-            self.var_grid_in    = var_grid_in   # (list of lists): Store variable grid locations
-            self.var_grid_out   = var_grid_out  # (list): Output variables - multiple noisy observations are available for each combination of variables
+            self.device = device # (string): Computational device
+            self.input_size = input_size # (int): Input size for FNN
+            self.output_size = output_size # (int): Output size for FNN
+            self.dnn_arch = dnn_arch # (list of int): List containing the number of neurons for each hidden layer
+            self.dnn_activation = dnn_activation
+            self.dnn_dropout = dnn_dropout
+            self.is_trained = False # (boolean): Flag for trained FNN 
+
+            # Assign LF model 
+            self.lf_model = lf_model # (object): Low-fidelity model with function solve_t
+
+            # Store variable grid locations
+            self.var_grid_in=var_grid_in # (list of lists): Store variable grid locations
+            # Output variables - multiple noisy observations 
+            # are available for each combination of variables
+            self.var_grid_out=var_grid_out # (list): Output variables - multiple noisy observations are available for each combination of variables
 
             # Input/output statistics
             self.var_in_avg = torch.mean(var_grid_in, dim = 0)
@@ -97,8 +116,8 @@ class Discrepancy(object):
             self.var_out_avg = torch.mean(var_grid_out)
             self.var_out_std = torch.std(var_grid_out)
 
-            # Create instance of surrogate
-            self.surrogate = FNN(input_size, output_size, arch = self.dnn_arch, device = self.device, init_zero = True) if surrogate is None else surrogate
+            # Create surrogate
+            self.surrogate = FNN(input_size, output_size, arch=self.dnn_arch, device=self.device, init_zero=True, dropout=dnn_dropout) if surrogate is None else surrogate
         
     def surrogate_save(self):
         """Save surrogate model to [self.name].sur and [self.name].npz
@@ -157,6 +176,7 @@ class Discrepancy(object):
         print('--- Training model discrepancy')
         print('')
 
+        # Set it as trained
         self.is_trained = True
 
         # LF model output at the current batch
@@ -180,11 +200,15 @@ class Discrepancy(object):
         optimizer = torch.optim.RMSprop(self.surrogate.parameters(), lr = lr)
         scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, lr_exp)
 
+        # Set surrogate in training mode
+        self.surrogate.train()
+
+        # Init weights
+        self.surrogate.init_weight()
+
+        # Loop on iterations - epochs with fill batch
         for i in range(max_iters):
-            
-            # Set surrogate in training mode
-            self.surrogate.train()          
-            
+
             # Surrogate returns a table with rows as batches and columns as variables considered            
             disc = self.surrogate(var_grid)
 
@@ -192,7 +216,7 @@ class Discrepancy(object):
             # Mean over the columns (batches)
             # Mean over the rows (variables)
             # Also we need to account for the number of repeated observations
-            loss = torch.tensor(0.0)            
+            loss = torch.tensor(0.0)        
             # Loop over the number of observations
             for loopA in range(var_out.size(1)):
                 loss += torch.sum((disc.flatten() - var_out[:,loopA]) ** 2)
@@ -214,8 +238,14 @@ class Discrepancy(object):
         print('')
         print('--- Surrogate model pre-train complete')
         print('')        
+        # Save if needed
         if store:
             self.surrogate_save()
+        # Put it in eval model if no dropouts are present
+        if(self.dnn_dropout is not None):
+            self.surrogate.train()
+        else:
+            self.surrogate.eval()
 
     def forward(self, var):
         """Function to evaluate the surrogate
@@ -292,7 +322,7 @@ def test_surrogate():
     model = PhysChem(var_grid)
 
     # Generate true data
-    model.genDataFile(dataFileNamePrefix='observations', use_true_model=True, store=True, num_observations=10)  
+    model.genDataFile(dataFileNamePrefix='observations', use_true_model=True, store=True, num_observations=3)  
 
     # Get data from true model at the same TP conditions    
     var_data = np.loadtxt('observations.csv',skiprows = 1, delimiter=',')
@@ -305,18 +335,25 @@ def test_surrogate():
                               input_size=2,
                               output_size=1,
                               var_grid_in=var_data_in,
-                              var_grid_out=var_data_out)
-    
+                              var_grid_out=var_data_out,
+                              dnn_arch=[64,64],
+                              dnn_activation='relu',
+                              dnn_dropout=[0.2,0.5],                              
+                              activation='silu')
+       
     # Create a batch of samples for the calibration parameters
     batch_x = model.defParams
 
     # Update the discrepancy model
-    discrepancy.update(batch_x, max_iters=1000, lr=0.001, lr_exp=0.9999, record_interval=100)
+    discrepancy.update(batch_x, max_iters=10000, lr=0.001, lr_exp=0.9999, record_interval=100)
 
     # Plot discrepancy
     fig = plt.figure()
     ax = fig.add_subplot(projection='3d')
-    ax.scatter(model.var_in[:,0].detach().numpy(), model.var_in[:,1].detach().numpy(), discrepancy.forward(model.var_in).detach().numpy(), marker='o')
+    for loopA in range(50):
+        ax.scatter(model.var_in[:,0].detach().numpy(), model.var_in[:,1].detach().numpy(), model.solve_t(batch_x)+discrepancy.forward(model.var_in).detach().numpy(), color='blue', marker='o')
+    for loopA in range(var_data_out.size(1)):
+        ax.scatter(model.var_in[:,0].detach().numpy(), model.var_in[:,1].detach().numpy(), var_data_out[:,loopA].detach().numpy(), color='red', marker='D', s=5)
     ax.set_xlabel('Temperature')
     ax.set_ylabel('Pressure')
     ax.set_zlabel('Coverage')
@@ -325,5 +362,5 @@ def test_surrogate():
 # TEST SURROGATE
 if __name__ == '__main__':
   
-  test_surrogate()
+  test_discrepancy()
     

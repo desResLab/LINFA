@@ -2,10 +2,15 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+def init_weights(m):
+    if isinstance(m, nn.Linear):
+        nn.init.xavier_uniform_(m.weight)
+        m.bias.data.fill_(0.0)
+
 class FNN(nn.Module):
     """Fully Connected Neural Network"""
 
-    def __init__(self, input_size, output_size, arch=None, activation='relu', device='cpu',init_zero=False):
+    def __init__(self, input_size, output_size, arch=None, activation='relu', device='cpu', init_zero=False, dropout=None):
         """
         Args:
             input_size (int): Input size for FNN
@@ -32,6 +37,14 @@ class FNN(nn.Module):
                 self.fc.append(nn.Linear(self.neuron_size[layer-1], self.neuron_size[layer]).to(device))
             # Assign output layer
             self.fc.append(nn.Linear(self.neuron_size[len(self.neuron_size)-1], output_size).to(device))
+        # Add dropout layers
+        self.dropout = dropout
+        if(self.dropout is not None):
+            self.dropout_visible = nn.Dropout(p=self.dropout[0])
+            self.dropout_hidden = nn.Dropout(p=self.dropout[1])
+
+    def init_weight(self):
+        self.apply(init_weights)
 
     def forward(self, x):
         """
@@ -41,17 +54,37 @@ class FNN(nn.Module):
         Returns:
             torch.Tensor. Assumed to be a batch.
         """
+        if(self.dropout is not None):
+
+            x = self.dropout_visible(x)
+
         for loopA in range(len(self.fc)-1):
-            if(self.activation == 'relu'):
-                x = F.relu(self.fc[loopA](x))
+
+            if(self.activation == 'relu'):                
+
+                if(self.dropout is not None):
+                    x = self.dropout_hidden(F.relu(self.fc[loopA](x)))
+                else:
+                    x = F.relu(self.fc[loopA](x))
+
             elif(self.activation == 'silu'):
-                x = F.silu(self.fc[loopA](x))
+
+                if(self.dropout is not None):
+                    x = self.dropout_hidden(F.silu(self.fc[loopA](x)))
+                else:
+                    x = F.silu(self.fc[loopA](x))
+
             elif(self.activation == 'tanh'):
-                x = F.tanh(self.fc[loopA](x))
+
+                if(self.dropout is not None):
+                    x = self.dropout_hidden(F.tanh(self.fc[loopA](x)))
+                else:
+                    x = F.tanh(self.fc[loopA](x))
+
             else:
                 print('Invalid activation string.')
                 exit(-1)
 
         # Last layer with linear activation
-        x = self.fc[len(self.fc)-1](x)
+        x = self.fc[-1](x)
         return x

@@ -1,0 +1,3 @@
+- Plot lf model plus discrepancy at arbitrary values of the variables and calibrarion model parameters. 
+- Add dropouts as an option to the mlp component, and add optional scheduler for the dropout probability. 
+- Generalize the code so it works on multiple outputs and also works for the NoFAS surrogate

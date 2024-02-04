@@ -1,9 +1,16 @@
 import os
 import torch
+import dill as pickle
 import numpy as np
 from linfa.maf import MAF, RealNVP
 
 torch.set_default_tensor_type(torch.DoubleTensor)
+
+def load_exp_from_file(file_name):
+    with open(file_name, 'rb') as file_handler:
+            data = pickle.load(file_handler)        
+            file_handler.close()
+    return data
 
 class experiment:
     """Defines an instance of variational inference
@@ -62,13 +69,14 @@ class experiment:
         self.linear_step  = 0.0001   #:double: Fixed step size for the Linear annealing scheduler
 
         # OUTPUT parameters
-        self.output_dir          = './results/' + self.name #:str: Name of the output folder
-        self.log_file            = 'log.txt'                #:str: File name where the log profile stats are written
-        self.seed                = 35435                    #:int: Random seed
-        self.n_sample            = 5000                     #:int: Number of batch samples used to print results at save_interval
-        self.save_interval       = 200                      #:int: Save interval for all results
-        self.store_nf_interval   = 1000                     #:int: Save interval for normalizing flow parameters
-        self.store_surr_interval = None                     #:int: Save interval for surrogate model (None for no save)
+        self.output_dir          = './results/' + self.name #:str:  Name of the output folder
+        self.log_file            = 'log.txt'                #:str:  File name where the log profile stats are written
+        self.seed                = 35435                    #:int:  Random seed
+        self.n_sample            = 5000                     #:int:  Number of batch samples used to print results at save_interval
+        self.save_interval       = 200                      #:int:  Save interval for all results
+        self.store_nf_interval   = 1000                     #:int:  Save interval for normalizing flow parameters
+        self.store_surr_interval = None                     #:int:  Save interval for surrogate model (None for no save)
+        self.save_exp            = True                     #:bool: Save local copy of experiment object to file
 
         # DEVICE parameters
         self.no_cuda = True #:bool: Flag to use CPU
@@ -82,6 +90,11 @@ class experiment:
         self.model_logdensity = None
         self.surrogate        = None
         self.model_logprior   = None
+
+    def save(self, file_name):
+        with open(file_name, 'wb') as file_handler:
+            pickle.dump(self, file_handler)        
+            file_handler.close()
 
     def run(self):
         """Runs instance of inference inference problem        
@@ -119,6 +132,10 @@ class experiment:
         print('')
         print('--- Running on device: '+ str(self.device))
         print('')
+
+        # Save experiment
+        if(self.save_exp):
+            self.save(self.output_dir + '/experiment.pt')
 
         # model
         if self.flow_type == 'maf':
