@@ -86,7 +86,7 @@ def plot_disr_histograms(lf_file, lf_dicr_file, lf_discr_noise_file, data_file, 
                 # Evalute random sample of true process posterior
                 sample[loopA, loopB] = lf_model_plus_disc[loopA, loopB, random_array]
 
-            # Plot function & save line psroperties for legend
+            # Plot function & save line properties for legend
             plt.plot(np.tile(pressures, (sample_size, 1)).transpose(), sample[loopA], linewidth=0.1, color=clrs[loopA])
             
             for loopC in range(no_reps):
@@ -201,34 +201,22 @@ def plot_discr_surface_2d(file_path, lf_file, data_file, num_1d_grid_points, dat
         # Define test grid
         test_grid = prep_test_grid(dicr.var_grid_in, data_limit_factor, num_1d_grid_points)
 
-        # ## Variable input 1
-        # min_dim_1 = torch.min(dicr.var_grid_in[:,0])
-        # max_dim_1 = torch.max(dicr.var_grid_in[:,0])
-        # min_dim_1, max_dim_1 = scale_limits(min_dim_1, max_dim_1, data_limit_factor)
-        
-        # ## Variable input 2
-        # min_dim_2 = torch.min(dicr.var_grid_in[:,1])
-        # max_dim_2 = torch.max(dicr.var_grid_in[:,1])
-        # min_dim_2, max_dim_2 = scale_limits(min_dim_2, max_dim_2, data_limit_factor)
-
-        # # Create test grid of variable inputs to evaluate discrepancy surrogate
-        # test_grid_1 = torch.linspace(min_dim_1, max_dim_1, num_1d_grid_points)
-        # test_grid_2 = torch.linspace(min_dim_2, max_dim_2, num_1d_grid_points)
-        # grid_t, grid_p = torch.meshgrid(test_grid_1, test_grid_2, indexing='ij')
-        # test_grid = torch.cat((grid_t.reshape(-1,1), grid_p.reshape(-1,1)),1)
-
-
         # Evaluate discrepancy over test grid
         res = dicr.forward(test_grid)
 
          # Assign obsersations from data
-        observations = exp_data[:,num_var_ins:]
+        observations = exp_data[:, num_var_ins:]
 
         # Assign variable inputs   
         var_train = [exp_data[:, 0], exp_data[:, 1]]
 
-        # Assign discrepancy target, i.e., obs - lf model predictions for each batch
-        disc = observations - lf_train
+        # Check for repeated experiments
+        if np.shape(observations)[1] > 1:
+            # Average over measurements
+            disc =  observations.mean(axis = 1).reshape([num_var_pairs, 1]) - lf_train # compute
+        else:
+            # Assign discrepancy target, i.e., obs - lf model predictions for each batch
+            disc = observations - lf_train
 
         # Compute average discrepancy across batches used for training
         train_disc = disc.mean(axis=1)
@@ -425,7 +413,7 @@ if __name__ == '__main__':
                         help='Generate pictures for dark background',
                         dest='use_dark_mode')
 
-    # Enable dark mode for pictures
+    # Different quantities to plot
     parser.add_argument('-m', '--mode',
                         action = None,
                         const = None,
