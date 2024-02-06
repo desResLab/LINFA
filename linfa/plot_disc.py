@@ -159,10 +159,13 @@ def compare_disc(train, test):
 
 def plot_discr_surface_2d(file_path, lf_file, data_file, num_1d_grid_points, data_limit_factor, step_num, out_dir, img_format = 'png', nom_coverage = 95.0):
 
+    # TODO: need to generalize to cases where there are multiple observations
+
+
     # Load training data
     exp_name = os.path.basename(file_path)       # Name of experiment
     dir_name = os.path.dirname(file_path)        # Name of results directory
-    exp_data = np.loadtxt(data_file)             # Experimental data
+    exp_data = np.loadtxt(data_file)             # Experimental data (no. var input pairs x [no var input types + no. repeated obs])
     lf_train = np.loadtxt(lf_file)               # Low-fidelity model posterior samples
 
     # Create an instance of the discrepancy class
@@ -178,7 +181,7 @@ def plot_discr_surface_2d(file_path, lf_file, data_file, num_1d_grid_points, dat
     dicr.surrogate_load()
 
     # Print discrepancy surrogate
-    dicr.pretty_print(print_data = True)
+    dicr.pretty_print(print_data = False)
 
     # Get the number of dimensions for the aux variable
     num_var_pairs = dicr.var_grid_in.size(0)    # No. of variable input-pairs
@@ -198,21 +201,22 @@ def plot_discr_surface_2d(file_path, lf_file, data_file, num_1d_grid_points, dat
         # Define test grid
         test_grid = prep_test_grid(dicr.var_grid_in, data_limit_factor, num_1d_grid_points)
 
-        ## Variable input 1
-        min_dim_1 = torch.min(dicr.var_grid_in[:,0])
-        max_dim_1 = torch.max(dicr.var_grid_in[:,0])
-        min_dim_1, max_dim_1 = scale_limits(min_dim_1, max_dim_1, data_limit_factor)
+        # ## Variable input 1
+        # min_dim_1 = torch.min(dicr.var_grid_in[:,0])
+        # max_dim_1 = torch.max(dicr.var_grid_in[:,0])
+        # min_dim_1, max_dim_1 = scale_limits(min_dim_1, max_dim_1, data_limit_factor)
         
-        ## Variable input 2
-        min_dim_2 = torch.min(dicr.var_grid_in[:,1])
-        max_dim_2 = torch.max(dicr.var_grid_in[:,1])
-        min_dim_2, max_dim_2 = scale_limits(min_dim_2, max_dim_2, data_limit_factor)
+        # ## Variable input 2
+        # min_dim_2 = torch.min(dicr.var_grid_in[:,1])
+        # max_dim_2 = torch.max(dicr.var_grid_in[:,1])
+        # min_dim_2, max_dim_2 = scale_limits(min_dim_2, max_dim_2, data_limit_factor)
 
-        # Create test grid of variable inputs to evaluate discrepancy surrogate
-        test_grid_1 = torch.linspace(min_dim_1, max_dim_1, num_1d_grid_points)
-        test_grid_2 = torch.linspace(min_dim_2, max_dim_2, num_1d_grid_points)
-        grid_t, grid_p = torch.meshgrid(test_grid_1, test_grid_2, indexing='ij')
-        test_grid = torch.cat((grid_t.reshape(-1,1), grid_p.reshape(-1,1)),1)
+        # # Create test grid of variable inputs to evaluate discrepancy surrogate
+        # test_grid_1 = torch.linspace(min_dim_1, max_dim_1, num_1d_grid_points)
+        # test_grid_2 = torch.linspace(min_dim_2, max_dim_2, num_1d_grid_points)
+        # grid_t, grid_p = torch.meshgrid(test_grid_1, test_grid_2, indexing='ij')
+        # test_grid = torch.cat((grid_t.reshape(-1,1), grid_p.reshape(-1,1)),1)
+
 
         # Evaluate discrepancy over test grid
         res = dicr.forward(test_grid)
