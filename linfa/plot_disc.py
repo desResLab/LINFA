@@ -259,27 +259,6 @@ def plot_discr_surface_2d(file_path, lf_file, data_file, num_1d_grid_points, dat
         plt.tight_layout()
         print('Generating plot...: ',out_dir+'disc_surf_'+ str(step_num) +'.%s' % img_format)
         plt.savefig(out_dir+'disc_surf_'+ str(step_num) +'.%s' % img_format, format = img_format, bbox_inches = 'tight', dpi = 300)
-        # plt.show()
-
-# def eval_discrepancy_custom_grid(file_path, train_grid_in, train_grid_out, test_grid):
-
-#     exp_name = os.path.basename(file_path)
-#     dir_name = os.path.dirname(file_path)
-
-#     # Create an instance of discrepancy
-#     dicr = Discrepancy(model_name = exp_name, 
-#                        model_folder = dir_name,
-#                        lf_model = None,
-#                        input_size = train_grid_in.size(1),
-#                        output_size = 1,
-#                        var_grid_in = train_grid_in,
-#                        var_grid_out = train_grid_out)
-    
-#     # Load the surrogate
-#     dicr.surrogate_load()
-
-#     # Evaluate surrogate
-#     return dicr.forward(test_grid)
 
 def plot_marginal_stats(marg_stats_file, step_num, saveinterval, img_format, out_dir):
     
