@@ -77,6 +77,7 @@ class experiment:
         self.store_nf_interval   = 1000                     #:int:  Save interval for normalizing flow parameters
         self.store_surr_interval = None                     #:int:  Save interval for surrogate model (None for no save)
         self.save_exp            = True                     #:bool: Save local copy of experiment object to file
+        self.no_disc_evals       = 10                       #:int:  No. of times stochastic discrepancy is evaluated and saved
 
         # DEVICE parameters
         self.no_cuda = True #:bool: Flag to use CPU
@@ -231,6 +232,7 @@ class experiment:
         x0 = nf.base_dist.sample([self.batch_size])
         xk, sum_log_abs_det_jacobians = nf(x0)
 
+        # Here
         # generate and save samples evaluation
         if sampling and iteration % self.save_interval == 0:
             print('--- Saving results at iteration '+str(iteration))
@@ -282,24 +284,38 @@ class experiment:
                     # Print lf outputs
                     model_out = self.model.solve_t(self.transform.forward(xkk))
                     np.savetxt(self.output_dir + '/' + self.name + '_outputs_lf_' + str(iteration), model_out.data.cpu().numpy(), newline="\n")                    
+                    
                     # LF model, plus dicrepancy, plus noise
                     if(self.surrogate is None):
                         # This need to have as many rows as T,P
                         # and as many columns as batches                        
                         model_out_noise = model_out + noise
                         np.savetxt(self.output_dir + '/' + self.name + '_outputs_lf+noise_' + str(iteration), model_out_noise.data.cpu().numpy(), newline="\n")
+                   
                     else:
-                        discr_out = self.surrogate.forward(self.model.var_in)
-                        # CHECK COMPATIBILITY !!!
-                        model_out_lf_discr = model_out + discr_out                        
-                        model_out_lf_discr_noise = model_out + discr_out + noise
-                        # Save model outputs
-                        # For discrepancy we have
-                        # Rows: number of variable pairs
-                        # Columns: number of batches
-                        np.savetxt(self.output_dir + '/' + self.name + '_outputs_discr_' + str(iteration), discr_out.data.cpu().numpy(), newline="\n")
-                        np.savetxt(self.output_dir + '/' + self.name + '_outputs_lf+discr_' + str(iteration), model_out_lf_discr.data.cpu().numpy(), newline="\n")
-                        np.savetxt(self.output_dir + '/' + self.name + '_outputs_lf+discr+noise_' + str(iteration), model_out_lf_discr_noise.data.cpu().numpy(), newline="\n")
+                        # Check for deterministic discrepancy
+                        if self.surrogate.dnn_dropout is None:
+                            # Set loop to evaluate one set of parameters
+                            self.no_disc_evals = 1
+                         
+                        for loopA in range(self.no_disc_evals):
+
+                            # Evaluate discrepancy
+                            discr_out = self.surrogate.forward(self.model.var_in)
+                            
+                            # Evaluate model estimates
+                            model_out_lf_discr = model_out + discr_out                        
+                            
+                            # Evaluate response estimates
+                            model_out_lf_discr_noise = model_out + discr_out + noise
+                            
+                            # Save model outputs
+                            # For discrepancy we have
+                            # Rows: number of variable pairs
+                            # Columns: number of batches
+                            np.savetxt(self.output_dir + '/' + self.name + '_outputs_discr_' + str(iteration) + '_' + str(loopA), discr_out.data.cpu().numpy(), newline="\n")
+                            np.savetxt(self.output_dir + '/' + self.name + '_outputs_lf+discr_' + str(iteration) + '_' + str(loopA), model_out_lf_discr.data.cpu().numpy(), newline="\n")
+                            np.savetxt(self.output_dir + '/' + self.name + '_outputs_lf+discr+noise_' + str(iteration) + '_' + str(loopA), model_out_lf_discr_noise.data.cpu().numpy(), newline="\n")
                 else:
                     print('Invalid type of surrogate model')
                     exit(-1)

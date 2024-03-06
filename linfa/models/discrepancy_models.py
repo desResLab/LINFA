@@ -16,7 +16,7 @@ class PhysChem(object):
         ## model constants
         self.RConst = torch.tensor(8.314) # universal gas constant (J/ mol/ K)
         self.data = None # dataset of model
-        # self.stdRatio = 0.05 # standard deviation ratio
+        
         # TEMP TEST WITH LARGE NOISE ON DISCREPANCY - PUT IT BACK WHEN TEST FINISHED!!!
         self.stdRatio = 0.1 # standard deviation ratio
         self.defOut = self.solve_t(self.defParams)
@@ -87,7 +87,7 @@ class PhysChem(object):
             def_out = self.solve_t(self.defParams)
         
         # get standard deviation
-        stdDev = self.stdRatio * torch.abs(def_out)
+        stdDev = self.stdRatio * torch.abs(torch.mean(def_out))
         
         # add noise to coverage data
         coverage = def_out.repeat(1,num_observations)
