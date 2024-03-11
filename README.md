@@ -49,6 +49,10 @@ To run the tests type
 ```sh
 python -m unittest linfa.linfa_test_suite.NAME_example
 ```
+To run a limited number of iterations (say 100), you can instead type
+```sh
+it=100 python3 -m unittest linfa.linfa_test_suite.NAME_example
+```
 where `NAME` need to be replaced by
 * `trivial` for the trivial example (Ex 1).
 * `highdim` for the high-dimensional example (Ex 2).
@@ -56,6 +60,8 @@ where `NAME` need to be replaced by
 * `rcr` for the RCR model (Ex 4).
 * `adaann` for the Friedman model example (Ex 5).
 * `rcr_nofas_adaann` for the RCR model, combining NoFAS with adaptive annealing (AdaAnn)
+
+If used with adaptive annealing (AdaAnn) the `it=100` option runs 100 iterations only at `T=1` (i.e., to approximate the untempered posterior distribution). Therefore the total number of iterations is generally higher than specified through the `it` option.
 
 At regular intervals set by the parameter `experiment.save_interval` LINFA writes a few results files. The sub-string `NAME` refers to the experiment name specified in the `experiment.name` variable, and `IT` indicates the iteration at which the file is written. The results files are
 

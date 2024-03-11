@@ -171,14 +171,14 @@ class experiment:
                     i += 1
                 prev_i = i
 
-                if self.scheduler == 'AdaAnn':
+                if (self.scheduler == 'AdaAnn'):
                     z0 = nf.base_dist.sample([self.M])
                     zk, _ = nf(z0)
                     log_qk = self.model_logdensity(zk)
                     dt = self.tol / torch.sqrt(log_qk.var())
                     dt = dt.detach()# .numpy()
 
-                if self.scheduler == 'Linear':
+                if (self.scheduler == 'Linear'):
                     dt = self.linear_step
         else:
             loglist = []
@@ -214,78 +214,82 @@ class experiment:
         x0 = nf.base_dist.sample([self.batch_size])
         xk, sum_log_abs_det_jacobians = nf(x0)
 
+        # Check for last iteration
+        last_it = (iteration == self.n_iter)
+
         # generate and save samples evaluation
-        if sampling and iteration % self.save_interval == 0:
-            print('--- Saving results at iteration '+str(iteration))
-            x00 = nf.base_dist.sample([self.n_sample])
-            xkk, _ = nf(x00)
-            
-            # Save surrogate grid - there is no grid for discrepancy
-            if self.surrogate and (self.surrogate_type == 'surrogate'):
-                np.savetxt(self.output_dir + '/' + self.name + '_grid_' + str(iteration), self.surrogate.grid_record.clone().cpu().numpy(), newline="\n")
-            
-            # Save log profile
-            np.savetxt(self.output_dir + '/' + self.log_file, np.array(log), newline="\n")
-            
-            # Save normalized domain samples
-            np.savetxt(self.output_dir + '/' + self.name + '_samples_' + str(iteration), xkk.data.clone().cpu().numpy(), newline="\n")
-            
-            # Save samples in the original space
-            if self.transform:
-                xkk_samples = self.transform.forward(xkk).data.cpu().numpy()
-                np.savetxt(self.output_dir + '/' + self.name + '_params_' + str(iteration), xkk_samples, newline="\n")
-            else:
-                xkk_samples = xkk.data.cpu().numpy()
-                np.savetxt(self.output_dir + '/' + self.name + '_params_' + str(iteration), xkk_samples, newline="\n")
-            
-            # Save marginal statistics
-            np.savetxt(self.output_dir + '/' + self.name + '_marginal_stats_' + str(iteration), np.concatenate((xkk_samples.mean(axis=0).reshape(-1,1),xkk_samples.std(axis=0).reshape(-1,1)),axis=1), newline="\n")
-            
-            # Save log density at the same samples
-            np.savetxt(self.output_dir + '/' + self.name + '_logdensity_' + str(iteration), self.model_logdensity(xkk).data.cpu().numpy(), newline="\n")
-            
-            # Save model outputs at the samples - If a model is defined
-            if self.transform:
-                if(self.surrogate_type == 'surrogate'):
-                    # Define noise when we use NoFAS
-                    stds = torch.abs(self.model.defOut).to(self.device) * self.model.stdRatio
-                    o00 = torch.randn(x00.size(0), self.model.data.shape[0]).to(self.device)
-                    noise = o00*stds.repeat(o00.size(0),1)
-                    # Compute outputs
-                    if self.surrogate:
-                        np.savetxt(self.output_dir + '/' + self.name + '_outputs_' + str(iteration), (self.surrogate.forward(xkk) + noise).data.cpu().numpy(), newline="\n")
-                    else:
-                        np.savetxt(self.output_dir + '/' + self.name + '_outputs_' + str(iteration), (self.model.solve_t(self.transform.forward(xkk)) + noise).data.cpu().numpy(), newline="\n")
-                elif(self.surrogate_type == 'discrepancy'):
-                    # Define noise when we use NoFAS
-                    stds = torch.abs(self.model.defOut).to(self.device) * self.model.stdRatio
-                    # Noise is rows: number of T,P pairs, columns: number of batches
-                    o00 = torch.randn(self.model.data.shape[0], x00.size(0)).to(self.device)
-                    noise = o00*stds.repeat(1,x00.size(0))
-                    # Print lf outputs
-                    model_out = self.model.solve_t(self.transform.forward(xkk))
-                    np.savetxt(self.output_dir + '/' + self.name + '_outputs_lf_' + str(iteration), model_out.data.cpu().numpy(), newline="\n")                    
-                    # LF model, plus dicrepancy, plus noise
-                    if(self.surrogate is None):
-                        # This need to have as many rows as T,P
-                        # and as many columns as batches                        
-                        model_out_noise = model_out + noise
-                        np.savetxt(self.output_dir + '/' + self.name + '_outputs_lf+noise_' + str(iteration), model_out_noise.data.cpu().numpy(), newline="\n")
-                    else:
-                        discr_out = self.surrogate.forward(self.model.var_in)
-                        # CHECK COMPATIBILITY !!!
-                        model_out_lf_discr = model_out + discr_out                        
-                        model_out_lf_discr_noise = model_out + discr_out + noise
-                        # Save model outputs
-                        # For discrepancy we have
-                        # Rows: number of variable pairs
-                        # Columns: number of batches
-                        np.savetxt(self.output_dir + '/' + self.name + '_outputs_discr_' + str(iteration), discr_out.data.cpu().numpy(), newline="\n")
-                        np.savetxt(self.output_dir + '/' + self.name + '_outputs_lf+discr_' + str(iteration), model_out_lf_discr.data.cpu().numpy(), newline="\n")
-                        np.savetxt(self.output_dir + '/' + self.name + '_outputs_lf+discr+noise_' + str(iteration), model_out_lf_discr_noise.data.cpu().numpy(), newline="\n")
+        if(sampling):
+            if (iteration % self.save_interval == 0) or last_it:
+                print('--- Saving results at iteration '+str(iteration))
+                x00 = nf.base_dist.sample([self.n_sample])
+                xkk, _ = nf(x00)
+                
+                # Save surrogate grid - there is no grid for discrepancy
+                if self.surrogate and (self.surrogate_type == 'surrogate'):
+                    np.savetxt(self.output_dir + '/' + self.name + '_grid_' + str(iteration), self.surrogate.grid_record.clone().cpu().numpy(), newline="\n")
+                
+                # Save log profile
+                np.savetxt(self.output_dir + '/' + self.log_file, np.array(log), newline="\n")
+                
+                # Save normalized domain samples
+                np.savetxt(self.output_dir + '/' + self.name + '_samples_' + str(iteration), xkk.data.clone().cpu().numpy(), newline="\n")
+                
+                # Save samples in the original space
+                if self.transform:
+                    xkk_samples = self.transform.forward(xkk).data.cpu().numpy()
+                    np.savetxt(self.output_dir + '/' + self.name + '_params_' + str(iteration), xkk_samples, newline="\n")
                 else:
-                    print('Invalid type of surrogate model')
-                    exit(-1)
+                    xkk_samples = xkk.data.cpu().numpy()
+                    np.savetxt(self.output_dir + '/' + self.name + '_params_' + str(iteration), xkk_samples, newline="\n")
+                
+                # Save marginal statistics
+                np.savetxt(self.output_dir + '/' + self.name + '_marginal_stats_' + str(iteration), np.concatenate((xkk_samples.mean(axis=0).reshape(-1,1),xkk_samples.std(axis=0).reshape(-1,1)),axis=1), newline="\n")
+                
+                # Save log density at the same samples
+                np.savetxt(self.output_dir + '/' + self.name + '_logdensity_' + str(iteration), self.model_logdensity(xkk).data.cpu().numpy(), newline="\n")
+                
+                # Save model outputs at the samples - If a model is defined
+                if self.transform:
+                    if(self.surrogate_type == 'surrogate'):
+                        # Define noise when we use NoFAS
+                        stds = torch.abs(self.model.defOut).to(self.device) * self.model.stdRatio
+                        o00 = torch.randn(x00.size(0), self.model.data.shape[0]).to(self.device)
+                        noise = o00*stds.repeat(o00.size(0),1)
+                        # Compute outputs
+                        if self.surrogate:
+                            np.savetxt(self.output_dir + '/' + self.name + '_outputs_' + str(iteration), (self.surrogate.forward(xkk) + noise).data.cpu().numpy(), newline="\n")
+                        else:
+                            np.savetxt(self.output_dir + '/' + self.name + '_outputs_' + str(iteration), (self.model.solve_t(self.transform.forward(xkk)) + noise).data.cpu().numpy(), newline="\n")
+                    elif(self.surrogate_type == 'discrepancy'):
+                        # Define noise when we use NoFAS
+                        stds = torch.abs(self.model.defOut).to(self.device) * self.model.stdRatio
+                        # Noise is rows: number of T,P pairs, columns: number of batches
+                        o00 = torch.randn(self.model.data.shape[0], x00.size(0)).to(self.device)
+                        noise = o00*stds.repeat(1,x00.size(0))
+                        # Print lf outputs
+                        model_out = self.model.solve_t(self.transform.forward(xkk))
+                        np.savetxt(self.output_dir + '/' + self.name + '_outputs_lf_' + str(iteration), model_out.data.cpu().numpy(), newline="\n")                    
+                        # LF model, plus dicrepancy, plus noise
+                        if(self.surrogate is None):
+                            # This need to have as many rows as T,P
+                            # and as many columns as batches                        
+                            model_out_noise = model_out + noise
+                            np.savetxt(self.output_dir + '/' + self.name + '_outputs_lf+noise_' + str(iteration), model_out_noise.data.cpu().numpy(), newline="\n")
+                        else:
+                            discr_out = self.surrogate.forward(self.model.var_in)
+                            # CHECK COMPATIBILITY !!!
+                            model_out_lf_discr = model_out + discr_out                        
+                            model_out_lf_discr_noise = model_out + discr_out + noise
+                            # Save model outputs
+                            # For discrepancy we have
+                            # Rows: number of variable pairs
+                            # Columns: number of batches
+                            np.savetxt(self.output_dir + '/' + self.name + '_outputs_discr_' + str(iteration), discr_out.data.cpu().numpy(), newline="\n")
+                            np.savetxt(self.output_dir + '/' + self.name + '_outputs_lf+discr_' + str(iteration), model_out_lf_discr.data.cpu().numpy(), newline="\n")
+                            np.savetxt(self.output_dir + '/' + self.name + '_outputs_lf+discr+noise_' + str(iteration), model_out_lf_discr_noise.data.cpu().numpy(), newline="\n")
+                    else:
+                        print('Invalid type of surrogate model')
+                        exit(-1)
 
 
         if torch.any(torch.isnan(xk)):
@@ -295,25 +299,26 @@ class experiment:
             exit(-1)
 
         # updating surrogate model
-        if (self.run_nofas and iteration % self.calibrate_interval == 0):
-            if(self.surrogate_type == 'surrogate'):
-                go_on = self.surrogate.grid_record.size(0) < self.budget
-            elif(self.surrogate_type == 'discrepancy'):
-                go_on = True
-            else:
-                print('Invalid type of surrogate model')
-                exit(-1)
-            if(go_on):    
-                # Update Surrogate Model
+        if(self.run_nofas):
+            if (iteration % self.calibrate_interval == 0) or last_it:
                 if(self.surrogate_type == 'surrogate'):
-                    xk0 = xk[:self.true_data_num, :].data.clone()
-                    self.surrogate.update(xk0, max_iters=self.surr_upd_it)
+                    go_on = self.surrogate.grid_record.size(0) < self.budget
                 elif(self.surrogate_type == 'discrepancy'):
-                    xk0 = xk.data.clone()
-                    self.surrogate.update(self.transform.forward(xk0), max_iters=self.surr_upd_it, reg=False, reg_penalty=0.0001)
+                    go_on = True
                 else:
                     print('Invalid type of surrogate model')
-                    exit(-1)    
+                    exit(-1)
+                if(go_on):    
+                    # Update Surrogate Model
+                    if(self.surrogate_type == 'surrogate'):
+                        xk0 = xk[:self.true_data_num, :].data.clone()
+                        self.surrogate.update(xk0, max_iters=self.surr_upd_it)
+                    elif(self.surrogate_type == 'discrepancy'):
+                        xk0 = xk.data.clone()
+                        self.surrogate.update(self.transform.forward(xk0), max_iters=self.surr_upd_it, reg=False, reg_penalty=0.0001)
+                    else:
+                        print('Invalid type of surrogate model')
+                        exit(-1)    
 
         # Free energy bound
         if(self.model_logprior is None):
@@ -331,5 +336,5 @@ class experiment:
         if self.store_nf_interval > 0 and iteration % self.store_nf_interval == 0:
             torch.save(nf.state_dict(), self.output_dir + '/' + self.name + "_" + str(iteration) + ".nf")
 
-        if not(self.store_surr_interval is None) and self.store_surr_interval > 0 and iteration % self.store_surr_interval == 0:
+        if not(self.store_surr_interval is None) and (self.store_surr_interval > 0) and ((iteration % self.store_surr_interval == 0) or (last_it)):
             self.surrogate.surrogate_save() # Save surrogate model
