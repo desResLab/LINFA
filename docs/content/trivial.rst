@@ -22,3 +22,10 @@ Results in terms of loss profile, variational approximation and posterior predic
    :name: fig_trivial
 
    Results from the trivial model. Loss profile (top), posterior samples (center) and posterior predictive distribution (bottom).
+
+An implementation of this model can be found below.
+
+.. literalinclude:: /linfa/tests/test_linfa.py
+   :pyobject: linfa_test_suite.trivial_example
+
+   
