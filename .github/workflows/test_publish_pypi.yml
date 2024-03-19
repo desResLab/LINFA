@@ -44,7 +44,4 @@ jobs:
 
     - uses: codecov/codecov-action@v4
       with:
-        flags: unittests # optional
-        name: codecov-umbrella # optional
         token: ${{ secrets.CODECOV_TOKEN }} # required
-        verbose: true # optional (default = false)        

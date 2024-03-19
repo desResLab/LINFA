@@ -117,10 +117,10 @@ LINFA is designed as a general inference engine and allows the user to define cu
 
 Other Python modules and packages were found to provide an implementation of variational inference with a number of additional features. An incomplete list of these packages is reported below.
 
-- [PyMc](https://www.pymc.io/projects/examples/en/latest/variational_inference/variational_api_quickstart.html)[@abril2023pymc]
-- [BayesPy](https://bayespy.org/) (with an accompanying paper, [BayesPy: Variational Bayesian Inference in Python](https://arxiv.org/abs/1410.0870))[@luttinen2016bayespy].
-- [Pyro](https://docs.pyro.ai/en/stable/inference.html) (with [some examples](http://pyro.ai/examples/svi_part_i.html))[@bingham2019pyro].
-- [PyVBMC](https://acerbilab.github.io/pyvbmc/) has an accompanying [JOSS article](https://joss.theoj.org/papers/10.21105/joss.05428)[@huggins2023pyvbmc].
+- [PyMC](https://www.pymc.io/projects/examples/en/latest/variational_inference/variational_api_quickstart.html) [@abril2023pymc].
+- [BayesPy](https://bayespy.org/) [@luttinen2016bayespy] (with an accompanying paper, [BayesPy: Variational Bayesian Inference in Python](https://arxiv.org/abs/1410.0870)).
+- [Pyro](https://docs.pyro.ai/en/stable/inference.html) [@bingham2019pyro] (with [some examples](http://pyro.ai/examples/svi_part_i.html)).
+- [PyVBMC](https://acerbilab.github.io/pyvbmc/) [@huggins2023pyvbmc] with accompanying [JOSS article](https://joss.theoj.org/papers/10.21105/joss.05428).
 - Online notebooks (see this [example](https://predictivesciencelab.github.io/data-analytics-se/lecture28/hands-on-28.html)) which implement variational inference from scratch in `pytorch`.
 
 LINFA is based on normalizing flow transformations and therefore can infer non linear parameter dependence. It also provides the ability to adaptively train a surrogate model (NoFAS) which significantly reduces the computational cost of inference for the parameters of expensive computational models. Finally, LINFA provides an adaptive annealing algorithm (AdaAnn) which autonomously selects the appropriate annealing steps based on the current approximation of the posterior distribution.
