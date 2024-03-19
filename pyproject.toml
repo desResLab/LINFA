@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "linfa_vi"
-version = "1.4.3"
+version = "1.4.4"
 description = "A Python library for inference with normalizing flow and annealing"
 readme = "README.md"
 authors = [{ name = "resDesLab ", email = "daniele.schiavazzi@gmail.com" }]
@@ -21,7 +21,8 @@ dependencies = [
     "torch==1.13.1",
     "numpy",
     "matplotlib",
-    'tomli; python_version < "3.11"',    
+    'tomli; python_version < "3.11"',
+    "codecov",
 ]
 requires-python = ">=3.7"
 
