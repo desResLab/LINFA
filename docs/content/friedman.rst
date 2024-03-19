@@ -74,3 +74,8 @@ We impose a non-informative uniform prior :math:`p(\boldsymbol{\beta})` and, unl
    :name: fig_adaann_res
 
    Loss profile (left) and posterior marginal statistics for positive mode in the modified Friedman test case.
+
+An implementation of this model can be found below.
+
+.. literalinclude:: /../linfa/tests/test_linfa.py
+   :pyobject: linfa_test_suite.adaann_example

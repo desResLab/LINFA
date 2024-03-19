@@ -25,7 +25,7 @@ Results in terms of loss profile, variational approximation and posterior predic
 
 An implementation of this model can be found below.
 
-.. literalinclude:: /linfa/tests/test_linfa.py
+.. literalinclude:: /../linfa/tests/test_linfa.py
    :pyobject: linfa_test_suite.trivial_example
 
    

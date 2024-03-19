@@ -26,7 +26,7 @@ def plot_log(log_file,out_dir,fig_format='png',use_dark_mode=False):
   plt.ylabel('log loss',fontsize=fs)
   plt.gca().tick_params(axis='both', labelsize=fs)
   plt.tight_layout()
-  plt.savefig(out_dir+'log_plot.'+fig_format,bbox_inches='tight',dpi=200)
+  plt.savefig(os.path.join(out_dir,'log_plot.'+fig_format),bbox_inches='tight',dpi=200)
   plt.close()
 
 def plot_params(param_data,LL_data,idx1,idx2,out_dir,out_info,fig_format='png',use_dark_mode=False):  
@@ -57,7 +57,7 @@ def plot_params(param_data,LL_data,idx1,idx2,out_dir,out_info,fig_format='png',u
   plt.xlim([avg_1-3*std_1,avg_1+3*std_1])
   plt.ylim([avg_2-3*std_2,avg_2+3*std_2])
   plt.tight_layout()
-  plt.savefig(out_dir+'params_plot_' + out_info + '_'+str(idx1)+'_'+str(idx2)+'.'+fig_format,bbox_inches='tight',dpi=200)
+  plt.savefig(os.path.join(out_dir,'params_plot_' + out_info + '_'+str(idx1)+'_'+str(idx2)+'.'+fig_format),bbox_inches='tight',dpi=200)
   plt.close()
 
 def plot_outputs(sample_file,obs_file,idx1,idx2,out_dir,out_info,fig_format='png',use_dark_mode=False):  
@@ -86,7 +86,7 @@ def plot_outputs(sample_file,obs_file,idx1,idx2,out_dir,out_info,fig_format='png
   plt.xlim([avg_1-3*std_1,avg_1+3*std_1])
   plt.ylim([avg_2-3*std_2,avg_2+3*std_2])
   plt.tight_layout()
-  plt.savefig(out_dir+'data_plot_' + out_info + '_'+str(idx1)+'_'+str(idx2)+'.'+fig_format,bbox_inches='tight',dpi=200)
+  plt.savefig(os.path.join(out_dir,'data_plot_' + out_info + '_'+str(idx1)+'_'+str(idx2)+'.'+fig_format),bbox_inches='tight',dpi=200)
   plt.close()
 
 # =========
@@ -108,7 +108,6 @@ if __name__ == '__main__':
                       help='Folder with experiment results',
                       metavar='',
                       dest='folder_name')
-
 
   # folder name
   parser.add_argument('-n', '--name',
@@ -159,13 +158,13 @@ if __name__ == '__main__':
   args = parser.parse_args()
 
   # Set file name/path
-  out_dir     = args.folder_name + args.exp_name + '/'
-  log_file    = out_dir + 'log.txt'
-  sample_file = out_dir + args.exp_name + '_samples_'    + str(args.step_num)
-  param_file  = out_dir + args.exp_name + '_params_'     + str(args.step_num)
-  LL_file     = out_dir + args.exp_name + '_logdensity_' + str(args.step_num)
-  output_file = out_dir + args.exp_name + '_outputs_'    + str(args.step_num)
-  obs_file    = out_dir + args.exp_name + '_data'
+  out_dir     = os.path.join(args.folder_name,args.exp_name)
+  log_file    = os.path.join(out_dir,'log.txt')
+  sample_file = os.path.join(out_dir,args.exp_name + '_samples_'    + str(args.step_num))
+  param_file  = os.path.join(out_dir,args.exp_name + '_params_'     + str(args.step_num))
+  LL_file     = os.path.join(out_dir,args.exp_name + '_logdensity_' + str(args.step_num))
+  output_file = os.path.join(out_dir,args.exp_name + '_outputs_'    + str(args.step_num))
+  obs_file    = os.path.join(out_dir,args.exp_name + '_data')
   out_info    = args.exp_name + '_' + str(args.step_num)
 
   # Plot loss profile
