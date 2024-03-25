@@ -36,10 +36,11 @@ jobs:
         it=100 coverage run -m unittest linfa.linfa_test_suite.rcr_example
         it=100 coverage run -m unittest linfa.linfa_test_suite.adaann_example
 
-    - uses: codecov/codecov-action@v4
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v4.0.1
       with:
-        flags: unittests # optional
-        token: ${{ secrets.CODECOV_TOKEN }} # required        
+        token: ${{ secrets.CODECOV_TOKEN }}
+        slug: desResLab/LINFA
 
     - name: Publish to PyPI
       # if: startsWith(github.ref, 'refs/tags')      
