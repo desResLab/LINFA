@@ -21,6 +21,7 @@ dependencies = [
     "torch==1.13.1",
     "numpy",
     "matplotlib",
+    "ipython",
     'tomli; python_version < "3.11"',
     "codecov",
 ]

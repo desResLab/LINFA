@@ -96,7 +96,7 @@ In addition you need to specify a list of options as discussed in the [documenta
 
 ### Tutorial
 
-Two step-by-step tutorials ([tutorial 1](tutorial/tutorial_linfa_2d.ipynb) and [tutorial 2](tutorial/tutorial_linfa_3d.ipynb)) are also available which will guide you through the an inference problem for a ballistic simulation.
+Two step-by-step tutorials ([tutorial 1](docs/content/tutorial/tutorial_linfa_2d.ipynb) and [tutorial 2](docs/content/tutorial/tutorial_linfa_3d.ipynb)) are also available which will guide you through an inference problem for a ballistic simulation.
 
 ### Contributing
 
