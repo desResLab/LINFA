@@ -28,18 +28,18 @@ jobs:
         python -m build
         pip install -e .
 
+    - name: Run tests
+      run: |      
+        it=100 coverage run -m unittest linfa.linfa_test_suite.trivial_example
+        it=100 coverage run -m unittest linfa.linfa_test_suite.highdim_example
+        it=100 coverage run -m unittest linfa.linfa_test_suite.rc_example
+        it=100 coverage run -m unittest linfa.linfa_test_suite.rcr_example
+        it=100 coverage run -m unittest linfa.linfa_test_suite.adaann_example
+
     - uses: codecov/codecov-action@v4
       with:
         flags: unittests # optional
-        token: ${{ secrets.CODECOV_TOKEN }} # required
-
-    - name: Run tests
-      run: |      
-        it=100 python3 -m unittest linfa.linfa_test_suite.trivial_example
-        it=100 python3 -m unittest linfa.linfa_test_suite.highdim_example
-        it=100 python3 -m unittest linfa.linfa_test_suite.rc_example
-        it=100 python3 -m unittest linfa.linfa_test_suite.rcr_example
-        it=100 python3 -m unittest linfa.linfa_test_suite.adaann_example
+        token: ${{ secrets.CODECOV_TOKEN }} # required        
 
     - name: Publish to PyPI
       # if: startsWith(github.ref, 'refs/tags')      
