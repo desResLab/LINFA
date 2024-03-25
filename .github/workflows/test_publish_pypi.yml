@@ -28,6 +28,11 @@ jobs:
         python -m build
         pip install -e .
 
+    - uses: codecov/codecov-action@v4
+      with:
+        flags: unittests # optional
+        token: ${{ secrets.CODECOV_TOKEN }} # required
+
     - name: Run tests
       run: |      
         it=100 python3 -m unittest linfa.linfa_test_suite.trivial_example
@@ -42,6 +47,3 @@ jobs:
       with:
         password: ${{ secrets.PYPI_API_TOKEN }}
 
-    - uses: codecov/codecov-action@v4
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }} # required
