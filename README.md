@@ -63,7 +63,7 @@ where `NAME` need to be replaced by
 
 If used with adaptive annealing (AdaAnn) the `it=100` option runs 100 iterations only at `T=1` (i.e., to approximate the untempered posterior distribution). Therefore the total number of iterations is generally higher than specified through the `it` option.
 
-At regular intervals set by the parameter `experiment.save_interval` LINFA writes a few results files. The sub-string `NAME` refers to the experiment name specified in the `experiment.name` variable, and `IT` indicates the iteration at which the file is written. The results files are
+At regular intervals, set by the parameter `experiment.save_interval`, LINFA writes a few results files. The sub-string `NAME` refers to the experiment name specified in the `experiment.name` variable, and `IT` indicates the iteration at which the file is written. The results files are
 
 * `log.txt` contains the log profile information, i.e.
   * Iteration number.
@@ -82,6 +82,8 @@ A post processing script is also available to plot all results. To run it type
 python -m linfa.plot_res -n NAME -i IT -f FOLDER
 ```
 where `NAME` and `IT` are again the experiment name and iteration number corresponding to the result file of interest, while `FOLDER` is the name of the folder with the results of the inference task are kept. Also the file format can be specified throught the `-p` option (options: `pdf`, `png`, `jpg`) and images with dark background can be generated using the `-d` flag. 
+
+The coverage resulting from these tests can be found at [this link](https://app.codecov.io/gh/desResLab/LINFA)
 
 ### Usage
 
