@@ -1,5 +1,7 @@
 torch==1.13.1
-numpy==1.19.5
+numpy
 sphinx
 sphinx-rtd-theme
 sphinxcontrib-bibtex
+nbsphinx
+ipython
