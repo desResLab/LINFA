@@ -41,7 +41,6 @@ header-includes:
 - '\usepackage{booktabs}'
 - '\usepackage{caption}'
 - '\usepackage{unicode-math}'
-- '\usepackage{bm}'
 ---
 
 # Summary
@@ -152,23 +151,23 @@ NSF CAREER grant #1942662.
 
 ### Variational inference with normalizing flow
 
-Consider the problem of estimating (in a Bayesian sense) the parameters $\bm{z}\in\bm{\mathcal{Z}}$ of a physics-based or statistical model
+Consider the problem of estimating (in a Bayesian sense) the parameters $\symbfit{z}\in\symbfit{\mathcal{Z}}$ of a physics-based or statistical model
 $$
-\bm{x} = \bm{f}(\bm{z}) + \bm{\varepsilon},
+\symbfit{x} = \symbfit{f}(\symbfit{z}) + \symbfit{\varepsilon},
 $$
-from the observations $\bm{x}\in\bm{\mathcal{X}}$ and a known statistical characterization of the error $\bm{\varepsilon}$.
-We tackle this problem with variational inference and normalizing flow. A normalizing flow (NF) is a nonlinear transformation $F:\mathbb{R}^{d}\times \bm{\Lambda} \to \mathbb{R}^{d}$ designed to map an easy-to-sample \emph{base} distribution $q_{0}(\bm{z}_{0})$ into a close approximation $q_{K}(\bm{z}_{K})$ of a desired target posterior density $p(\bm{z}|\bm{x})$. This transformation can be determined by composing $K$ bijections 
+from the observations $\symbfit{x}\in\symbfit{\mathcal{X}}$ and a known statistical characterization of the error $\symbfit{\varepsilon}$.
+We tackle this problem with variational inference and normalizing flow. A normalizing flow (NF) is a nonlinear transformation $F:\mathbb{R}^{d}\times \symbfit{\Lambda} \to \mathbb{R}^{d}$ designed to map an easy-to-sample \emph{base} distribution $q_{0}(\symbfit{z}_{0})$ into a close approximation $q_{K}(\symbfit{z}_{K})$ of a desired target posterior density $p(\symbfit{z}|\symbfit{x})$. This transformation can be determined by composing $K$ bijections 
 $$
-\bm{z}_{K} = F(\bm{z}_{0}) = F_{K} \circ F_{K-1} \circ \cdots \circ F_{k} \circ \cdots \circ F_{1}(\bm{z}_{0}),
+\symbfit{z}_{K} = F(\symbfit{z}_{0}) = F_{K} \circ F_{K-1} \circ \cdots \circ F_{k} \circ \cdots \circ F_{1}(\symbfit{z}_{0}),
 $$
 and evaluating the transformed density through the change of variable formula (see @villani2009optimal).
 
-In the context of variational inference, we seek to determine an _optimal_ set of parameters $\bm{\lambda}\in\bm{\Lambda}$ so that $q_{K}(\bm{z}_{K})\approx p(\bm{z}|\bm{x})$. Given observations $\bm{x}\in\mathcal{\bm{X}}$, a likelihood function $l_{\bm{z}}(\bm{x})$ (informed by the distribution of the error $\bm{\varepsilon}$) and prior $p(\bm{z})$, a NF-based approximation $q_K(\bm{z})$ of the posterior distribution $p(\bm{z}|\bm{x})$ can be computed by maximizing the lower bound to the log marginal likelihood $\log p(\bm{x})$ (the so-called _evidence lower bound_ or ELBO), or, equivalently, by minimizing a _free energy bound_ (see, e.g., @rezende2015variational).
+In the context of variational inference, we seek to determine an _optimal_ set of parameters $\symbfit{\lambda}\in\symbfit{\Lambda}$ so that $q_{K}(\symbfit{z}_{K})\approx p(\symbfit{z}|\symbfit{x})$. Given observations $\symbfit{x}\in\mathcal{\symbfit{X}}$, a likelihood function $l_{\symbfit{z}}(\symbfit{x})$ (informed by the distribution of the error $\symbfit{\varepsilon}$) and prior $p(\symbfit{z})$, a NF-based approximation $q_K(\symbfit{z})$ of the posterior distribution $p(\symbfit{z}|\symbfit{x})$ can be computed by maximizing the lower bound to the log marginal likelihood $\log p(\symbfit{x})$ (the so-called _evidence lower bound_ or ELBO), or, equivalently, by minimizing a _free energy bound_ (see, e.g., @rezende2015variational).
 
 \begin{equation}\label{equ:ELBO}
 \begin{split}
-\mathcal{F}(\bm x)& = \mathbb{E}_{q_K(\bm z_K)}\left[\log q_K(\bm z_K) - \log p(\bm x, \bm z_K)\right]\\
-& = \mathbb{E}_{q_0(\bm z_0)}[\log q_0(\bm z_0)] - \mathbb{E}_{q_0(\bm z_0)}[\log p(\bm x, \bm z_K)] - \mathbb{E}_{q_0(\bm z_0)}\left[\sum_{k=1}^K \log \left|\det \frac{\partial \bm z_k}{\partial \bm z_{k-1}}\right|\right].
+\mathcal{F}(\symbfit x)& = \mathbb{E}_{q_K(\symbfit z_K)}\left[\log q_K(\symbfit z_K) - \log p(\symbfit x, \symbfit z_K)\right]\\
+& = \mathbb{E}_{q_0(\symbfit z_0)}[\log q_0(\symbfit z_0)] - \mathbb{E}_{q_0(\symbfit z_0)}[\log p(\symbfit x, \symbfit z_K)] - \mathbb{E}_{q_0(\symbfit z_0)}\left[\sum_{k=1}^K \log \left|\det \frac{\partial \symbfit z_k}{\partial \symbfit z_{k-1}}\right|\right].
 \end{split}
 \end{equation}
 
@@ -176,34 +175,34 @@ For computational convenience, normalizing flow transformations are selected to 
 
 ### MAF and RealNVP
 
-LINFA implements two widely used normalizing flow formulations, MAF [@papamakarios2018masked] and RealNVP [@dinh2016density]. MAF belongs to the class of _autoregressive_ normalizing flows. Given the latent variable $\bm{z} = (z_{1},z_{2},\dots,z_{d})$, it assumes $p(z_i|z_{1},\dots,z_{i-1}) = \phi[(z_i - \mu_i) / e^{\alpha_i}]$, where $\phi$ is the standard normal distribution, $\mu_i = f_{\mu_i}(z_{1},\dots,z_{i-1})$, $\alpha_i = f_{\alpha_i}(z_{1},\dots,z_{i-1}),\,i=1,2,\dots,d$, and $f_{\mu_i}$ and $f_{\alpha_i}$ are masked autoencoder neural networks (MADE, @germain2015made). In a MADE autoencoder the network connectivities are multiplied by Boolean masks so the input-output relation maintains a lower triangular structure, making the computation of the Jacobian determinant particularly simple. MAF transformations are then composed of multiple MADE layers, possibly interleaved by batch normalization layers [@ioffe2015batch], typically used to add stability during training and increase network accuracy [@papamakarios2018masked].
+LINFA implements two widely used normalizing flow formulations, MAF [@papamakarios2018masked] and RealNVP [@dinh2016density]. MAF belongs to the class of _autoregressive_ normalizing flows. Given the latent variable $\symbfit{z} = (z_{1},z_{2},\dots,z_{d})$, it assumes $p(z_i|z_{1},\dots,z_{i-1}) = \phi[(z_i - \mu_i) / e^{\alpha_i}]$, where $\phi$ is the standard normal distribution, $\mu_i = f_{\mu_i}(z_{1},\dots,z_{i-1})$, $\alpha_i = f_{\alpha_i}(z_{1},\dots,z_{i-1}),\,i=1,2,\dots,d$, and $f_{\mu_i}$ and $f_{\alpha_i}$ are masked autoencoder neural networks (MADE, @germain2015made). In a MADE autoencoder the network connectivities are multiplied by Boolean masks so the input-output relation maintains a lower triangular structure, making the computation of the Jacobian determinant particularly simple. MAF transformations are then composed of multiple MADE layers, possibly interleaved by batch normalization layers [@ioffe2015batch], typically used to add stability during training and increase network accuracy [@papamakarios2018masked].
 
-RealNVP is another widely used flow where, at each layer the first $d'$ variables are left unaltered while the remaining $d-d'$ are subject to an affine transformation of the form $\widehat{\bm{z}}_{d'+1:d} = \bm{z}_{d'+1:d}\,\odot\,e^{\bm{\alpha}} + \bm{\mu}$, where $\bm{\mu} = f_{\mu}(\bm{z}_{1:d'})$ and $\bm{\alpha} = f_{\alpha}(\bm{z}_{d'+1:d})$ are MADE autoencoders. In this context, MAF could be seen as a generalization of RealNVP by setting $\mu_i=\alpha_i=0$ for $i\leq d'$ [@papamakarios2018masked].
+RealNVP is another widely used flow where, at each layer the first $d'$ variables are left unaltered while the remaining $d-d'$ are subject to an affine transformation of the form $\widehat{\symbfit{z}}_{d'+1:d} = \symbfit{z}_{d'+1:d}\,\odot\,e^{\symbfit{\alpha}} + \symbfit{\mu}$, where $\symbfit{\mu} = f_{\mu}(\symbfit{z}_{1:d'})$ and $\symbfit{\alpha} = f_{\alpha}(\symbfit{z}_{d'+1:d})$ are MADE autoencoders. In this context, MAF could be seen as a generalization of RealNVP by setting $\mu_i=\alpha_i=0$ for $i\leq d'$ [@papamakarios2018masked].
 
 ### Normalizing flow with adaptive surrogate (NoFAS)
 
-LINFA is designed to accommodate black-box models $\bm{f}: \bm{\mathcal{Z}} \to \bm{\mathcal{X}}$ between the random inputs $\bm{z} = (z_1, z_2, \cdots, z_d)^T \in \bm{\mathcal{Z}}$ and the outputs $(x_1, x_2,\cdots,x_m)^T \in \bm{\mathcal{X}}$, and assumes $n$ observations $\bm x = \{\bm x_i\}_{i=1}^n \subset \bm{\mathcal{X}}$ to be available. Our goal is to infer $\bm z$ and to quantify its uncertainty given $\bm{x}$. We embrace a variational Bayesian paradigm and sample from the posterior distribution $p(\bm z\vert \bm x)\propto \ell_{\bm z}(\bm x,\bm{f})\,p(\bm z)$, with prior $p(\bm z)$ via normalizing flows. 
+LINFA is designed to accommodate black-box models $\symbfit{f}: \symbfit{\mathcal{Z}} \to \symbfit{\mathcal{X}}$ between the random inputs $\symbfit{z} = (z_1, z_2, \cdots, z_d)^T \in \symbfit{\mathcal{Z}}$ and the outputs $(x_1, x_2,\cdots,x_m)^T \in \symbfit{\mathcal{X}}$, and assumes $n$ observations $\symbfit x = \{\symbfit x_i\}_{i=1}^n \subset \symbfit{\mathcal{X}}$ to be available. Our goal is to infer $\symbfit z$ and to quantify its uncertainty given $\symbfit{x}$. We embrace a variational Bayesian paradigm and sample from the posterior distribution $p(\symbfit z\vert \symbfit x)\propto \ell_{\symbfit z}(\symbfit x,\symbfit{f})\,p(\symbfit z)$, with prior $p(\symbfit z)$ via normalizing flows. 
 
-This requires the evaluation of the gradient of the ELBO \eqref{equ:ELBO} with respect to the NF parameters $\bm{\lambda}$, replacing $p(\bm x, \bm z_K)$ with $p(\bm x\vert\bm z_K)\,p(\bm z)$ $=\ell_{\bm z_K}(\bm{x},\bm{f})\,p(\bm z)$, and approximating the expectations with their MC estimates. However, the likelihood function needs to be evaluated at every MC realization, which can be costly if the model $\bm{f}(\bm{z})$ is computationally expensive. In addition, automatic differentiation through a legacy (e.g. physics-based) solver may be an impractical, time-consuming, or require the development of an adjoint solver.
+This requires the evaluation of the gradient of the ELBO \eqref{equ:ELBO} with respect to the NF parameters $\symbfit{\lambda}$, replacing $p(\symbfit x, \symbfit z_K)$ with $p(\symbfit x\vert\symbfit z_K)\,p(\symbfit z)$ $=\ell_{\symbfit z_K}(\symbfit{x},\symbfit{f})\,p(\symbfit z)$, and approximating the expectations with their MC estimates. However, the likelihood function needs to be evaluated at every MC realization, which can be costly if the model $\symbfit{f}(\symbfit{z})$ is computationally expensive. In addition, automatic differentiation through a legacy (e.g. physics-based) solver may be an impractical, time-consuming, or require the development of an adjoint solver.
 
-Our solution is to replace the model $\bm{f}$ with a computationally inexpensive surrogate $\widehat{\bm{f}}: \bm{\mathcal{Z}} \times \bm{\mathcal{W}} \to \bm{\mathcal{X}}$ parameterized by the weigths $\bm{w} \in \bm{\mathcal{W}}$, whose derivatives can be obtained at a relatively low computational cost, but intrinsic bias in the selected surrogate formulation, a limited number of training examples, and locally optimal $\bm{w}$ can compromise the accuracy of $\widehat{\bm{f}}$.
+Our solution is to replace the model $\symbfit{f}$ with a computationally inexpensive surrogate $\widehat{\symbfit{f}}: \symbfit{\mathcal{Z}} \times \symbfit{\mathcal{W}} \to \symbfit{\mathcal{X}}$ parameterized by the weigths $\symbfit{w} \in \symbfit{\mathcal{W}}$, whose derivatives can be obtained at a relatively low computational cost, but intrinsic bias in the selected surrogate formulation, a limited number of training examples, and locally optimal $\symbfit{w}$ can compromise the accuracy of $\widehat{\symbfit{f}}$.
 
-To resolve these issues, LINFA implements NoFAS, which updates the surrogate model adaptively by smartly weighting the samples of $\bm{z}$ from NF thanks to a \emph{memory-aware} loss function.
+To resolve these issues, LINFA implements NoFAS, which updates the surrogate model adaptively by smartly weighting the samples of $\symbfit{z}$ from NF thanks to a \emph{memory-aware} loss function.
 Once a newly updated surrogate is obtained, the likelihood function is updated, leading to a new posterior distribution that will be approximated by VI-NF, producing, in turn, new samples for the next surrogate model update, and so on. Additional details can be found in @wang2022variational.
 
 ### Adaptive Annealing
 
-Annealing is a technique to parametrically smooth a target density to improve sampling efficiency and accuracy during inference. In the discrete case, this is achieved by incrementing an _inverse temperature_ $t_{k}$ and setting $p_k(\bm{z},\bm{x}) = p^{t_k}(\bm{z},\bm{x}),\,\,\text{for } k=0,\dots,K$, where $0 < t_{0} < \cdots < t_{K} \le 1$. The result of exponentiation produces a smooth unimodal distribution for a sufficiently small $t_0$, recovering the target density as $t_{k}$ approaches 1. In other words, annealing provides a continuous deformation from an easier to approximate unimodal distribution to a desired target density.
+Annealing is a technique to parametrically smooth a target density to improve sampling efficiency and accuracy during inference. In the discrete case, this is achieved by incrementing an _inverse temperature_ $t_{k}$ and setting $p_k(\symbfit{z},\symbfit{x}) = p^{t_k}(\symbfit{z},\symbfit{x}),\,\,\text{for } k=0,\dots,K$, where $0 < t_{0} < \cdots < t_{K} \le 1$. The result of exponentiation produces a smooth unimodal distribution for a sufficiently small $t_0$, recovering the target density as $t_{k}$ approaches 1. In other words, annealing provides a continuous deformation from an easier to approximate unimodal distribution to a desired target density.
 
 A linear annealing scheduler with fixed temperature increments is often used in practice (see, e.g., @rezende2015variational), where $t_j=t_{0} + j (1-t_{0})/K$ for $j=0,\ldots,K$ with constant increments $\epsilon = (1-t_{0})/K$. Intuitively, small temperature changes are desirable to carefully explore the parameter spaces at the beginning of the annealing process, whereas larger changes can be taken as $t_{k}$ increases, after annealing has helped to capture important features of the target distribution (e.g., locating all the relevant modes).
 
 The AdaAnn scheduler determines the increment $\epsilon_{k}$ that approximately produces a pre-defined change in the KL divergence between two distributions annealed at~$t_{k}$ and $t_{k+1}=t_{k}+\epsilon_{k}$, respectively. Letting the KL divergence equal a constant $\tau^2/2$, where $\tau$ is referred to as the \emph{KL tolerance}, the step size $\epsilon_k$ becomes 
 
 \begin{equation}\label{equ:adaann}
-\epsilon_k = \tau/ \sqrt{\mathbb{V}_{p^{t_k}}[\log p(\bm z,\bm{x})]}. 
+\epsilon_k = \tau/ \sqrt{\mathbb{V}_{p^{t_k}}[\log p(\symbfit z,\symbfit{x})]}. 
 \end{equation}
 
-The denominator is large when the support of the annealed distribution $p^{t_{k}}(\bm{z},\bm{x})$ is wider than the support of the target $p(\bm{z},\bm{x})$, and progressively reduces with increasing $t_{k}$. Further detail on the derivation of the expression for $\epsilon_{k}$ can be found in @cobian2023adaann.
+The denominator is large when the support of the annealed distribution $p^{t_{k}}(\symbfit{z},\symbfit{x})$ is wider than the support of the target $p(\symbfit{z},\symbfit{x})$, and progressively reduces with increasing $t_{k}$. Further detail on the derivation of the expression for $\epsilon_{k}$ can be found in @cobian2023adaann.
 
 ## Numerical benchmarks
 
@@ -211,15 +210,15 @@ The denominator is large when the support of the annealed distribution $p^{t_{k}
 
 A model $f:\mathbb{R}^{2}\to \mathbb{R}^{2}$ is chosen in this experiment having the closed-form expression
 $$
-f(\bm z) = f(z_{1},z_{2}) = (z_1^3 / 10 + \exp(z_2 / 3), z_1^3 / 10 - \exp(z_2 / 3))^T.
+f(\symbfit z) = f(z_{1},z_{2}) = (z_1^3 / 10 + \exp(z_2 / 3), z_1^3 / 10 - \exp(z_2 / 3))^T.
 $$
-Observations $\bm{x}$ are generated as
+Observations $\symbfit{x}$ are generated as
 
 \begin{equation}\label{eqn:exp1}
-\bm{x} = \bm{x}^{*} + 0.05\,|\bm{x}^{*}|\,\odot\bm{x}_{0},
+\symbfit{x} = \symbfit{x}^{*} + 0.05\,|\symbfit{x}^{*}|\,\odot\symbfit{x}_{0},
 \end{equation}
 
-where $\bm{x}_{0} \sim \mathcal{N}(0,\bm I_2)$ and $\odot$ is the Hadamard product. We set the _true_ model parameters at $\bm{z}^{*} = (3, 5)^T$, with output $\bm{x}^{*} = f(\bm z^{*})=(7.99, -2.59)^{T}$, and simulate 50 sets of observations from \eqref{eqn:exp1}. The likelihood of $\bm z$ given $\bm{x}$ is assumed Gaussian, and we adopt a noninformative uniform prior $p(\bm z)$. We allocate a budget of $4\times4=16$ model solutions to the pre-grid and use the rest to adaptively calibrate $\widehat{f}$ using $2$ samples every $1000$ normalizing flow iterations.
+where $\symbfit{x}_{0} \sim \mathcal{N}(0,\symbfit I_2)$ and $\odot$ is the Hadamard product. We set the _true_ model parameters at $\symbfit{z}^{*} = (3, 5)^T$, with output $\symbfit{x}^{*} = f(\symbfit z^{*})=(7.99, -2.59)^{T}$, and simulate 50 sets of observations from \eqref{eqn:exp1}. The likelihood of $\symbfit z$ given $\symbfit{x}$ is assumed Gaussian, and we adopt a noninformative uniform prior $p(\symbfit z)$. We allocate a budget of $4\times4=16$ model solutions to the pre-grid and use the rest to adaptively calibrate $\widehat{f}$ using $2$ samples every $1000$ normalizing flow iterations.
 
 Results in terms of loss profile, variational approximation, and posterior predictive distribution are shown in \autoref{fig:trivial}.
 
@@ -232,11 +231,11 @@ Results in terms of loss profile, variational approximation, and posterior predi
 
 We consider a map $f: \mathbb{R}^{5}\to\mathbb{R}^{4}$ expressed as
 $$
-f(\bm{z}) = \bm{A}\,\bm{g}(e^{\bm{z}}),
+f(\symbfit{z}) = \symbfit{A}\,\symbfit{g}(e^{\symbfit{z}}),
 $$
-where $g_i(\bm{r}) = (2\cdot |2\,a_{i} - 1| + r_i) / (1 + r_i)$ with $r_i > 0$ for $i=1,\dots,5$ is the _Sobol'_ function [@sobol2003theorems] and $\bm{A}$ is a $4\times5$ matrix. We also set
+where $g_i(\symbfit{r}) = (2\cdot |2\,a_{i} - 1| + r_i) / (1 + r_i)$ with $r_i > 0$ for $i=1,\dots,5$ is the _Sobol'_ function [@sobol2003theorems] and $\symbfit{A}$ is a $4\times5$ matrix. We also set
 $$
-\bm{a} = (0.084, 0.229, 0.913, 0.152, 0.826)^T \text{ and }\bm{A} = \frac{1}{\sqrt{2}}
+\symbfit{a} = (0.084, 0.229, 0.913, 0.152, 0.826)^T \text{ and }\symbfit{A} = \frac{1}{\sqrt{2}}
 \begin{pmatrix}
 1 & 1 & 0 & 0 & 0\\
 0 & 1 & 1 & 0 & 0\\
@@ -244,7 +243,7 @@ $$
 0 & 0 & 0 & 1 & 1\\
 \end{pmatrix}.
 $$
-The true parameter vector is $\bm{z}^{*} = (2.75,$ $-1.5, 0.25,$ $-2.5,$ $1.75)^T$. While the Sobol' function is bijective and analytic, $f$ is over-parameterized and non identifiabile. This is also confirmed by the fact that the curve segment $\gamma(t) = g^{-1}(g(\bm z^*) + \bm v\,t)\in Z$ gives the same model solution as $\bm{x}^{*} = f(\bm{z}^{*}) = f(\gamma(t)) \approx (1.4910,$ $1.6650,$ $1.8715,$ $1.7011)^T$ for $t \in (-0.0153, 0.0686]$, where $\bm v = (1,-1,1,-1,1)^T$. This is consistent with the one-dimensional null-space of the matrix $\bm A$. We also generate synthetic observations from the Gaussian distribution $\bm{x} = \bm{x}^{*} + 0.01\cdot |\bm{x}^{*}| \odot \bm{x}_{0}$ with $\bm{x}_{0} \sim \mathcal{N}(0,\bm I_5)$, and results shown in \autoref{fig:highdim}.
+The true parameter vector is $\symbfit{z}^{*} = (2.75,$ $-1.5, 0.25,$ $-2.5,$ $1.75)^T$. While the Sobol' function is bijective and analytic, $f$ is over-parameterized and non identifiabile. This is also confirmed by the fact that the curve segment $\gamma(t) = g^{-1}(g(\symbfit z^*) + \symbfit v\,t)\in Z$ gives the same model solution as $\symbfit{x}^{*} = f(\symbfit{z}^{*}) = f(\gamma(t)) \approx (1.4910,$ $1.6650,$ $1.8715,$ $1.7011)^T$ for $t \in (-0.0153, 0.0686]$, where $\symbfit v = (1,-1,1,-1,1)^T$. This is consistent with the one-dimensional null-space of the matrix $\symbfit A$. We also generate synthetic observations from the Gaussian distribution $\symbfit{x} = \symbfit{x}^{*} + 0.01\cdot |\symbfit{x}^{*}| \odot \symbfit{x}_{0}$ with $\symbfit{x}_{0} \sim \mathcal{N}(0,\symbfit I_5)$, and results shown in \autoref{fig:highdim}.
 
 ![](../docs/content/imgs/highdim/log_plot-1.png){height=430px}![](../docs/content/imgs/highdim/data_plot_highdim_25000_0_2-1.png){height=430px}![](../docs/content/imgs/highdim/data_plot_highdim_25000_2_3-1.png){height=430px}
 
@@ -261,7 +260,7 @@ The two-element Windkessel model (often referred to as the _RC_ model) is the si
 Q_{d} = \frac{P_{p}-P_{d}}{R},\quad \frac{d P_{p}}{d t} = \frac{Q_{p} - Q_{d}}{C},
 \end{equation}
 
-where $Q_{p}$ is the flow entering the RC system and $Q_{d}$ is the distal flow. Synthetic observations are generated by adding Gaussian noise to the true model solution $\bm{x}^{*}=(x^{*}_{1},x^{*}_{2},x^{*}_{3})=(P_{p,\text{min}},$ $P_{p,\text{max}},$ $P_{p,\text{avg}})= (78.28, 101.12,  85.75)$, i.e., $\bm{x}$ follows a multivariate Gaussian distribution with mean $\bm{x}^{*}$ and a diagonal covariance matrix with entries $0.05\,x_{i}^{*}$, where $i=1,2,3$ corresponds to the maximum, minimum, and average pressures, respectively. The aim is to quantify the uncertainty in the RC model parameters given 50 repeated pressure measurements. We imposed a non-informative prior on $R$ and $C$. Results are shown in \autoref{fig:rc_res}.
+where $Q_{p}$ is the flow entering the RC system and $Q_{d}$ is the distal flow. Synthetic observations are generated by adding Gaussian noise to the true model solution $\symbfit{x}^{*}=(x^{*}_{1},x^{*}_{2},x^{*}_{3})=(P_{p,\text{min}},$ $P_{p,\text{max}},$ $P_{p,\text{avg}})= (78.28, 101.12,  85.75)$, i.e., $\symbfit{x}$ follows a multivariate Gaussian distribution with mean $\symbfit{x}^{*}$ and a diagonal covariance matrix with entries $0.05\,x_{i}^{*}$, where $i=1,2,3$ corresponds to the maximum, minimum, and average pressures, respectively. The aim is to quantify the uncertainty in the RC model parameters given 50 repeated pressure measurements. We imposed a non-informative prior on $R$ and $C$. Results are shown in \autoref{fig:rc_res}.
 
 ![](../docs/content/imgs/rc/log_plot_rc-1.png){height=420px}![](../docs/content/imgs/rc/target_plot_rc-1.png){height=420px}![](../docs/content/imgs/rc/sample_plot_rc_0_1-1.png){height=420px} 
 \begin{figure}
@@ -276,7 +275,7 @@ The output consists of the maximum, minimum, and average values of the proximal 
 $$
 Q_{p} = \frac{P_{p} - P_{c}}{R_{p}},\quad Q_{d} = \frac{P_{c}-P_{d}}{R_{d}},\quad \frac{d\, P_{c}}{d\,t} = \frac{Q_{p}-Q_{d}}{C},
 $$
-where the distal pressure is set to $P_{d}=55$ mmHg. Synthetic observations are generated from $N(\bm\mu, \bm\Sigma)$, where $\mu=(f_{1}(\bm{z}^{*}),f_{2}(\bm{z}^{*}),f_{3}(\bm{z}^{*}))^T$ = $(P_{p,\text{min}}, P_{p,\text{max}}, P_{p,\text{ave}})^T$ = $(100.96,148.02,116.50)^T$ and $\bm\Sigma$ is a diagonal matrix with entries $(5.05, 7.40, 5.83)^T$. The budgeted number of true model solutions is $216$; the fixed surrogate model is evaluated on a $6\times 6\times 6 = 216$ pre-grid while the adaptive surrogate is evaluated with a pre-grid of size $4\times 4\times 4 = 64$ and the other 152 evaluations are adaptively selected. 
+where the distal pressure is set to $P_{d}=55$ mmHg. Synthetic observations are generated from $N(\symbfit\mu, \symbfit\Sigma)$, where $\mu=(f_{1}(\symbfit{z}^{*}),f_{2}(\symbfit{z}^{*}),f_{3}(\symbfit{z}^{*}))^T$ = $(P_{p,\text{min}}, P_{p,\text{max}}, P_{p,\text{ave}})^T$ = $(100.96,148.02,116.50)^T$ and $\symbfit\Sigma$ is a diagonal matrix with entries $(5.05, 7.40, 5.83)^T$. The budgeted number of true model solutions is $216$; the fixed surrogate model is evaluated on a $6\times 6\times 6 = 216$ pre-grid while the adaptive surrogate is evaluated with a pre-grid of size $4\times 4\times 4 = 64$ and the other 152 evaluations are adaptively selected. 
 
 This example also demonstrates how NoFAS can be combined with annealing for improved convergence. The results in \autoref{fig:rcr_res} are generated using the AdaAnn adaptive annealing scheduler with intial inverse temperature $t_{0}=0.05$, KL tolerance $\tau=0.01$ and a batch size of 100 samples. The number of parameter updates is set to 500, 5000 and 5 for $t_{0}$, $t_{1}$ and $t_{0}<t<t_{1}$, respectively and 1000 Monte Carlo realizations are used to evaluate the denominator in equation \eqref{equ:adaann}. The posterior samples capture well the nonlinear correlation among the parameters and generate a fairly accurate posterior predictive distribution that overlaps with the observations. Additional details can be found in @wang2022variational and @cobian2023adaann.
 
