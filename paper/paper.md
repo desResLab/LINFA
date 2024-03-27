@@ -41,6 +41,7 @@ header-includes: |
   - '\usepackage{booktabs}'
   - '\usepackage{caption}'
   - '\usepackage{bm}'
+  - '\usepackage{amsmath, amsthm, amssymb, amsfonts}'
 ---
 
 # Summary
