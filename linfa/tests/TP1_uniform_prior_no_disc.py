@@ -170,13 +170,13 @@ def run_test():
         # Eval log prior
         for loopA, param_pairs in enumerate(phys_inputs):
             if param_pairs[0] < low[0]:
-                l1 = 0
+                l1 = 1
             elif param_pairs[0] > high[0]:
-                l1 = 0
+                l1 = 1
             elif param_pairs[1] < low[1]:
-                l1 = 0
+                l1 = 1
             elif param_pairs[1] > high[1]:
-                l1 = 0
+                l1 = 1
             else:
                 l1 = -np.log((high[0] - low[0])*(high[1] - low[1]))
             # Return

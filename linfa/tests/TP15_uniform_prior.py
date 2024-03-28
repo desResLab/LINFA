@@ -159,20 +159,31 @@ def run_test():
     # Assign log density model
     exp.model_logdensity = lambda x: log_density(x, exp.model, exp.surrogate, exp.transform)
 
-     # Define log prior
+    # Define log prior
     def log_prior(calib_inputs, transform):
         # Compute transformation log Jacobian
         adjust = transform.compute_log_jacob_func(calib_inputs)
         # Compute the calibration inputs in the physical domain
         phys_inputs = transform.forward(calib_inputs)
-        # Define prior moments for uniform distribution
+        # Define upper and lower bounds for uniform distribution
         low = torch.tensor([500, -35.0E3])
         high = torch.tensor([1500, -10.0E3])
+        res = [] # Initialize
         # Eval log prior
-        l1 = -np.log((high[0] - low[0])*(high[1] - low[1]))
-        # Return
-        res = l1 + adjust
-        return res
+        for loopA, param_pairs in enumerate(phys_inputs):
+            if param_pairs[0] < low[0]:
+                l1 = 1
+            elif param_pairs[0] > high[0]:
+                l1 = 1
+            elif param_pairs[1] < low[1]:
+                l1 = 1
+            elif param_pairs[1] > high[1]:
+                l1 = 1
+            else:
+                l1 = -np.log((high[0] - low[0])*(high[1] - low[1]))
+            # Return
+            res.append(l1 + adjust[loopA])
+        return torch.tensor(res)
 
     exp.model_logprior = lambda x: log_prior(x, exp.transform)
 
