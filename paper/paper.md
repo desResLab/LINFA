@@ -37,11 +37,10 @@ bibliography: paper.bib
 # https://blog.joss.theoj.org/2018/12/a-new-collaboration-with-aas-publishing
 aas-doi: 10.3847/xxxxx <- update this with the DOI from AAS once you know it.
 aas-journal: Astrophysical Journal <- The name of the AAS journal.
-header-includes:
+header-includes: |
   - '\usepackage{booktabs}'
   - '\usepackage{caption}'
   - '\usepackage{bm}'
-  - '\usepackage{amsmath, amsthm, amssymb, amsfonts}'
 ---
 
 # Summary
