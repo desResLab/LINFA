@@ -53,8 +53,8 @@ def run_test():
     exp.device = torch.device('cuda:0' if torch.cuda.is_available() and not exp.no_cuda else 'cpu')
 
     # Define transformation
-    trsf_info = [['tanh', -20.0, 20.0, 500.0, 1500.0],
-                 ['tanh', -20.0, 20.0, -30000.0, -15000.0]]
+    trsf_info = [['linear', -20.0, 20.0, 500.0, 1500.0],
+                 ['linear', -20.0, 20.0, -30000.0, -15000.0]]
     trsf = Transformation(trsf_info)
     
     # Apply the transformation

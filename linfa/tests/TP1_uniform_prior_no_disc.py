@@ -53,8 +53,8 @@ def run_test():
     exp.device = torch.device('cuda:0' if torch.cuda.is_available() and not exp.no_cuda else 'cpu')
 
     # Define transformation
-    trsf_info = [['tanh', -20.0, 20.0, 500.0, 1500.0],
-                 ['tanh', -20.0, 20.0, -30000.0, -15000.0]]
+    trsf_info = [['linear', -20.0, 20.0, 500.0, 1500.0],
+                 ['linear', -20.0, 20.0, -30000.0, -15000.0]]
     trsf = Transformation(trsf_info)
     
     # Apply the transformation
@@ -163,14 +163,25 @@ def run_test():
         adjust = transform.compute_log_jacob_func(calib_inputs)
         # Compute the calibration inputs in the physical domain
         phys_inputs = transform.forward(calib_inputs)
-        # Define prior moments for uniform distribution
+        # Define upper and lower bounds for uniform distribution
         low = torch.tensor([500, -35.0E3])
         high = torch.tensor([1500, -10.0E3])
+        res = [] # Initialize
         # Eval log prior
-        l1 = -np.log((high[0] - low[0])*(high[1] - low[1]))
-        # Return
-        res = l1 + adjust
-        return res
+        for loopA, param_pairs in enumerate(phys_inputs):
+            if param_pairs[0] < low[0]:
+                l1 = 0
+            elif param_pairs[0] > high[0]:
+                l1 = 0
+            elif param_pairs[1] < low[1]:
+                l1 = 0
+            elif param_pairs[1] > high[1]:
+                l1 = 0
+            else:
+                l1 = -np.log((high[0] - low[0])*(high[1] - low[1]))
+            # Return
+            res.append(l1 + adjust[loopA])
+        return torch.tensor(res)
 
     exp.model_logprior = lambda x: log_prior(x, exp.transform)
 
