@@ -40,7 +40,6 @@ aas-journal: Astrophysical Journal <- The name of the AAS journal.
 header-includes: |
 - '\usepackage{booktabs}'
 - '\usepackage{caption}'
-- '\usepackage{unicode-math}'
 ---
 
 # Summary
