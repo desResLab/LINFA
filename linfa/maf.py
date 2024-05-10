@@ -135,7 +135,9 @@ class BatchNorm(nn.Module):
         self.register_buffer('running_mean', torch.zeros(input_size))
         self.register_buffer('running_var', torch.ones(input_size))
 
-    def forward(self, x, cond_y=None):
+    # CAREFUL: CHANGED SO WE CAN CALL NF.LOGPROB
+    # def forward(self, x, cond_y=None):
+    def inverse(self, x, cond_y=None):
         if self.training:
             self.batch_mean = x.mean(0)
             self.batch_var = x.var(0)  # note MAF paper uses biased variance estimate; ie x.var(0, unbiased=False)
@@ -161,7 +163,9 @@ class BatchNorm(nn.Module):
         # log_abs_det_jacobian.mean(0).item(), self.log_gamma.mean(), self.beta.mean()))
         return y, log_abs_det_jacobian.expand_as(x)
 
-    def inverse(self, y, cond_y=None):
+    # CAREFUL: CHANGED SO WE CAN CALL NF.LOGPROB
+    # def inverse(self, y, cond_y=None):
+    def forward(self, y, cond_y=None):
         if self.training:
             mean = self.batch_mean
             var = self.batch_var

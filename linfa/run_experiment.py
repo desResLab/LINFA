@@ -212,7 +212,9 @@ class experiment:
 
         # Evaluate the Jacobian terms in  loss function
         x0 = nf.base_dist.sample([self.batch_size])
-        xk, sum_log_abs_det_jacobians = nf(x0)
+
+        # Use the inverse map since this is a library for density estimation
+        xk, sum_log_abs_det_jacobians = nf.inverse(x0)
 
         # Check for last iteration
         last_it = (iteration == self.n_iter)
@@ -222,7 +224,7 @@ class experiment:
             if (iteration % self.save_interval == 0) or last_it:
                 print('--- Saving results at iteration '+str(iteration))
                 x00 = nf.base_dist.sample([self.n_sample])
-                xkk, _ = nf(x00)
+                xkk, _ = nf.inverse(x00)
                 
                 # Save surrogate grid - there is no grid for discrepancy
                 if self.surrogate and (self.surrogate_type == 'surrogate'):
@@ -247,6 +249,7 @@ class experiment:
                 
                 # Save log density at the same samples
                 np.savetxt(self.output_dir + '/' + self.name + '_logdensity_' + str(iteration), self.model_logdensity(xkk).data.cpu().numpy(), newline="\n")
+                # np.savetxt(self.output_dir + '/' + self.name + '_logdensity_' + str(iteration), nf.log_prob(xkk).data.cpu().numpy(), newline="\n")                
                 
                 # Save model outputs at the samples - If a model is defined
                 if self.transform:
