@@ -17,9 +17,16 @@ class PhysChem(object):
         self.RConst = torch.tensor(8.314) # universal gas constant (J/ mol/ K)
         self.data = None # dataset of model
         
-        # TEMP TEST WITH LARGE NOISE ON DISCREPANCY - PUT IT BACK WHEN TEST FINISHED!!!
         self.stdRatio = 0.1 # standard deviation ratio
-        self.defOut = self.solve_t(self.defParams)
+        
+        # TODO this isnt working: it needs to be solve_true when discrepamcy is true and solve_t when discrepancy is
+        self.discrepancy = False
+        if self.discrepancy:
+            self.defOut = self.solve_t(self.defParams)
+        else:
+            self.defOut = self.solve_true(self.defParams)
+       
+        torch.manual_seed(35435)
         
     def solve_t(self, cal_inputs):
 
@@ -76,22 +83,21 @@ class PhysChem(object):
 
         # Return
         return cov_frac
-
     
     def genDataFile(self, dataFileNamePrefix='observations', use_true_model=True, store = True, num_observations = 10):
 
         # solve model
         if(use_true_model):
-            def_out = self.solve_true(self.defParams)
+            self.defOut = self.solve_true(self.defParams)
         else:
-            def_out = self.solve_t(self.defParams)
+            self.defOut = self.solve_t(self.defParams)
         
         # get standard deviation
-        stdDev = self.stdRatio * torch.abs(torch.mean(def_out))
+        stdDev = self.stdRatio * torch.abs(torch.mean(self.defOut))
         
         # add noise to coverage data
-        coverage = def_out.repeat(1,num_observations)
-
+        coverage = self.defOut.repeat(1,num_observations)
+        print('Coverage:', coverage)
         for loopA in range(num_observations):
             noise = torch.randn((len(coverage),1))*stdDev
             coverage[:,loopA] = coverage[:,loopA] + noise.flatten()
@@ -117,15 +123,15 @@ class PhysChem(object):
 # TEST SURROGATE
 if __name__ == '__main__':
 
-    # Set variable grid
-    var_grid = [[350.0, 400.0, 450.0],
-                [1.0, 2.0, 3.0, 4.0, 5.0]]
+    torch.manual_seed(35435)
+
+    var_grid = [[350.0],[1.0]]
 
     # Create model
     model = PhysChem(var_grid)
     
     # Generate data
-    model.genDataFile(num_observations=50)
+    model.genDataFile(use_true_model = False, num_observations=1)
 
 
     

@@ -58,6 +58,10 @@ def plot_log(log_file,out_dir,fig_format='png',use_dark_mode=False):
   plt.close()
 
 def plot_params(param_data,LL_data,idx1,idx2,out_dir,out_info,fig_format='png',use_dark_mode=False):  
+  ## TODO: plot density instead of log likelihood -- nothing will change in the plotting, LL file will be saved as a density
+  ## DS to make changes in code
+  ## schedule meeting for two weeks
+
 
   # Read data
   param_data = np.loadtxt(param_data)  
@@ -67,9 +71,26 @@ def plot_params(param_data,LL_data,idx1,idx2,out_dir,out_info,fig_format='png',u
   if(use_dark_mode):
     plt.style.use('dark_background')
 
-  # Plot figure
+  # Remove an outlier
+  if False:
+    arg_max = np.argmax(np.exp(-dent_data))
+    dent_data[arg_max] = np.average(dent_data)
+
   plt.figure(figsize=(3,2))
-  plt.scatter(param_data[:,idx1],param_data[:,idx2],s=1.5,lw=0,marker='o',c=np.exp(dent_data))
+  plt.ylabel('log likelihood')
+  plt.plot(np.arange(len(dent_data)), dent_data)
+  plt.xlabel('sample')
+  plt.savefig(out_dir+'dent_data' + out_info + '_'+str(idx1)+'_'+str(idx2)+'.'+fig_format,bbox_inches='tight',dpi=200)
+
+
+  plt.figure(figsize=(3,2))
+  plt.ylabel('likelihood')
+  plt.plot(np.arange(len(dent_data)), np.exp(dent_data))
+  plt.xlabel('sample')
+  plt.savefig(out_dir+'exp_dent_data' + out_info + '_'+str(idx1)+'_'+str(idx2)+'.'+fig_format,bbox_inches='tight',dpi=200)
+  
+  plt.figure(figsize=(3,2))
+  plt.scatter(param_data[:,idx1],param_data[:,idx2],s=1.5,lw=0,marker='o',c = np.exp(dent_data))
   # plt.scatter(param_data[:,idx1],param_data[:,idx2],s=1.5,lw=0,marker='o')
   plt.colorbar()
   plt.gca().xaxis.set_major_formatter(mtick.FormatStrFormatter('%.1f'))
@@ -77,13 +98,13 @@ def plot_params(param_data,LL_data,idx1,idx2,out_dir,out_info,fig_format='png',u
   plt.gca().tick_params(axis='both', labelsize=fs)
   plt.xlabel('$z_{K,'+str(idx1+1)+'}$',fontsize=fs)
   plt.ylabel('$z_{K,'+str(idx2+1)+'}$',fontsize=fs)  
-  # Set limits based on avg and std
-  avg_1 = np.mean(param_data[:,idx1])
-  std_1 = np.std(param_data[:,idx1])
-  avg_2 = np.mean(param_data[:,idx2])
-  std_2 = np.std(param_data[:,idx2])  
-  plt.xlim([avg_1-3*std_1,avg_1+3*std_1])
-  plt.ylim([avg_2-3*std_2,avg_2+3*std_2])
+  # # Set limits based on avg and std
+  # avg_1 = np.mean(param_data[:,idx1])
+  # std_1 = np.std(param_data[:,idx1])
+  # avg_2 = np.mean(param_data[:,idx2])
+  # std_2 = np.std(param_data[:,idx2])  
+  # plt.xlim([avg_1-3*std_1,avg_1+3*std_1])
+  # plt.ylim([avg_2-3*std_2,avg_2+3*std_2])
   plt.tight_layout()
   plt.savefig(out_dir+'params_plot_' + out_info + '_'+str(idx1)+'_'+str(idx2)+'.'+fig_format,bbox_inches='tight',dpi=200)
   plt.close()

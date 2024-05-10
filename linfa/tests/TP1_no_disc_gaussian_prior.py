@@ -11,7 +11,7 @@ from linfa.models.discrepancy_models import PhysChem
 def run_test():
 
     exp = experiment()
-    exp.name = "TP1_uniform_prior_no_disc"
+    exp.name = "TP1_no_disc_gaussian_prior_linear"
     exp.flow_type           = 'maf'         # str: Type of flow (default 'realnvp')
     exp.n_blocks            = 15            # int: Number of hidden layers   
     exp.hidden_size         = 100           # int: Hidden layer size for MADE in each layer (default 100)
@@ -24,13 +24,13 @@ def run_test():
     exp.input_size          = 2             # int: Dimensionalty of input (default 2)
     exp.batch_size          = 200           # int: Number of samples generated (default 100)
     exp.true_data_num       = 2             # double: Number of true model evaluted (default 2)
-    exp.n_iter              = 25000         # int: Number of iterations (default 25001)
+    exp.n_iter              = 10000         # int: Number of iterations (default 25001)
     exp.lr                  = 0.001         # float: Learning rate (default 0.003)
     exp.lr_decay            = 0.9999        # float:  Learning rate decay (default 0.9999)
     exp.log_interal         = 10            # int: How often to show loss stat (default 10)
 
     exp.run_nofas           = True          # normalizing flow with adaptive surrogate
-    exp.surrogate_type      = 'discrepancy' # type of surrogate we are using
+    exp.surrogate_type      = 'discrepancy'          # type of surrogate we are using
     exp.surr_pre_it         = 1000          # int: Number of pre-training iterations for surrogate model
     exp.surr_upd_it         = 2000          # int: Number of iterations for the surrogate model update
     exp.calibrate_interval  = 1000          #:int:    How often the surrogate model is updated
@@ -43,7 +43,7 @@ def run_test():
     exp.output_dir = './results/' + exp.name
     exp.log_file = 'log.txt'
     
-    exp.seed = random.randint(0, 10 ** 9)   # int: Random seed used
+    exp.seed = 35435                        # int: Random seed used
     exp.n_sample = 5000                     # int: Batch size to generate final results/plots
     exp.no_cuda = True                      # Running on CPU by default but teste on CUDA
 
@@ -156,28 +156,23 @@ def run_test():
 
     # Assign log density model
     exp.model_logdensity = lambda x: log_density(x, exp.model, exp.surrogate, exp.transform)
-    
+
     # Define log prior
     def log_prior(calib_inputs, transform):
         # Compute transformation log Jacobian
         adjust = transform.compute_log_jacob_func(calib_inputs)
         # Compute the calibration inputs in the physical domain
         phys_inputs = transform.forward(calib_inputs)
-        # Define upper and lower bounds for uniform distribution
-        low = torch.tensor([500, -35.0E3])
-        high = torch.tensor([1500, -10.0E3])
-        res = [] # Initialize
+        # Define prior moments
+        pr_avg = torch.tensor([[1E3, -21E3]])
+        pr_std = torch.tensor([[1E2, 500]])
         # Eval log prior
-        for loopA, param_pairs in enumerate(phys_inputs):
-            if low[0] <= param_pairs[0] <= high[0]:
-                l1 = -np.inf
-            elif low[1] <= param_pairs[1] <= high[1]:
-                l1 = -np.inf
-            else:
-                l1 = -np.log((high[0] - low[0])*(high[1] - low[1]))
-            # Return
-            res.append(l1 + adjust[loopA])
-        return torch.tensor(res)
+        l1 = -0.5 * calib_inputs.size(1) * np.log(2.0 * np.pi)            
+        l2 = (-0.5 * torch.log(torch.prod(pr_std))).item()
+        l3 = -0.5 * torch.sum(((phys_inputs - pr_avg)/pr_std)**2, dim = 1).unsqueeze(1)
+        # Return 
+        res = l1 + l2 + l3 + adjust
+        return res
 
     exp.model_logprior = lambda x: log_prior(x, exp.transform)
 
@@ -200,7 +195,7 @@ def generate_data(use_true_model=False,num_observations=50):
 if __name__ == "__main__":
     
     generate_data(use_true_model = False, num_observations = 1)
-    
+
     run_test()
 
 
