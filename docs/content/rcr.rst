@@ -14,7 +14,7 @@ where the distal pressure is set to :math:`P_{d}=55` mmHg.
 
 Synthetic observations are generated from :math:`N(\boldsymbol\mu, \boldsymbol\Sigma)`, where :math:`\mu=(f_{1}(\boldsymbol{z}^{*}),f_{2}(\boldsymbol{z}^{*}),f_{3}(\boldsymbol{z}^{*}))^T = (P_{p,\text{min}}, P_{p,\text{max}}, P_{p,\text{ave}})^T = (100.96, 148.02,116.50)^T` and :math:`\boldsymbol\Sigma`` is a diagonal matrix with entries :math:`(5.05, 7.40, 5.83)^T`. The budgeted number of true model solutions is 216; the fixed surrogate model is evaluated on a :math:`6\times 6\times 6 = 216` pre-grid while the adaptive surrogate is evaluated with a pre-grid of size :math:`4\times 4\times 4 = 64` and the other 152 evaluations are adaptively selected.
 
-This example also demonstrates how NoFAS can be combined with annealing for improved convergence. The results in :numref:`fig_rcr_res` are generated using the AdaAnn adaptive annealing scheduler with intial inverse temperature :math:`t_{0}=0.05`, KL tolerance :math:`\tau=0.01` and a batch size of 100 samples. The number of parameter updates is set to 500, 5000 and 5 for :math:`t_{0}`, :math:`t_{1}` and :math:`t_{0}<t<t_{1}`, respectively and 1000 Monte Carlo realizations are used to evaluate the denominator in :eq:`eqn:friedman1`. The posterior samples capture well the nonlinear correlation among the parameters and generate a fairly accurate posterior predictive distribution that overlaps with the observations. Additional details can be found in :cite:p:`wang2022variational,cobian2023adaann`.
+This example also demonstrates how NoFAS can be combined with annealing for improved convergence. The results in :numref:`fig_rcr_res` are generated using the AdaAnn adaptive annealing scheduler with intial inverse temperature :math:`t_{0}=0.05`, KL tolerance :math:`\tau=0.01` and a batch size of 100 samples. The number of parameter updates is set to 500, 5000 and 5 for :math:`t_{0}`, :math:`t_{1}` and :math:`t_{0}<t<t_{1}`, respectively and 1000 Monte Carlo realizations are used to evaluate the denominator in :eq:`eqn:friedman1`. Use of annealing explains why the loss function is increasing (the posterior distribution becomes increasingly less smooth) instead of monotonically descreasing as for the other examples. The posterior samples capture well the nonlinear correlation among the parameters and generate a fairly accurate posterior predictive distribution that overlaps with the observations. Additional details can be found in :cite:p:`wang2022variational,cobian2023adaann`.
 
 .. figure:: imgs/rcr/log_plot-1.png
 .. figure:: imgs/rcr/data_plot_rcr_nofas_adaann_8400_0_1-1.png
@@ -25,3 +25,9 @@ This example also demonstrates how NoFAS can be combined with annealing for impr
    :name: fig_rcr_res
 
    Results from the RCR model. Loss profile (top), posterior predictive distribution (center) and posterior samples (bottom).
+
+An implementation of this model can be found below.
+
+.. literalinclude:: /../linfa/tests/test_linfa.py
+   :pyobject: linfa_test_suite.rcr_example
+

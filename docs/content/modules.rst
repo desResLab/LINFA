@@ -7,3 +7,4 @@ Modules for the LINFA library
    nofas
    maf
    run_experiment
+   post_processing

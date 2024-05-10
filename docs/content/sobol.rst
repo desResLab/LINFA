@@ -35,3 +35,9 @@ Results are shown in :numref:`fig_highdim`.
    :name: fig_highdim
 
    Results from the high-dimensional model. Loss profile and representative plots for the posterior samples and posterior predictive distribution are shown.
+
+An implementation of this model can be found below.
+
+.. literalinclude:: /../linfa/tests/test_linfa.py
+   :pyobject: linfa_test_suite.highdim_example
+

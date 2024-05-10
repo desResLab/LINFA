@@ -49,6 +49,10 @@ To run the tests type
 ```sh
 python -m unittest linfa.linfa_test_suite.NAME_example
 ```
+To run a limited number of iterations (say 100), you can instead type
+```sh
+it=100 python3 -m unittest linfa.linfa_test_suite.NAME_example
+```
 where `NAME` need to be replaced by
 * `trivial` for the trivial example (Ex 1).
 * `highdim` for the high-dimensional example (Ex 2).
@@ -57,7 +61,9 @@ where `NAME` need to be replaced by
 * `adaann` for the Friedman model example (Ex 5).
 * `rcr_nofas_adaann` for the RCR model, combining NoFAS with adaptive annealing (AdaAnn)
 
-At regular intervals set by the parameter `experiment.save_interval` LINFA writes a few results files. The sub-string `NAME` refers to the experiment name specified in the `experiment.name` variable, and `IT` indicates the iteration at which the file is written. The results files are
+If used with adaptive annealing (AdaAnn) the `it=100` option runs 100 iterations only at `T=1` (i.e., to approximate the untempered posterior distribution). Therefore the total number of iterations is generally higher than specified through the `it` option.
+
+At regular intervals, set by the parameter `experiment.save_interval`, LINFA writes a few results files. The sub-string `NAME` refers to the experiment name specified in the `experiment.name` variable, and `IT` indicates the iteration at which the file is written. The results files are
 
 * `log.txt` contains the log profile information, i.e.
   * Iteration number.
@@ -77,6 +83,8 @@ python -m linfa.plot_res -n NAME -i IT -f FOLDER
 ```
 where `NAME` and `IT` are again the experiment name and iteration number corresponding to the result file of interest, while `FOLDER` is the name of the folder with the results of the inference task are kept. Also the file format can be specified throught the `-p` option (options: `pdf`, `png`, `jpg`) and images with dark background can be generated using the `-d` flag. 
 
+The coverage resulting from these tests can be found at [this link](https://app.codecov.io/gh/desResLab/LINFA)
+
 ### Usage
 
 To use LINFA with your model you need to specify the following components:
@@ -90,7 +98,11 @@ In addition you need to specify a list of options as discussed in the [documenta
 
 ### Tutorial
 
-Two step-by-step tutorials ([tutorial 1](tutorial/tutorial_linfa_2d.ipynb) and [tutorial 2](tutorial/tutorial_linfa_3d.ipynb)) are also available which will guide you through the an inference problem for a ballistic simulation.
+Two step-by-step tutorials ([tutorial 1](docs/content/tutorial/tutorial_linfa_2d.ipynb) and [tutorial 2](docs/content/tutorial/tutorial_linfa_3d.ipynb)) are also available which will guide you through an inference problem for a ballistic simulation.
+
+### Contributing
+
+If you are interested in contributing to this project, plase take a look at the [contributed guide](CONTRIBUTING.md) provided with LINFA.
 
 ### Citation
 

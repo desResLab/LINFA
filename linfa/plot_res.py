@@ -54,7 +54,7 @@ def plot_log(log_file,out_dir,fig_format='png',use_dark_mode=False):
   plt.ylabel('log loss',fontsize=fs)
   plt.gca().tick_params(axis='both', labelsize=fs)
   plt.tight_layout()
-  plt.savefig(out_dir+'log_plot.'+fig_format,bbox_inches='tight',dpi=200)
+  plt.savefig(os.path.join(out_dir,'log_plot.'+fig_format),bbox_inches='tight',dpi=200)
   plt.close()
 
 def plot_params(param_data,LL_data,idx1,idx2,out_dir,out_info,fig_format='png',use_dark_mode=False):  
@@ -106,7 +106,7 @@ def plot_params(param_data,LL_data,idx1,idx2,out_dir,out_info,fig_format='png',u
   # plt.xlim([avg_1-3*std_1,avg_1+3*std_1])
   # plt.ylim([avg_2-3*std_2,avg_2+3*std_2])
   plt.tight_layout()
-  plt.savefig(out_dir+'params_plot_' + out_info + '_'+str(idx1)+'_'+str(idx2)+'.'+fig_format,bbox_inches='tight',dpi=200)
+  plt.savefig(os.path.join(out_dir,'params_plot_' + out_info + '_'+str(idx1)+'_'+str(idx2)+'.'+fig_format),bbox_inches='tight',dpi=200)
   plt.close()
 
 def plot_outputs(sample_file,obs_file,idx1,idx2,out_dir,out_info,fig_format='png',use_dark_mode=False):  
@@ -135,50 +135,7 @@ def plot_outputs(sample_file,obs_file,idx1,idx2,out_dir,out_info,fig_format='png
   plt.xlim([avg_1-3*std_1,avg_1+3*std_1])
   plt.ylim([avg_2-3*std_2,avg_2+3*std_2])
   plt.tight_layout()
-  # Save plot
-  plt.savefig(out_dir + out_info + '_'+str(idx1)+'_'+str(idx2)+'.'+fig_format,bbox_inches='tight',dpi=200)
-  plt.close()
-
-def plot_outputs_discr(out_type,sample_file,obs_file,idx1,idx2,out_dir,out_info,fig_format='png',use_dark_mode=False):  
-
-  # Read data
-  sample_data = np.loadtxt(sample_file)  
-  obs_data    = np.loadtxt(obs_file) 
-
-    # Set dark mode
-  if(use_dark_mode):
-    plt.style.use('dark_background')
-
-  plt.figure(figsize=(2.5,2))
-  # THE OUTPUT ARE FOR EACH TP!!!
-  plt.scatter(sample_data[:,idx1],sample_data[:,idx2],s=2,c='b',marker='o',edgecolor=None,alpha=0.1)
-  # THE OBSERVATIONS ARE FOR EACH TP!!!
-  plt.scatter(obs_data[idx1,:],obs_data[idx2,:],s=3,c='r',alpha=1,zorder=99)
-  plt.gca().xaxis.set_major_formatter(mtick.FormatStrFormatter('%.2f'))
-  plt.gca().yaxis.set_major_formatter(mtick.FormatStrFormatter('%.2f'))
-  plt.gca().tick_params(axis='both', labelsize=fs)
-  plt.xlabel('$x_{'+str(idx1+1)+'}$',fontsize=fs)
-  plt.ylabel('$x_{'+str(idx2+1)+'}$',fontsize=fs)  
-  # Set limits based on avg and std
-  avg_1 = np.mean(sample_data[:,idx1])
-  std_1 = np.std(sample_data[:,idx1])
-  avg_2 = np.mean(sample_data[:,idx2])
-  std_2 = np.std(sample_data[:,idx2])  
-  plt.xlim([avg_1-3*std_1,avg_1+3*std_1])
-  plt.ylim([avg_2-3*std_2,avg_2+3*std_2])
-  plt.tight_layout()
-  if(out_type == 'none'):
-    file_prefix = 'data_plot_'
-  elif(out_type == 'disc'):
-    file_prefix = 'data_plot_disc_'
-  elif(out_type == 'lf'):
-    file_prefix = 'data_plot_lf_'
-  elif(out_type == 'lf+disc'):
-    file_prefix = 'data_plot_lf+disc_'
-  elif(out_type == 'lf+disc+noise'):
-    file_prefix = 'data_plot_lf+disc+noise_'
-  # Save plot
-  plt.savefig(out_dir + file_prefix + out_info + '_'+str(idx1) + '_' + str(idx2) + '.' + fig_format,bbox_inches='tight',dpi=200)
+  plt.savefig(os.path.join(out_dir,'data_plot_' + out_info + '_'+str(idx1)+'_'+str(idx2)+'.'+fig_format),bbox_inches='tight',dpi=200)
   plt.close()
 
 # =========
@@ -250,27 +207,14 @@ if __name__ == '__main__':
   args = parser.parse_args()
 
   # Set file name/path
-  out_dir     = args.folder_name + args.exp_name + '/'
-  log_file    = out_dir + 'log.txt'
-  sample_file = out_dir + args.exp_name + '_samples_'    + str(args.step_num)
-  param_file  = out_dir + args.exp_name + '_params_'     + str(args.step_num)
-  LL_file     = out_dir + args.exp_name + '_logdensity_' + str(args.step_num)
-
-  # Output files
-  output_file               = out_dir + args.exp_name + '_outputs_'                + str(args.step_num)
-  output_file_lf            = out_dir + args.exp_name + '_outputs_lf_'             + str(args.step_num)
-  output_file_lf_disc       = out_dir + args.exp_name + '_outputs_lf+discr_'       + str(args.step_num)
-  output_file_lf_disc_noise = out_dir + args.exp_name + '_outputs_lf+discr+noise_' + str(args.step_num)
-
-  # Observation file
-  obs_file = out_dir + args.exp_name + '_data'
-  out_info = args.exp_name + '_' + str(args.step_num)
-
-  # Check is this is a case with discrepancy or not
-  if(os.path.isfile(output_file_lf_disc)):
-    is_discrepancy = True
-  else:
-    is_discrepancy = False
+  out_dir     = os.path.join(args.folder_name,args.exp_name)
+  log_file    = os.path.join(out_dir,'log.txt')
+  sample_file = os.path.join(out_dir,args.exp_name + '_samples_'    + str(args.step_num))
+  param_file  = os.path.join(out_dir,args.exp_name + '_params_'     + str(args.step_num))
+  LL_file     = os.path.join(out_dir,args.exp_name + '_logdensity_' + str(args.step_num))
+  output_file = os.path.join(out_dir,args.exp_name + '_outputs_'    + str(args.step_num))
+  obs_file    = os.path.join(out_dir,args.exp_name + '_data')
+  out_info    = args.exp_name + '_' + str(args.step_num)
 
   # Plot loss profile
   if(os.path.isfile(log_file)):

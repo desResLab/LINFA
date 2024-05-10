@@ -24,3 +24,7 @@ The aim is to quantify the uncertainty in the RC model parameters given 50 repea
 
    Results from the RC model. Loss profile (top), posterior samples (center) for R and C and the posterior predictive distribution (bottom) for :math:`P_{p,\text{min}}` and :math:`P_{p,\text{max}}` (right, :math:`P_{p,\text{avg}}` not shown).
 
+An implementation of this model can be found below.
+
+.. literalinclude:: /../linfa/tests/test_linfa.py
+   :pyobject: linfa_test_suite.rc_example
