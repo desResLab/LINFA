@@ -334,4 +334,6 @@ class RealNVP(nn.Module):
 
     def log_prob(self, x, y=None):
         u, sum_log_abs_det_jacobians = self.forward(x, y)
+        print(torch.exp(sum_log_abs_det_jacobians))
+        exit()
         return torch.sum(self.base_dist.log_prob(u) + sum_log_abs_det_jacobians, dim=1)

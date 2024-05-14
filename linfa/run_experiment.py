@@ -248,8 +248,9 @@ class experiment:
                 np.savetxt(self.output_dir + '/' + self.name + '_marginal_stats_' + str(iteration), np.concatenate((xkk_samples.mean(axis=0).reshape(-1,1),xkk_samples.std(axis=0).reshape(-1,1)),axis=1), newline="\n")
                 
                 # Save log density at the same samples
-                np.savetxt(self.output_dir + '/' + self.name + '_logdensity_' + str(iteration), self.model_logdensity(xkk).data.cpu().numpy(), newline="\n")
-                # np.savetxt(self.output_dir + '/' + self.name + '_logdensity_' + str(iteration), nf.log_prob(xkk).data.cpu().numpy(), newline="\n")                
+                # np.savetxt(self.output_dir + '/' + self.name + '_logdensity_' + str(iteration), self.model_logdensity(xkk).data.cpu().numpy(), newline="\n")
+                np.savetxt(self.output_dir + '/' + self.name + '_logdensity_' + str(iteration), nf.log_prob(xkk).data.cpu().numpy(), newline="\n")                
+                print('Current MC integral: ',np.exp(nf.log_prob(xkk).data.cpu().numpy()).mean())
                 
                 # Save model outputs at the samples - If a model is defined
                 if self.transform:
