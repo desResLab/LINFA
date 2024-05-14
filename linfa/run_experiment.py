@@ -235,22 +235,23 @@ class experiment:
                 
                 # Save normalized domain samples
                 np.savetxt(self.output_dir + '/' + self.name + '_samples_' + str(iteration), xkk.data.clone().cpu().numpy(), newline="\n")
-                
+
                 # Save samples in the original space
                 if self.transform:
                     xkk_samples = self.transform.forward(xkk).data.cpu().numpy()
                     np.savetxt(self.output_dir + '/' + self.name + '_params_' + str(iteration), xkk_samples, newline="\n")
+                    # Conpute the sample density using normalizing flow AND account for the coordinate transformation
+                    xkk_logprob = nf.log_prob(xkk).data.cpu().numpy() - self.transform.compute_log_jacob_func(xkk).data.cpu().numpy().flatten()                 
                 else:
                     xkk_samples = xkk.data.cpu().numpy()
                     np.savetxt(self.output_dir + '/' + self.name + '_params_' + str(iteration), xkk_samples, newline="\n")
+                    xkk_logprob = nf.log_prob(xkk).data.cpu().numpy()
                 
                 # Save marginal statistics
                 np.savetxt(self.output_dir + '/' + self.name + '_marginal_stats_' + str(iteration), np.concatenate((xkk_samples.mean(axis=0).reshape(-1,1),xkk_samples.std(axis=0).reshape(-1,1)),axis=1), newline="\n")
                 
-                # Save log density at the same samples
-                # np.savetxt(self.output_dir + '/' + self.name + '_logdensity_' + str(iteration), self.model_logdensity(xkk).data.cpu().numpy(), newline="\n")
-                np.savetxt(self.output_dir + '/' + self.name + '_logdensity_' + str(iteration), nf.log_prob(xkk).data.cpu().numpy(), newline="\n")                
-                print('Current MC integral: ',np.exp(nf.log_prob(xkk).data.cpu().numpy()).mean())
+                # Save log density at the samples in the PHYSICAL SPACE (!)
+                np.savetxt(self.output_dir + '/' + self.name + '_logdensity_' + str(iteration), xkk_logprob, newline="\n")
                 
                 # Save model outputs at the samples - If a model is defined
                 if self.transform:
