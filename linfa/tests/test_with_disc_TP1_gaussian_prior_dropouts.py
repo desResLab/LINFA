@@ -89,7 +89,8 @@ def run_test():
                                     input_size = exp.model.var_in.size(1),
                                     output_size = 1,
                                     var_grid_in = var_grid_in,
-                                    var_grid_out = var_grid_out)
+                                    var_grid_out = var_grid_out,
+                                    dnn_dropout=[0.2, 0.5])
         
         # Initially tune on the default values of the calibration variables
         # exp.surrogate.update(langmuir_model.defParams, exp.surr_pre_it, 0.03, 0.9999, 100, store=True)
