@@ -11,7 +11,7 @@ from linfa.models.discrepancy_models import PhysChem
 def run_test():
 
     exp = experiment()
-    exp.name = "TP1_no_disc_gaussian_prior"
+    exp.name = "TP15_no_disc_gaussian"
     exp.flow_type           = 'realnvp'     # str: Type of flow (default 'realnvp') # TODO: generalize to work for TP1
     exp.n_blocks            = 15            # int: Number of hidden layers   
     exp.hidden_size         = 100           # int: Hidden layer size for MADE in each layer (default 100)
@@ -29,7 +29,7 @@ def run_test():
     exp.lr_decay            = 0.9999        # float:  Learning rate decay (default 0.9999)
     exp.log_interal         = 10            # int: How often to show loss stat (default 10)
 
-    exp.run_nofas           = True          # normalizing flow with adaptive surrogate
+    exp.run_nofas           = False          # normalizing flow with adaptive surrogate
     exp.surrogate_type      = 'discrepancy'          # type of surrogate we are using
     exp.surr_pre_it         = 1000          # int: Number of pre-training iterations for surrogate model
     exp.surr_upd_it         = 2000          # int: Number of iterations for the surrogate model update
@@ -44,7 +44,7 @@ def run_test():
     exp.log_file = 'log.txt'
     
     exp.seed = 35435                        # int: Random seed used
-    exp.n_sample = 5000                     # int: Batch size to generate final results/plots
+    exp.n_sample = 10000                     # int: Batch size to generate final results/plots
     exp.no_cuda = True                      # Running on CPU by default but teste on CUDA
 
     exp.optimizer = 'RMSprop'
@@ -53,19 +53,20 @@ def run_test():
     exp.device = torch.device('cuda:0' if torch.cuda.is_available() and not exp.no_cuda else 'cpu')
 
     # Define transformation
-    trsf_info = [['tanh', -5.0, 5.0, 500.0, 1500.0],
-                 ['tanh', -20.0, 20.0, -30000.0, -15000.0]]
+    trsf_info = [['tanh', -30.0, 30.0, 500.0, 1500.0],
+                 ['tanh', -30.0, 30.0, -30000.0, -15000.0]]
     trsf = Transformation(trsf_info)
     
     # Apply the transformation
     exp.transform = trsf
 
     # Add temperatures and pressures for each evaluation
-    variable_inputs = [[350.0],
-                       [1.0]]
+    variable_inputs = [[350.0, 400.0, 450.0],
+                       [1.0, 2.0, 3.0, 4.0, 5.0]]
 
     # Define model
     langmuir_model = PhysChem(variable_inputs)
+    
     # Assign as experiment model
     exp.model = langmuir_model
 
@@ -130,8 +131,13 @@ def run_test():
         # Evaluate log-likelihood:
         # Loop on the available observations
         for loopA in range(num_obs):
-            l1 = -0.5 * np.prod(langmuir_model.data.shape) * np.log(2.0 * np.pi)
+            # -1 / 2 * n * log ( 2 pi ) 
+            l1 = -0.5 * np.prod(langmuir_model.data.shape[1]) * np.log(2.0 * np.pi)
+
+            # - 1 / 2 * sum_{i=1} ^ N log (sigma_i)
             l2 = (-0.5 * langmuir_model.data.shape[1] * torch.log(torch.prod(stds))).item()
+            
+            # - 1 / 2 * sum_{i = 1} ^ N {(eta_i + disc_i - y_i)^2 / sigma_i^2)}
             l3 = -0.5 * torch.sum(((modelOut + discrepancy.t() - Data[:,loopA].unsqueeze(0)) / stds.t())**2, dim = 1)
 
             if(False):
@@ -183,8 +189,8 @@ def run_test():
 def generate_data(use_true_model=False,num_observations=50):
 
     # Set variable grid
-    var_grid = [[350.0],
-                [1.0]]
+    var_grid = [[350.0, 400.0, 450.0],
+                [1.0, 2.0, 3.0, 4.0, 5.0]]
 
     # Create model
     model = PhysChem(var_grid)

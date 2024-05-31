@@ -91,7 +91,7 @@ class PhysChem(object):
         coverage = def_out.repeat(1,num_observations)
 
         for loopA in range(num_observations):
-            noise = torch.randn((len(coverage),1))*stdDev
+            noise = torch.randn((len(coverage),1)) * stdDev
             coverage[:,loopA] = coverage[:,loopA] + noise.flatten()
         
         if store:

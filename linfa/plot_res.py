@@ -3,61 +3,49 @@ import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
+from matplotlib.ticker import ScalarFormatter, MaxNLocator
 
-# Plot format
-fs=8
-plt.rc('font', family='serif')
-plt.rc('xtick', labelsize='x-small')
-plt.rc('ytick', labelsize='x-small')
-plt.rc('text', usetex = False)
+# Set global plot settings
+plt.rcParams['figure.figsize']      = (8, 6)
+plt.rcParams['figure.dpi']          = 300
+plt.rcParams['axes.labelsize']      = 16
+plt.rcParams['xtick.labelsize']     = 15
+plt.rcParams['ytick.labelsize']     = 15
+plt.rcParams['legend.fontsize']     = 12
+plt.rcParams['lines.linewidth']     = 3
+plt.rcParams['lines.markersize']    = 16
+plt.rcParams['axes.labelweight']    = 'bold'
+plt.rcParams['xtick.direction']     = 'in'
+plt.rcParams['ytick.direction']     = 'in'
+plt.rcParams['xtick.top']           = True
+plt.rcParams['ytick.right']         = True
+plt.rcParams['savefig.bbox']        = 'tight'
 
-def plot_log(log_file,out_dir,fig_format='png',use_dark_mode=False):
+def plot_log(log_file,out_dir,fig_format='png', use_dark_mode=False):
+  
   log_data = np.loadtxt(log_file)
-
-  # Set dark mode
-  if(use_dark_mode):
-    plt.style.use('dark_background')  
-
   # loss profile
-  plt.figure(figsize=(2,2))
-  # plt.semilogy(log_data[:,1],log_data[:,2],'b-')
-  plt.plot(log_data[:,1],log_data[:,2],'b-')
-  plt.xlabel('Iterations',fontsize=fs)
-  plt.ylabel('log loss',fontsize=fs)
-  plt.gca().tick_params(axis='both', labelsize=fs)
-  plt.tight_layout()
-  plt.savefig(os.path.join(out_dir,'log_plot.'+fig_format),bbox_inches='tight',dpi=200)
+  plt.figure()
+  plt.plot(log_data[:, 1],log_data[:, 2],'b-')
+  plt.xlabel('Iterations')
+  plt.ylabel('Log Loss')
+  plt.savefig(os.path.join(out_dir,'log_plot.'+fig_format))
   plt.close()
 
-def plot_params(param_data,LL_data,idx1,idx2,out_dir,out_info,fig_format='png',use_dark_mode=False):  
+def plot_params(param_data,LL_data,idx1,idx2,out_dir,out_info,fig_format='png', use_dark_mode=False):  
 
   # Read data
   param_data = np.loadtxt(param_data)  
   dent_data  = np.loadtxt(LL_data)
 
-  # Set dark mode
-  if(use_dark_mode):
-    plt.style.use('dark_background')
-
   # Plot figure
-  plt.figure(figsize=(3,2))
-  plt.scatter(param_data[:,idx1],param_data[:,idx2],s=1.5,lw=0,marker='o',c=np.exp(dent_data))
-  # plt.scatter(param_data[:,idx1],param_data[:,idx2],s=1.5,lw=0,marker='o')
+  plt.figure()
+  plt.scatter(param_data[:,idx1], param_data[:,idx2]/1000, lw = 0, s =7, marker = 'o', c = np.exp(dent_data))
+  plt.plot(1000, -21.0, 'r*')
   plt.colorbar()
-  plt.gca().xaxis.set_major_formatter(mtick.FormatStrFormatter('%.1f'))
-  plt.gca().yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1e'))
-  plt.gca().tick_params(axis='both', labelsize=fs)
-  plt.xlabel('$z_{K,'+str(idx1+1)+'}$',fontsize=fs)
-  plt.ylabel('$z_{K,'+str(idx2+1)+'}$',fontsize=fs)  
-  # Set limits based on avg and std
-  avg_1 = np.mean(param_data[:,idx1])
-  std_1 = np.std(param_data[:,idx1])
-  avg_2 = np.mean(param_data[:,idx2])
-  std_2 = np.std(param_data[:,idx2])  
-  plt.xlim([avg_1-3*std_1,avg_1+3*std_1])
-  plt.ylim([avg_2-3*std_2,avg_2+3*std_2])
-  plt.tight_layout()
-  plt.savefig(os.path.join(out_dir,'params_plot_' + out_info + '_'+str(idx1)+'_'+str(idx2)+'.'+fig_format),bbox_inches='tight',dpi=200)
+  plt.xlabel('Std. Pressure, '+r'$P_0$'+' [Pa]')
+  plt.ylabel('Ads. Energy, '+r'$E$'+' [kJ'+r'$\cdot$'+'mol'+r'$^{-1}$'+']')
+  plt.savefig(os.path.join(out_dir,'params_plot_' + out_info + '_'+str(idx1)+'_'+str(idx2)+'.'+fig_format))
   plt.close()
 
 def plot_outputs(sample_file,obs_file,idx1,idx2,out_dir,out_info,fig_format='png',use_dark_mode=False):  
