@@ -52,9 +52,12 @@ def run_test():
 
     exp.device = torch.device('cuda:0' if torch.cuda.is_available() and not exp.no_cuda else 'cpu')
 
+
+    ## TODO: How to update this transformation to include variance of noise
     # Define transformation
     trsf_info = [['tanh', -30.0, 30.0, 500.0, 1500.0],
-                 ['tanh', -30.0, 30.0, -30000.0, -15000.0]]
+                 ['tanh', -30.0, 30.0, -30000.0, -15000.0],
+                 ['identity', ]]
     trsf = Transformation(trsf_info)
     
     # Apply the transformation
@@ -102,6 +105,7 @@ def run_test():
     # Define log density
     def log_density(calib_inputs, model, surrogate, transform):
         
+        # TODO: need to update calib_inputs to include the variance of the nouse
         # Compute transformation by log Jacobian
         adjust = transform.compute_log_jacob_func(calib_inputs)
 
@@ -111,6 +115,7 @@ def run_test():
         # Initialize total number of variable inputs
         total_var_inputs = len(model.var_in)
            
+        # TODO: update solve_t to include an additional parameter in calib_inputs
         # Evaluate model response - (num_var x num_batch)
         modelOut = langmuir_model.solve_t(transform.forward(calib_inputs)).t()
 
@@ -122,7 +127,8 @@ def run_test():
             discrepancy = surrogate.forward(model.var_in)
         
         # Get the absolute values of the standard deviation (num_var)
-        std_dev = torch.mean(langmuir_model.defOut) * langmuir_model.stdRatio
+        # TODO : remove this and put in the likelihood function
+        std_dev = calib_inputs[3] #torch.mean(langmuir_model.defOut) * langmuir_model.stdRatio
         
         # Get data - (num_var x num_obs)
         Data = torch.tensor(langmuir_model.data[:,2:]).to(exp.device)
@@ -142,16 +148,6 @@ def run_test():
             # - 1 / (2 * sigma^2) sum_{i = 1} ^ N (eta_i + disc_i - y_i)^2 
             l3 = -0.5 / (std_dev ** 2) * torch.sum((modelOut + discrepancy.t() - Data[:,loopA].unsqueeze(0))**2, dim = 1)
 
-            if(False):
-                print('Compare')
-                print('%15s %15s %15s %15s' % ('lf out','discrep','lf+discr','obs'))
-                for loopB in range(discrepancy.size(0)):
-                    test1 = modelOut[0,:]
-                    test2 = discrepancy[:,0]
-                    test3 = Data[:,loopA]
-                    print('%15.3f %15.3f %15.3f %15.3f' % (modelOut[0,loopB],discrepancy[loopB,0],modelOut[0,loopB]+discrepancy[loopB,0],Data[loopB,loopA]))
-                print('')
-            
             # Compute negative ll (num_batch x 1)
             negLL = -(l1 + l2 + l3) # sum contributions
             res = -negLL.reshape(calib_inputs.size(0), 1) # reshape
@@ -166,15 +162,15 @@ def run_test():
     exp.model_logdensity = lambda x: log_density(x, exp.model, exp.surrogate, exp.transform)
 
     # Define log prior
-    # TODO: can we use a half-normal or truncated normal prior? How to enforce bounds?
     def log_prior(calib_inputs, transform):
         # Compute transformation log Jacobian
         adjust = transform.compute_log_jacob_func(calib_inputs)
         # Compute the calibration inputs in the physical domain
         phys_inputs = transform.forward(calib_inputs)
         # Define prior moments
-        pr_avg = torch.tensor([[1E3, -21E3, 0.0]])
-        pr_std = torch.tensor([[1E2, 500, ^2]])
+        # TODO: put a Gamma prior on the variance of the error
+        pr_avg = torch.tensor([[1E3, -21E3]])
+        pr_std = torch.tensor([[1E2, 500]])
 
         # Eval log prior
         l1 = -0.5 * calib_inputs.size(1) * np.log(2.0 * np.pi)            

@@ -19,7 +19,9 @@ class PhysChem(object):
         self.stdRatio = 0.05 # standard deviation ratio
         self.defOut = self.solve_t(self.defParams)
         
-    def solve_t(self, cal_inputs, noise  = None):
+    def solve_t(self, cal_inputs):
+
+        # TODO: update cal_inputs to pass other variables for inference
 
         num_batch = len(cal_inputs)
         num_vars = len(self.var_in)
@@ -43,6 +45,7 @@ class PhysChem(object):
         # Return coverages        
         return cov_frac
 
+    # TODO: update cal_inputs to include variable number of parameters not called by the model
     def solve_true(self, cal_inputs):
 
         num_batch = len(cal_inputs)
@@ -80,8 +83,10 @@ class PhysChem(object):
 
         # solve model
         if(use_true_model):
+            # TODO: update call to solve_true to include additional parameters
             def_out = self.solve_true(self.defParams)
         else:
+            # TODO: update call to solve_t to include additional parameters
             def_out = self.solve_t(self.defParams)
         
         # get standard deviation
