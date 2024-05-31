@@ -19,7 +19,7 @@ class PhysChem(object):
         self.stdRatio = 0.05 # standard deviation ratio
         self.defOut = self.solve_t(self.defParams)
         
-    def solve_t(self, cal_inputs):
+    def solve_t(self, cal_inputs, noise  = None):
 
         num_batch = len(cal_inputs)
         num_vars = len(self.var_in)
@@ -85,10 +85,10 @@ class PhysChem(object):
             def_out = self.solve_t(self.defParams)
         
         # get standard deviation
-        stdDev = self.stdRatio * torch.abs(def_out)
+        stdDev = self.stdRatio * torch.mean(torch.abs(def_out))
         
         # add noise to coverage data
-        coverage = def_out.repeat(1,num_observations)
+        coverage = def_out.repeat(1, num_observations)
 
         for loopA in range(num_observations):
             noise = torch.randn((len(coverage),1)) * stdDev
