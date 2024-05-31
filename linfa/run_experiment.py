@@ -327,12 +327,20 @@ class experiment:
 
         # Free energy bound
         if(self.model_logprior is None):
+            # test1 = (- torch.sum(sum_log_abs_det_jacobians, 1)).mean()
+            # test2 = (self.model_logdensity(xk)).mean()
+            # print(test1,test2)
             loss = (- torch.sum(sum_log_abs_det_jacobians, 1) - t * self.model_logdensity(xk)).mean()
         else:
+            # test1 = (- torch.sum(sum_log_abs_det_jacobians, 1)).mean()
+            # test2 = (self.model_logdensity(xk)).mean()
+            # test3 = (self.model_logprior(xk)).mean()
+            # print(test1,test2,test3)
             loss = (- torch.sum(sum_log_abs_det_jacobians, 1) - t * (self.model_logdensity(xk) + self.model_logprior(xk))).mean()
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
+
         if iteration % self.log_interval == 0:
             print('VI NF (t=%5.3f): it: %7d | loss: %8.3e' % (t,iteration, loss.item()))
             log.append([t, iteration, loss.item()])
