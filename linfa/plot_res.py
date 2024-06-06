@@ -35,16 +35,19 @@ def plot_log(log_file,out_dir,fig_format='png', use_dark_mode=False):
 def plot_params(param_data,LL_data,idx1,idx2,out_dir,out_info,fig_format='png', use_dark_mode=False):  
 
   # Read data
-  param_data = np.loadtxt(param_data)  
-  dent_data  = np.loadtxt(LL_data)
+  param_data = np.loadtxt(param_data)  # [5000, 3]
+  dent_data  = np.loadtxt(LL_data)     # [5000, ]
 
   # Plot figure
   plt.figure()
   plt.scatter(param_data[:,idx1], param_data[:,idx2]/1000, lw = 0, s =7, marker = 'o', c = np.exp(dent_data))
-  plt.plot(1000, -21.0, 'r*')
+  
+  #plt.plot(1000, -21.0, 'r*')
   plt.colorbar()
-  plt.xlabel('Std. Pressure, '+r'$P_0$'+' [Pa]')
-  plt.ylabel('Ads. Energy, '+r'$E$'+' [kJ'+r'$\cdot$'+'mol'+r'$^{-1}$'+']')
+  # plt.xlabel('Std. Pressure, '+r'$P_0$'+' [Pa]')
+  # plt.ylabel('Ads. Energy, '+r'$E$'+' [kJ'+r'$\cdot$'+'mol'+r'$^{-1}$'+']')
+  plt.xlabel(r'$\theta_{K,'+str(idx1+1)+'}$')
+  plt.ylabel(r'$\theta_{K,'+str(idx2+1)+'}$')
   plt.savefig(os.path.join(out_dir,'params_plot_' + out_info + '_'+str(idx1)+'_'+str(idx2)+'.'+fig_format))
   plt.close()
 
@@ -164,10 +167,10 @@ if __name__ == '__main__':
 
   # Plot 2D slice of posterior samples
   if(os.path.isfile(param_file) and os.path.isfile(LL_file)):
-    tot_params  = np.loadtxt(param_file).shape[1]
+    tot_params  = np.loadtxt(param_file).shape[1] # extract total number of parameters inferred
     print('Plotting posterior samples...')
-    for loopA in range(tot_params):
-      for loopB in range(loopA+1, tot_params):
+    for loopA in range(tot_params): # loop over total number of parameters
+      for loopB in range(loopA+1, tot_params): # get next parameter
         plot_params(param_file,LL_file,loopA,loopB,out_dir,out_info,fig_format=args.img_format,use_dark_mode=args.use_dark_mode)
   else:
     print('File with posterior samples not found: '+param_file)

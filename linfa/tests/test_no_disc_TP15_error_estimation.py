@@ -58,7 +58,7 @@ def run_test():
     # Define transformation
     trsf_info = [['tanh', -30.0, 30.0, 500.0, 1500.0],
                  ['tanh', -30.0, 30.0, -30000.0, -15000.0],
-                 ['tanh', -7.0, 7.0, 0.01, 0.1]]
+                 ['tanh', -15.0, 15.0, 0.0001, 0.5]]
     trsf = Transformation(trsf_info)
     
     # Apply the transformation
