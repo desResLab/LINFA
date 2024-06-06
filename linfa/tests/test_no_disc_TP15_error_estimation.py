@@ -26,9 +26,9 @@ def run_test():
     exp.batch_size          = 200           # int: Number of samples generated (default 100)
     exp.true_data_num       = 2             # double: Number of true model evaluted (default 2)
     exp.n_iter              = 10000         # int: Number of iterations (default 25001)
-    exp.lr                  = 0.0005         # float: Learning rate (default 0.003)
+    exp.lr                  = 0.00001        # float: Learning rate (default 0.003)
     exp.lr_decay            = 0.9999        # float:  Learning rate decay (default 0.9999)
-    exp.log_interval        = 1            # int: How often to show loss stat (default 10)
+    exp.log_interval        = 1             # int: How often to show loss stat (default 10)
 
     exp.run_nofas           = False         # normalizing flow with adaptive surrogate
     exp.surrogate_type      = 'discrepancy' # type of surrogate we are using
@@ -56,9 +56,9 @@ def run_test():
 
     ## TODO: How to update this transformation to include variance of noise
     # Define transformation
-    trsf_info = [['tanh', -30.0, 30.0, 500.0, 1500.0],
+    trsf_info = [['tanh', -40.0, 30.0, 500.0, 1500.0],
                  ['tanh', -30.0, 30.0, -30000.0, -15000.0],
-                 ['tanh', -15.0, 15.0, 0.0001, 0.5]]
+                 ['tanh', -15.0, 15.0, 0.01, 0.2]]
     trsf = Transformation(trsf_info)
     
     # Apply the transformation
