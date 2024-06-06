@@ -40,7 +40,7 @@ def plot_params(param_data,LL_data,idx1,idx2,out_dir,out_info,fig_format='png', 
 
   # Plot figure
   plt.figure()
-  plt.scatter(param_data[:,idx1], param_data[:,idx2]/1000, lw = 0, s =7, marker = 'o', c = np.exp(dent_data))
+  plt.scatter(param_data[:,idx1], param_data[:,idx2], lw = 0, s =7, marker = 'o', c = np.exp(dent_data))
   
   #plt.plot(1000, -21.0, 'r*')
   plt.colorbar()
