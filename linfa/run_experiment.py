@@ -333,20 +333,18 @@ class experiment:
             # print(test1,test2)
             loss = (- torch.sum(sum_log_abs_det_jacobians, 1) - t * self.model_logdensity(xk)).mean()
         else:
-            test1 = (- torch.sum(sum_log_abs_det_jacobians, 1)).mean()
-            test2 = (self.model_logdensity(xk)).mean()
-            test3 = (self.model_logprior(xk)).mean()
+            sum_log_jac = (- torch.sum(sum_log_abs_det_jacobians, 1)).mean()
+            likelihood =  - t * (self.model_logdensity(xk)).mean()
+            prior =  - t * (self.model_logprior(xk)).mean()
             # print(test1,test2,test3)
             loss = (- torch.sum(sum_log_abs_det_jacobians, 1) - t * (self.model_logdensity(xk) + self.model_logprior(xk))).mean()
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
 
-        # TODO: Make a plot showing all three components of loss function vs time. This will help us figure out which
-        # terms affect optimization problem the most
         if iteration % self.log_interval == 0:
-            print('VI NF (t=%5.3f): it: %7d | log Jac:  %8.3e| log dens:  %8.3e| log prior:  %8.3e| loss: %8.3e' % (t, iteration, test1/loss.item(), test2/loss.item(), test3/loss.item(), loss.item()))
-            log.append([t, iteration, loss.item(), test1.item(), test2.item(), test3.item()])
+            print('VI NF (t=%5.3f): it: %7d | loss: %8.3e' % (t, iteration, loss.item()))
+            log.append([t, iteration, loss.item(), sum_log_jac.item(), likelihood.item(), prior.item()])
         
         # Save state of normalizing flow layers
         if self.store_nf_interval > 0 and iteration % self.store_nf_interval == 0:

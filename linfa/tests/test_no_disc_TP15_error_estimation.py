@@ -26,7 +26,7 @@ def run_test():
     exp.batch_size          = 200           # int: Number of samples generated (default 100)
     exp.true_data_num       = 2             # double: Number of true model evaluted (default 2)
     exp.n_iter              = 10000         # int: Number of iterations (default 25001)
-    exp.lr                  = 0.00001        # float: Learning rate (default 0.003)
+    exp.lr                  = 0.0005        # float: Learning rate (default 0.003)
     exp.lr_decay            = 0.9999        # float:  Learning rate decay (default 0.9999)
     exp.log_interval        = 1             # int: How often to show loss stat (default 10)
 
@@ -54,11 +54,10 @@ def run_test():
     exp.device = torch.device('cuda:0' if torch.cuda.is_available() and not exp.no_cuda else 'cpu')
 
 
-    ## TODO: How to update this transformation to include variance of noise
     # Define transformation
     trsf_info = [['tanh', -40.0, 30.0, 500.0, 1500.0],
                  ['tanh', -30.0, 30.0, -30000.0, -15000.0],
-                 ['tanh', -15.0, 15.0, 0.01, 0.2]]
+                 ['tanh', -20.0, 20.0, 0.00001, 0.2]]
     trsf = Transformation(trsf_info)
     
     # Apply the transformation
@@ -87,7 +86,6 @@ def run_test():
     # Define log density
     def log_density(calib_inputs, model, surrogate, transform):
         
-        # TODO: need to update calib_inputs to include the variance of the nouse
         # Compute transformation by log Jacobian
         adjust = transform.compute_log_jacob_func(calib_inputs)
         phys_inputs = transform.forward(calib_inputs)
@@ -98,7 +96,6 @@ def run_test():
         # Initialize total number of variable inputs
         total_var_inputs = len(model.var_in)
            
-        # TODO: update solve_t to include an additional parameter in calib_inputs
         # Evaluate model response - (num_var x num_batch)
         modelOut = model.solve_t(transform.forward(calib_inputs)).t()
         
@@ -113,7 +110,6 @@ def run_test():
             discrepancy = surrogate.forward(model.var_in)
         
         # Get the absolute values of the standard deviation (num_var)
-        # TODO : remove this and put in the likelihood function
         p0Const, eConst, sigma_e = torch.chunk(phys_inputs, chunks = 3, dim = 1)
         std_dev = sigma_e.flatten() * torch.mean(torch.abs(def_out))
 
@@ -136,6 +132,10 @@ def run_test():
             l3 = -0.5 / (std_dev ** 2) * torch.sum((modelOut + discrepancy.t() - Data[:,loopA].unsqueeze(0))**2, dim = 1)
 
             # Compute negative ll (num_batch x 1)
+            # print('l1', l1)
+            # print('l2', l2)
+            # print('l3', l3)
+            # exit()
             negLL = -(l1 + l2 + l3) # sum contributions
             res = -negLL.reshape(calib_inputs.size(0), 1) # reshape
         
@@ -143,6 +143,11 @@ def run_test():
             total_nll += res
 
             fin_res = total_nll/num_obs + adjust
+
+            # print('total nll', (total_nll/num_obs).mean().item())
+            # print('adjust', adjust.mean().item())
+            # print('total', fin_res.mean().item())
+            # exit()
                 
         # Return log-likelihood
         return fin_res
@@ -164,19 +169,50 @@ def run_test():
         pr_std = torch.tensor([[1E2, 500]])
 
         # Eval log prior
-        l1 = -0.5 * calib_inputs.size(1) * np.log(2.0 * np.pi)            
+        # -n / 2 * log ( 2 pi ) 
+        l1 = -0.5 * calib_inputs.size(1) * np.log(2.0 * np.pi)     
+
+        # - n / 2 * log (sigma^2)       
         l2 = (-0.5 * torch.log(torch.prod(pr_std))).item()
+        
+        # - 1 / (2 * sigma^2) sum_{i = 1} ^ N (eta_i + disc_i - y_i)^2 
         l3 = -0.5 * torch.sum(((phys_inputs[:,:1] - pr_avg)/pr_std)**2, dim = 1).unsqueeze(1)
         # Add gaussian log prior for first two parameters
         gauss_prior_res = l1 + l2 + l3
         
         # Add beta prior for third parameter
-        sigma_prior = torch.distributions.beta.Beta(torch.tensor([1.0]), torch.tensor([3.0]))
-        beta_prior_res = sigma_prior.log_prob(phys_inputs[:,2])
+        if False:
+            sigma_prior = torch.distributions.beta.Beta(torch.tensor([1.0]), torch.tensor([0.5]))
+            prior_res = sigma_prior.log_prob(phys_inputs[:,2])
+            print(prior_res)
+            exit()
+        else:
+            a = torch.tensor([0.0])
+            b = torch.tensor([0.15])
+            sigma_prior = torch.distributions.uniform.Uniform(low = a, high = b)
+            prior_res = torch.zeros(phys_inputs[:,2].size(0))
+            for loopA, siggy in enumerate(phys_inputs[:,2]):
+                if a <= siggy <= b:
+                    prior_res[loopA] = sigma_prior.log_prob(siggy)
+                else:
+                    prior_res[loopA] = 500
+            
+            # print('noise param', phys_inputs[:,2])
+            # print('prior results', prior_res)
+            # exit()
         
+        res = gauss_prior_res + prior_res +  adjust
+
+        # print('Prior on std. dev. ratio:', prior_res.mean().item())
+        # print('Gaussian prior on physical params:', gauss_prior_res.mean().item())
+        # print('Adjustment:', adjust.mean().item())
+        # print('Total:', res.mean().item())
+        # exit()
+
+
+        # Log prior is constributing the most to the loss function
+        # Loss function is insensitive to values of sigma
         # Add transformation
-        res = gauss_prior_res + beta_prior_res + adjust
-        # res = gauss_prior_res + adjust
         
         return res
 
