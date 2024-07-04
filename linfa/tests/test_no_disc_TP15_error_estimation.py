@@ -180,13 +180,12 @@ def run_test():
         # Add gaussian log prior for first two parameters
         gauss_prior_res = l1 + l2 + l3
         
-        # Add beta prior for third parameter
         if False:
+             # Add beta prior for third parameter
             sigma_prior = torch.distributions.beta.Beta(torch.tensor([1.0]), torch.tensor([0.5]))
             prior_res = sigma_prior.log_prob(phys_inputs[:,2])
-            print(prior_res)
-            exit()
         else:
+            # Add uniform prior
             a = torch.tensor([0.0])
             b = torch.tensor([0.15])
             sigma_prior = torch.distributions.uniform.Uniform(low = a, high = b)
@@ -195,11 +194,8 @@ def run_test():
                 if a <= siggy <= b:
                     prior_res[loopA] = sigma_prior.log_prob(siggy)
                 else:
+                    # Large negative number
                     prior_res[loopA] = 500
-            
-            # print('noise param', phys_inputs[:,2])
-            # print('prior results', prior_res)
-            # exit()
         
         res = gauss_prior_res + prior_res +  adjust
 
