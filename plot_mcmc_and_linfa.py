@@ -22,13 +22,30 @@ plt.rcParams['xtick.top']           = True
 plt.rcParams['ytick.right']         = True
 plt.rcParams['savefig.bbox']        = 'tight'
 
-def plot_params(param_data, LL_data, idx1, idx2, param_file_mcmc_1, param_file_mcmc_2, out_dir,out_info,fig_format='png', use_dark_mode=False):  
+def plot_marginals(param_data, idx1, fig_format='png'):
+
+  param_data = np.loadtxt(param_data)  # [5000, 3]
+  mcmc_1_data = np.loadtxt(os.path.join(out_dir,'posterior_samples_'+str(idx1)))
+  gt_params = [1000, -21.0E3, 0.05]
+
+  plt.figure(figsize=(6, 6))
+  plt.hist(param_data[:,idx1], color = 'blue', alpha = 0.25, label = 'LINFA', density = True)
+  plt.hist(mcmc_1_data, color = 'red', alpha = 0.25, label = 'MCMC', density = True)
+  plt.axvline(gt_params[idx1], color = 'r')
+  plt.xlabel(r'$\theta_{K,'+str(idx1+1)+'}$')
+  plt.legend()
+  plt.savefig(os.path.join(out_dir,'marginal_params_plot_' + out_info + '_'+str(idx1)+'.'+fig_format))
+  plt.close()
+
+
+def plot_params(param_data, LL_data, idx1, idx2, out_dir, out_info, fig_format='png', use_dark_mode=False):  
 
   # Read data
   param_data = np.loadtxt(param_data)  # [5000, 3]
   dent_data  = np.loadtxt(LL_data)     # [5000, ]
-  mcmc_1_data = np.loadtxt(param_file_mcmc_1)
-  mcmc_2_data = np.loadtxt(param_file_mcmc_2)
+  mcmc_1_data = np.loadtxt(os.path.join(out_dir,'posterior_samples_'+str(idx1)))
+  mcmc_2_data = np.loadtxt(os.path.join(out_dir,'posterior_samples_'+str(idx2)))
+  gt_params = [1000, -21.0E3, 0.05]
 
   # Combine MCMC samples
   samples = np.vstack([mcmc_1_data, mcmc_2_data])  # Transpose to get shape (n, d)
@@ -47,29 +64,11 @@ def plot_params(param_data, LL_data, idx1, idx2, param_file_mcmc_1, param_file_m
   plt.figure(figsize=(8, 6))
   plt.contour(X, Y, Z)
   plt.scatter(param_data[:,idx1], param_data[:,idx2], lw = 0, s = 7, marker = 'o', c = np.exp(dent_data))
-  plt.plot(1000, -21.0E3, 'r*')
+  plt.plot(gt_params[idx1], gt_params[idx2], 'r*')
   plt.colorbar()
   plt.xlabel(r'$\theta_{K,'+str(idx1+1)+'}$')
   plt.ylabel(r'$\theta_{K,'+str(idx2+1)+'}$')
   plt.savefig(os.path.join(out_dir,'params_plot_' + out_info + '_'+str(idx1)+'_'+str(idx2)+'.'+fig_format))
-  plt.close()
-
-  plt.figure(figsize=(6, 6))
-  plt.hist(param_data[:,idx1], color = 'blue', alpha = 0.25, label = 'LINFA', density = True)
-  plt.hist(mcmc_1_data, color = 'red', alpha = 0.25, label = 'MCMC', density = True)
-  plt.axvline(1000, color = 'r')
-  plt.xlabel(r'$\theta_{K,'+str(idx1+1)+'}$')
-  plt.legend()
-  plt.savefig(os.path.join(out_dir,'marginal_params_plot_' + out_info + '_'+str(idx1)+'_'+str(idx2)+'.'+fig_format))
-  plt.close()
-
-  plt.figure(figsize=(6, 6))
-  plt.hist(param_data[:,idx2], color = 'blue', alpha = 0.25, label = 'LINFA', density = True)
-  plt.hist(mcmc_2_data, color = 'red', alpha = 0.25, label = 'MCMC', density = True)
-  plt.axvline(-21.0E3, color = 'r')
-  plt.xlabel(r'$\theta_{K,'+str(idx2+1)+'}$')
-  plt.legend()
-  plt.savefig(os.path.join(out_dir,'marginal_params_plot_' + out_info + '_'+str(idx2)+'_'+str(idx2)+'.'+fig_format))
   plt.close()
 
 # =========
@@ -142,16 +141,15 @@ if __name__ == '__main__':
   param_file  = os.path.join(out_dir,args.exp_name + '_params_'     + str(args.step_num))
   LL_file     = os.path.join(out_dir,args.exp_name + '_logdensity_' + str(args.step_num))
   out_info    = args.exp_name + '_' + str(args.step_num)
-  param_file_mcmc_1 = os.path.join(out_dir,'posterior_samples_1')
-  param_file_mcmc_2 = os.path.join(out_dir,'posterior_samples_2')
 
   # Plot 2D slice of posterior samples
   if(os.path.isfile(param_file) and os.path.isfile(LL_file)):
     tot_params  = np.loadtxt(param_file).shape[1] # extract total number of parameters inferred
     print('Plotting posterior samples...')
     for loopA in range(tot_params): # loop over total number of parameters
+      plot_marginals(param_file, loopA)
       for loopB in range(loopA+1, tot_params): # get next parameter
-        plot_params(param_file,LL_file,loopA,loopB,param_file_mcmc_1, param_file_mcmc_2, out_dir,out_info,fig_format=args.img_format,use_dark_mode=args.use_dark_mode)
+        plot_params(param_file,LL_file,loopA,loopB,out_dir,out_info,fig_format=args.img_format,use_dark_mode=args.use_dark_mode)
   else:
     print('File with posterior samples not found: '+param_file)
     print('File with log-density not found: '+LL_file)

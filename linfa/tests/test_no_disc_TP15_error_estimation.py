@@ -131,11 +131,6 @@ def run_test():
             # - 1 / (2 * sigma^2) sum_{i = 1} ^ N (eta_i + disc_i - y_i)^2 
             l3 = -0.5 / (std_dev ** 2) * torch.sum((modelOut + discrepancy.t() - Data[:,loopA].unsqueeze(0))**2, dim = 1)
 
-            # Compute negative ll (num_batch x 1)
-            # print('l1', l1)
-            # print('l2', l2)
-            # print('l3', l3)
-            # exit()
             negLL = -(l1 + l2 + l3) # sum contributions
             res = -negLL.reshape(calib_inputs.size(0), 1) # reshape
         
@@ -180,9 +175,9 @@ def run_test():
         # Add gaussian log prior for first two parameters
         gauss_prior_res = l1 + l2 + l3
         
-        if False:
+        if True:
              # Add beta prior for third parameter
-            sigma_prior = torch.distributions.beta.Beta(torch.tensor([1.0]), torch.tensor([0.5]))
+            sigma_prior = torch.distributions.beta.Beta(torch.tensor([3/16]), torch.tensor([57/16]))
             prior_res = sigma_prior.log_prob(phys_inputs[:,2])
         else:
             # Add uniform prior
