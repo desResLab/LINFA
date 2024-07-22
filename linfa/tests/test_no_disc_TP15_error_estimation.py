@@ -26,7 +26,7 @@ def run_test():
     exp.batch_size          = 200           # int: Number of samples generated (default 100)
     exp.true_data_num       = 2             # double: Number of true model evaluted (default 2)
     exp.n_iter              = 10000         # int: Number of iterations (default 25001)
-    exp.lr                  = 0.0005        # float: Learning rate (default 0.003)
+    exp.lr                  = 0.0001        # float: Learning rate (default 0.003)
     exp.lr_decay            = 0.9999        # float:  Learning rate decay (default 0.9999)
     exp.log_interval        = 1             # int: How often to show loss stat (default 10)
 
