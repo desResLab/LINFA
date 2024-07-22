@@ -71,6 +71,8 @@ def run_test():
 
     # Read data
     exp.model.data = np.loadtxt('observations.csv', delimiter = ',', skiprows = 1)
+    # FOR REPRODUCBILITY WITH MCMC: manually replace with observation used with MCMC
+    exp.model.data[2] = 0.542957759886306
 
     if(len(exp.model.data.shape) < 2):
         exp.model.data = np.expand_dims(exp.model.data, axis=0)
@@ -130,9 +132,14 @@ def run_test():
         # Evaluate log-likelihood:
         # Loop on the available observations
         for loopA in range(num_obs):
+            # -n / 2 * log ( 2 pi ) 
             l1 = -0.5 * np.prod(langmuir_model.data.shape) * np.log(2.0 * np.pi)
-            l2 = (-0.5 * langmuir_model.data.shape[1] * torch.log(torch.prod(stds))).item()
-            l3 = -0.5 * torch.sum(((modelOut + discrepancy.t() - Data[:,loopA].unsqueeze(0)) / stds.t())**2, dim = 1)
+
+            # - 1 / 2 * sum_{i=1} ^ N log (sigma_i)
+            l2 = (-0.5 * langmuir_model.data.shape[1] * torch.log(stds)).item()
+            
+            # - 1 / 2 * sum_{i = 1} ^ N {(eta_i + disc_i - y_i)^2 / sigma_i^2)}
+            l3 = -0.5 * torch.sum(((modelOut + discrepancy.t() - Data[:,loopA].unsqueeze(0)) / stds)**2, dim = 1)
 
             if(False):
                 print('Compare')
@@ -166,7 +173,7 @@ def run_test():
         phys_inputs = transform.forward(calib_inputs)
         # Define prior moments
         pr_avg = torch.tensor([[1E3, -21E3]])
-        pr_std = torch.tensor([[1E2, 500]])
+        pr_std = torch.tensor([[1E2, 5E2]])
         # Eval log prior
         l1 = -0.5 * calib_inputs.size(1) * np.log(2.0 * np.pi)            
         l2 = (-0.5 * torch.log(torch.prod(pr_std))).item()

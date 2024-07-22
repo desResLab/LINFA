@@ -328,16 +328,28 @@ class experiment:
 
         # Free energy bound
         if(self.model_logprior is None):
-            # test1 = (- torch.sum(sum_log_abs_det_jacobians, 1)).mean()
-            # test2 = (self.model_logdensity(xk)).mean()
+            sum_log_jac = (- torch.sum(sum_log_abs_det_jacobians, 1)).mean()
+            likelihood = -t * (self.model_logdensity(xk)).mean()
+            prior = (self.model_logdensity(xk)).mean()*0
             # print(test1,test2)
             loss = (- torch.sum(sum_log_abs_det_jacobians, 1) - t * self.model_logdensity(xk)).mean()
+        
         else:
+            ## - E[sum log(|det(J)|)]
+            # This number is positive 
             sum_log_jac = (- torch.sum(sum_log_abs_det_jacobians, 1)).mean()
-            likelihood =  - t * (self.model_logdensity(xk)).mean()
-            prior =  - t * (self.model_logprior(xk)).mean()
-            # print(test1,test2,test3)
+            
+            ## - E[log p(x|theta)]
+             # This number is positive which means the log prior is negative (good)
+            likelihood =  - t * (self.model_logdensity(xk)).mean() 
+            
+            ## - E[log p(theta)]
+            # This number is positive which means the log density is negative (good)
+            prior =  - t * (self.model_logprior(xk)).mean()       
+            
+            ## Loss = - E[log-likelihood] - E[log prior] - E[sum log det Jacobian]
             loss = (- torch.sum(sum_log_abs_det_jacobians, 1) - t * (self.model_logdensity(xk) + self.model_logprior(xk))).mean()
+           
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()

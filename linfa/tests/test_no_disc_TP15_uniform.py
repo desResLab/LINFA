@@ -12,7 +12,7 @@ def run_test():
 
     exp = experiment()
     exp.name = "TP15_no_disc_uniform"
-    exp.flow_type           = 'realnvp'     # str: Type of flow (default 'realnvp') # TODO: generalize to work for TP1
+    exp.flow_type           = 'realnvp'     # str: Type of flow (default 'realnvp')
     exp.n_blocks            = 15            # int: Number of hidden layers   
     exp.hidden_size         = 100           # int: Hidden layer size for MADE in each layer (default 100)
     exp.n_hidden            = 1             # int: Number of hidden layers in each MADE
@@ -121,8 +121,8 @@ def run_test():
             discrepancy = surrogate.forward(model.var_in)
         
         # Get the absolute values of the standard deviation (num_var)
-        stds = langmuir_model.defOut * langmuir_model.stdRatio
-        
+        stds = torch.mean(langmuir_model.defOut) * langmuir_model.stdRatio
+
         # Get data - (num_var x num_obs)
         Data = torch.tensor(langmuir_model.data[:,2:]).to(exp.device)
         num_obs = Data.size(1)
@@ -130,10 +130,18 @@ def run_test():
         # Evaluate log-likelihood:
         # Loop on the available observations
         for loopA in range(num_obs):
-            l1 = -0.5 * np.prod(langmuir_model.data.shape) * np.log(2.0 * np.pi)
-            l2 = (-0.5 * langmuir_model.data.shape[1] * torch.log(torch.prod(stds))).item()
-            l3 = -0.5 * torch.sum(((modelOut + discrepancy.t() - Data[:,loopA].unsqueeze(0)) / stds.t())**2, dim = 1)
-
+            # -n/2 * log(2 pi)
+            #l1_old= -0.5 * np.prod(langmuir_model.data.shape) * np.log(2.0 * np.pi)
+            l1 = -0.5 * np.prod(langmuir_model.data.shape[1]) * np.log(2.0 * np.pi)
+            #print(l1)
+            #print(l1_test)
+            #exit()
+            # l2 = (-0.5 * langmuir_model.data.shape[1] * torch.log(torch.prod(stds))).item()
+            # -n/2 * log(stds^2)
+            l2 = -0.5 * langmuir_model.data.shape[1] * torch.log(stds)
+            # -n/2 * Sum_{(model - data)/std}^2
+            l3 = -0.5 * torch.sum(((modelOut + discrepancy.t() - Data[:,loopA].unsqueeze(0)) / stds)**2, dim = 1)
+            
             if(False):
                 print('Compare')
                 print('%15s %15s %15s %15s' % ('lf out','discrep','lf+discr','obs'))

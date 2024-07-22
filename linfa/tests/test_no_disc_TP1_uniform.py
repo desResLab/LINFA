@@ -93,11 +93,6 @@ def run_test():
                                     output_size = 1,
                                     var_grid_in = var_grid_in,
                                     var_grid_out = var_grid_out)
-        # Initially tune on the default values of the calibration variables
-        # exp.surrogate.update(langmuir_model.defParams, exp.surr_pre_it, 0.03, 0.9999, 100, store=True)
-        # exp.surrogate.update(langmuir_model.defParams, 1, 0.03, 0.9999, 100, store=True)
-        # Load the surrogate
-        # exp.surrogate.surrogate_loaCCd()
     else:
         exp.surrogate = None
 

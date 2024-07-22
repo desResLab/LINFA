@@ -122,7 +122,7 @@ def run_test():
             discrepancy = surrogate.forward(model.var_in)
         
         # Get the absolute values of the standard deviation (num_var)
-        stds = langmuir_model.defOut * langmuir_model.stdRatio
+        stds = torch.mean(langmuir_model.defOut) * langmuir_model.stdRatio
         
         # Get data - (num_var x num_obs)
         Data = torch.tensor(langmuir_model.data[:,2:]).to(exp.device)
@@ -135,11 +135,11 @@ def run_test():
             l1 = -0.5 * np.prod(langmuir_model.data.shape[1]) * np.log(2.0 * np.pi)
 
             # - 1 / 2 * sum_{i=1} ^ N log (sigma_i)
-            l2 = (-0.5 * langmuir_model.data.shape[1] * torch.log(torch.prod(stds))).item()
+            l2 = (-0.5 * langmuir_model.data.shape[1] * torch.log(stds)).item()
             
             # - 1 / 2 * sum_{i = 1} ^ N {(eta_i + disc_i - y_i)^2 / sigma_i^2)}
             l3 = -0.5 * torch.sum(((modelOut + discrepancy.t() - Data[:,loopA].unsqueeze(0)) / stds.t())**2, dim = 1)
-
+            
             if(False):
                 print('Compare')
                 print('%15s %15s %15s %15s' % ('lf out','discrep','lf+discr','obs'))
@@ -164,7 +164,6 @@ def run_test():
     exp.model_logdensity = lambda x: log_density(x, exp.model, exp.surrogate, exp.transform)
 
     # Define log prior
-    # TODO: can we use a half-normal or truncated normal prior? How to enforce bounds?
     def log_prior(calib_inputs, transform):
         # Compute transformation log Jacobian
         adjust = transform.compute_log_jacob_func(calib_inputs)
@@ -172,7 +171,7 @@ def run_test():
         phys_inputs = transform.forward(calib_inputs)
         # Define prior moments
         pr_avg = torch.tensor([[1E3, -21E3]])
-        pr_std = torch.tensor([[1E2, 500]])
+        pr_std = torch.tensor([[1E2, 5E2]])
         # Eval log prior
         l1 = -0.5 * calib_inputs.size(1) * np.log(2.0 * np.pi)            
         l2 = (-0.5 * torch.log(torch.prod(pr_std))).item()
