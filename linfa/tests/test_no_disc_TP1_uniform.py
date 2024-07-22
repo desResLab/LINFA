@@ -66,11 +66,14 @@ def run_test():
 
     # Define model
     langmuir_model = PhysChem(variable_inputs)
+    
     # Assign as experiment model
     exp.model = langmuir_model
 
     # Read data
     exp.model.data = np.loadtxt('observations.csv', delimiter = ',', skiprows = 1)
+    # FOR REPRODUCBILITY WITH MCMC: manually replace with observation used with MCMC
+    exp.model.data[2] = 0.5547913358371508
 
     if(len(exp.model.data.shape) < 2):
         exp.model.data = np.expand_dims(exp.model.data, axis=0)
@@ -131,14 +134,15 @@ def run_test():
         # Loop on the available observations
         for loopA in range(num_obs):
             
-            # -1 / 2 * n * log ( 2 pi ) 
+            # -n / 2 * log ( 2 pi ) 
             l1 = -0.5 * np.prod(langmuir_model.data.shape[1]) * np.log(2.0 * np.pi)
 
             # - 1 / 2 * sum_{i=1} ^ N log (sigma_i)
-            l2 = (-0.5 * langmuir_model.data.shape[1] * torch.log(torch.prod(stds))).item()
+            l2 = (-0.5 * langmuir_model.data.shape[1] * torch.log(stds)).item()
             
             # - 1 / 2 * sum_{i = 1} ^ N {(eta_i + disc_i - y_i)^2 / sigma_i^2)}
-            l3 = -0.5 * torch.sum(((modelOut + discrepancy.t() - Data[:,loopA].unsqueeze(0)) / stds.t())**2, dim = 1)
+            l3 = -0.5 * torch.sum(((modelOut + discrepancy.t() - Data[:,loopA].unsqueeze(0)) / stds)**2, dim = 1)
+            
             if(False):
                 print('Compare')
                 print('%15s %15s %15s %15s' % ('lf out','discrep','lf+discr','obs'))
