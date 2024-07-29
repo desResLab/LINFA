@@ -230,7 +230,6 @@ class experiment:
                 if self.surrogate and (self.surrogate_type == 'surrogate'):
                     np.savetxt(self.output_dir + '/' + self.name + '_grid_' + str(iteration), self.surrogate.grid_record.clone().cpu().numpy(), newline="\n")
                 
-                # TODO here is where elbo is saved
                 # Save log profile
                 np.savetxt(self.output_dir + '/' + self.log_file, np.array(log), newline="\n")
                 
@@ -267,6 +266,7 @@ class experiment:
                         else:
                             np.savetxt(self.output_dir + '/' + self.name + '_outputs_' + str(iteration), (self.model.solve_t(self.transform.forward(xkk)) + noise).data.cpu().numpy(), newline="\n")
                     elif(self.surrogate_type == 'discrepancy'):
+                        # TODO: this is no longer correct?
                         # Define noise when we use NoFAS
                         stds = torch.abs(self.model.defOut).to(self.device) * self.model.stdRatio
                         # Noise is rows: number of T,P pairs, columns: number of batches
@@ -331,7 +331,6 @@ class experiment:
             sum_log_jac = (- torch.sum(sum_log_abs_det_jacobians, 1)).mean()
             likelihood = -t * (self.model_logdensity(xk)).mean()
             prior = (self.model_logdensity(xk)).mean()*0
-            # print(test1,test2)
             loss = (- torch.sum(sum_log_abs_det_jacobians, 1) - t * self.model_logdensity(xk)).mean()
         
         else:
@@ -345,7 +344,7 @@ class experiment:
             
             ## - E[log p(theta)]
             # This number is positive which means the log density is negative (good)
-            prior =  - t * (self.model_logprior(xk)).mean()       
+            prior =  - t * (self.model_logprior(xk)).mean()
             
             ## Loss = - E[log-likelihood] - E[log prior] - E[sum log det Jacobian]
             loss = (- torch.sum(sum_log_abs_det_jacobians, 1) - t * (self.model_logdensity(xk) + self.model_logprior(xk))).mean()
