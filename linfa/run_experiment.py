@@ -266,9 +266,10 @@ class experiment:
                         else:
                             np.savetxt(self.output_dir + '/' + self.name + '_outputs_' + str(iteration), (self.model.solve_t(self.transform.forward(xkk)) + noise).data.cpu().numpy(), newline="\n")
                     elif(self.surrogate_type == 'discrepancy'):
-                        # TODO: this is no longer correct?
-                        # Define noise when we use NoFAS
-                        stds = torch.abs(self.model.defOut).to(self.device) * self.model.stdRatio
+                        # TODO confirm the following changes with DS
+                        ## Define noise when we use NoFAS
+                        # stds = torch.abs(self.model.defOut).to(self.device) * self.model.stdRatio
+                        stds = torch.mean(torch.abs(self.model.defOut)).to(self.device) * self.model.stdRatio
                         # Noise is rows: number of T,P pairs, columns: number of batches
                         o00 = torch.randn(self.model.data.shape[0], x00.size(0)).to(self.device)
                         noise = o00*stds.repeat(1,x00.size(0))
