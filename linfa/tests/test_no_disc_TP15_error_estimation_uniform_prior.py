@@ -4,6 +4,7 @@ from linfa.discrepancy import Discrepancy
 import torch
 import random
 import numpy as np
+from scipy import stats
 
 # Import rcr model
 from linfa.models.discrepancy_models import PhysChem_error
@@ -162,35 +163,30 @@ def run_test():
         
         # Compute the calibration inputs in the physical domain
         phys_inputs = transform.forward(calib_inputs)
-    
-        # Define prior moments for first two variables
-        pr_avg = torch.tensor([[1E3, -21E3]])
-        pr_std = torch.tensor([[1E2, 5E2]])
 
-        # Eval log prior
-        # -n / 2 * log ( 2 pi ) 
-        l1 = -0.5 * calib_inputs.size(1) * np.log(2.0 * np.pi)     
+        if False:
+            # Define prior moments for first two variables
+            pr_avg = torch.tensor([[1E3, -21E3]])
+            pr_std = torch.tensor([[1E2, 5E2]])
 
-        # - n / 2 * log det(Sigma)       
-        l2 = -0.5 * torch.log(torch.prod(pr_std**2))
-        
-        # - 1 / (2 * sigma^2) sum_{i = 1} ^ N (eta_i + disc_i - y_i)^2 
-        l3 = -0.5 * torch.sum(((phys_inputs[:,:1] - pr_avg)/pr_std)**2, dim = 1).unsqueeze(1)
-        # Add gaussian log prior for first two parameters
-        gauss_prior_res = l1 + l2 + l3
-        print(gauss_prior_res)
-        exit()
-        ## TODO: debug with scipy
-        # import numpy as np
-        # from scipy.stats import multivariate_normal
-        # mean = np.array([1000.0,-21000.0])
-        # cov = np.array([[100.0**2,0],
-        #                 [0.0,500.0**2]])
-        # rv = multivariate_normal(mean=mean, cov=cov)
-        # sample = np.array([1200.0,-20000.0])
-        # print(rv.logpdf(sample))
-        # print('Completed!')
-        
+            # Eval log prior
+            # -n / 2 * log ( 2 pi ) 
+            l1 = -0.5 * calib_inputs.size(1) * np.log(2.0 * np.pi)     
+
+            # - n / 2 * log det(Sigma)       
+            l2 = -0.5 * torch.log(torch.prod(pr_std**2))
+            
+            # - 1 / (2 * sigma^2) sum_{i = 1} ^ N (eta_i + disc_i - y_i)^2 
+            l3 = -0.5 * torch.sum(((phys_inputs[:,:1] - pr_avg)/pr_std)**2, dim = 1).unsqueeze(1)
+            # Add gaussian log prior for first two parameters
+            gauss_prior_res = l1 + l2 + l3
+        else:
+            mean = np.array([1000.0,-21000.0])
+            cov = np.array([[100.0**2,0],
+                            [0.0,500.0**2]])
+            print(phys_inputs[:,:2].detach().numpy())
+            gauss_prior_res = stats.multivariate_normal.logpdf(phys_inputs[:,:2].detach().numpy(), mean = mean, cov = cov)
+            
         # Add uniform prior
         sigma_prior = torch.distributions.uniform.Uniform(low = torch.tensor([0.0]), high = torch.tensor([1.0]))
         prior_res = torch.zeros(phys_inputs[:,2].size(0))
@@ -200,9 +196,8 @@ def run_test():
             else:
                 # Large negative number
                 prior_res[loopA] = -500
-                print(sigma)
-                exit()
-        res = gauss_prior_res + prior_res.unsqueeze(1) +  adjust
+                
+        res = torch.from_numpy(gauss_prior_res) + prior_res.unsqueeze(1) +  adjust
 
         # print('Prior on std. dev. ratio:', prior_res.size())
         # print('Gaussian prior on physical params:', gauss_prior_res.size())

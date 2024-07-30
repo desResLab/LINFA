@@ -266,15 +266,17 @@ class experiment:
                         else:
                             np.savetxt(self.output_dir + '/' + self.name + '_outputs_' + str(iteration), (self.model.solve_t(self.transform.forward(xkk)) + noise).data.cpu().numpy(), newline="\n")
                     elif(self.surrogate_type == 'discrepancy'):
-                        # TODO confirm the following changes with DS
+                        # TODO confirm the following changes with 
                         ## Define noise when we use NoFAS
                         # stds = torch.abs(self.model.defOut).to(self.device) * self.model.stdRatio
-                        stds = torch.mean(torch.abs(self.model.defOut)).to(self.device) * self.model.stdRatio
+                        params = self.transform.forward(xkk)
+                        data = torch.tensor(self.model.data[:,2:]).to(self.device)
+                        stds = (torch.mean(data).to(self.device) * params[:, 2]).unsqueeze(0)
                         # Noise is rows: number of T,P pairs, columns: number of batches
                         o00 = torch.randn(self.model.data.shape[0], x00.size(0)).to(self.device)
-                        noise = o00*stds.repeat(1,x00.size(0))
-                        # Print lf outputs
-                        model_out = self.model.solve_t(self.transform.forward(xkk))
+                        # 
+                        noise = o00*stds #.repeat(1,x00.size(0))
+                        model_out = self.model.solve_t(params)
                         np.savetxt(self.output_dir + '/' + self.name + '_outputs_lf_' + str(iteration), model_out.data.cpu().numpy(), newline="\n")                    
                         # LF model, plus dicrepancy, plus noise
                         if(self.surrogate is None):
