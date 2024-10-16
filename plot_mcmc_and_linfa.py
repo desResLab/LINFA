@@ -45,7 +45,7 @@ def plot_params(param_data, LL_data, idx1, idx2, out_dir, out_info, fig_format='
   dent_data  = np.loadtxt(LL_data)     # [5000, ]
   mcmc_1_data = np.loadtxt(os.path.join(out_dir,'posterior_samples_'+str(idx1)))
   mcmc_2_data = np.loadtxt(os.path.join(out_dir,'posterior_samples_'+str(idx2)))
-  gt_params = [1000, -21.0E3, 0.05]
+  gt_params = [1000, -21.0E3, 0.15]
 
   # Combine MCMC samples
   samples = np.vstack([mcmc_1_data, mcmc_2_data])  # Transpose to get shape (n, d)

@@ -13,7 +13,7 @@ class PhysChem_general(object):
     def solve_true(self, cal_inputs):
         pass
     
-    def genDataFile(self, dataFileNamePrefix='observations', use_true_model=True, store=True, num_observations=10):
+    def genDataFile(self, dataFileNamePrefix = 'observations', use_true_model = True, store = True, num_observations = 10):
 
         # solve model
         if(use_true_model):
@@ -25,7 +25,7 @@ class PhysChem_general(object):
         
         # get standard deviation
         stdDev = self.stdRatio * torch.mean(torch.abs(def_out))
-        
+
         # add noise to coverage data
         coverage = def_out.repeat(1, num_observations)
 
@@ -140,12 +140,12 @@ class PhysChem_error(PhysChem_general):
         
         # calibration inputs
         self.defParams = torch.tensor([[1e3, -21e3, 0.05]]) # standard presssure (MPa) and energy of ads. (J/mol)
-        self.limits = [[5e2, 1.5e3],[-30e3, -15e3],[0.01,0.3]] # range on defParams
+        self.limits = [[5e2, 1.5e3],[-30e3, -15e3],[0.01, 0.3]] # range on defParams
                 
         ## model constants
         self.RConst = torch.tensor(8.314) # universal gas constant (J/ mol/ K)
         self.data = None # dataset of model
-        self.stdRatio = 0.05 # standard deviation ratio
+        self.stdRatio = 0.10 # standard deviation ratio
         self.defOut = self.solve_t(self.defParams)
         
     def solve_t(self, cal_inputs):
@@ -161,15 +161,15 @@ class PhysChem_error(PhysChem_general):
         P = P.repeat(1, num_batch)
 
         # unpack calibration inputs
-        p0Const, eConst, sigma_e = torch.chunk(cal_inputs, chunks = 3, dim = 1) # split cal_inputs into two chunks along the second dimension
+        p0Const, eConst, std_dev_ratio = torch.chunk(cal_inputs, chunks = 3, dim = 1) # split cal_inputs into two chunks along the second dimension
         p0Const = p0Const.repeat(1, num_vars).t()
         eConst  = eConst.repeat(1, num_vars).t()
         
         # compute equilibrium constant
-        kConst = 1/p0Const* torch.exp(-eConst / self.RConst / T)
+        kConst = 1 / p0Const * torch.exp(-eConst / self.RConst / T)
         
         # compute surface coverage fraction
-        cov_frac = kConst*P/(1 + kConst*P)
+        cov_frac = kConst * P / (1 + kConst*P)
 
         # Return coverages        
         return cov_frac
@@ -191,7 +191,7 @@ class PhysChem_error(PhysChem_general):
         e1Const  = e1Const.repeat(1, num_vars).t()
 
         # specify adsorption site two parameters
-        p02Const, e2Const, lambda1Const, lambda2Const = torch.tensor(5000.0), torch.tensor(-22000.0), torch.tensor(1.0), torch.tensor(0.5)
+        p02Const, e2Const, lambda1Const, lambda2Const = torch.tensor(5000.0), torch.tensor(-22000.0), torch.tensor(0.5), torch.tensor(0.5)
         p02Const = p02Const.repeat(1, num_vars).t()
         e2Const  = e2Const.repeat(1, num_vars).t()
 
@@ -224,7 +224,8 @@ class PhysChem_disc(PhysChem_general):
 
         # calibration inputs
         self.defParams = torch.tensor([[1e3, -21e3, self.stdRatio, 2.0]]) # standard presssure (MPa) and energy of ads. (J/mol)
-        self.limits = [[5e2, 1.5e3],[-30e3, -15e3],[0.01, 0.3], [0.1, 5.0]] # range on defParams
+        self.limits = [[5e2, 1.5e3],
+        [-30e3, -15e3],[0.01, 0.3], [0.1, 5.0]] # range on defParams
 
         self.defOut = self.solve_t(self.defParams)
         
