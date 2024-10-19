@@ -30,8 +30,8 @@ def plot_marginals(param_data, idx1, fig_format='png'):
   gt_params = [1000, -21.0E3, 0.05]
 
   plt.figure(figsize=(6, 6))
-  plt.hist(param_data[:, idx1], color = 'blue', alpha = 0.25, label = 'LINFA') #, density = True)
-  plt.hist(mcmc_1_data, color = 'red', alpha = 0.25, label = 'MCMC') #density = True)
+  plt.hist(param_data[:, idx1], color = 'blue', alpha = 0.25, label = 'LINFA', density = True)
+  plt.hist(mcmc_1_data, color = 'red', alpha = 0.25, label = 'MCMC', density = True)
   plt.axvline(gt_params[idx1], color = 'r')
   plt.xlabel(r'$\theta_{K,'+str(idx1+1)+'}$')
   plt.legend()

@@ -15,8 +15,8 @@ def run_test():
     exp = experiment()
     exp.name = "TP15_no_disc_error_estimation"
     exp.flow_type           = 'realnvp'     # str: Type of flow (default 'realnvp') # TODO: generalize to work for TP1
-    exp.n_blocks            = 30            # int: Number of hidden layers  
-    exp.hidden_size         = 100           # int: Hidden layer size for MADE in each layer (default 100)
+    exp.n_blocks            = 50            # int: Number of hidden layers  
+    exp.hidden_size         = 10            # int: Hidden layer size for MADE in each layer (default 100)
     exp.n_hidden            = 1             # int: Number of hidden layers in each MADE
     exp.activation_fn       = 'relu'        # str: Activation function used (default 'relu')
     exp.input_order         = 'sequential'  # str: Input oder for create_mask (default 'sequential')
@@ -25,12 +25,12 @@ def run_test():
     
     # p0,e,sigma_e (measurement noise also estimated)
     exp.input_size          = 3             # int: Dimensionalty of input (default 2)
-    exp.batch_size          = 200           # int: Number of samples generated (default 100)
-    exp.true_data_num       = 2             # double: Number of true model evaluted (default 2)
-    exp.n_iter              = 2000          # int: Number of iterations (default 25001)
-    exp.lr                  = 0.0001        # float: Learning rate (default 0.003)
+    exp.batch_size          = 300           # int: Number of samples generated (default 100)
+    exp.true_data_num       = 1             # double: Number of true model evaluted (default 2)
+    exp.n_iter              = 4000          # int: Number of iterations (default 25001)
+    exp.lr                  = 0.0005        # float: Learning rate (default 0.003)
     exp.lr_decay            = 0.9999        # float:  Learning rate decay (default 0.9999)
-    exp.log_interval        = 1             # int: How often to show loss stat (default 10)
+    exp.log_interval        = 10            # int: How often to show loss stat (default 10)
 
     exp.run_nofas           = False         # normalizing flow with adaptive surrogate
     exp.surrogate_type      = 'discrepancy' # type of surrogate we are using
@@ -73,7 +73,6 @@ def run_test():
 
     # Read data
     exp.model.data = np.loadtxt('observations.csv', delimiter = ',', skiprows = 1)
-    print(exp.model.defParams.detach().numpy()[0,2] * np.mean(exp.model.data[:,2]))
 
     if(len(exp.model.data.shape) < 2):
         exp.model.data = np.expand_dims(exp.model.data, axis=0)
@@ -109,29 +108,17 @@ def run_test():
             discrepancy = surrogate.forward(model.var_in)
         
         # Get the calibration parameters
-        p0Const, eConst, std_dev = torch.chunk(phys_inputs, chunks = 3, dim = 1)
-
-        # Get data - (num_var x num_obs)
+        p0Const, eConst, std_dev_ratio = torch.chunk(phys_inputs, chunks = 3, dim = 1)
         Data = torch.tensor(model.data[:,2:]).to(exp.device)
         num_reapeat_obs = Data.size(1)
 
         # Convert standard deviation ratio to standard deviation
-        std_dev = std_dev.flatten() * torch.mean(Data)
-        # LL = np.zeros(exp.batch_size)
+        std_dev = std_dev_ratio.flatten() * torch.mean(Data)
         total_nll = 0
 
         # Evaluate log-likelihood:
         # Loop on the available observations
         for loopA in range(num_reapeat_obs):
-
-            # # loop over batches
-            # for loopB in range(exp.batch_size):
-
-            #     mean = modelOut[loopB].detach().numpy()
-            #     cov = std_dev.detach().numpy()[loopB]**2 * np.eye(mean.shape[0])
-            #     data = Data[:, loopA].unsqueeze(0).detach().numpy()
-
-            #     LL[loopB] = stats.multivariate_normal.logpdf(x = data, mean = mean, cov = cov)
             
             # -n / 2 * log ( 2 pi ) 
             l1 = -0.5 * np.prod(model.data.shape[0]) * np.log(2.0 * np.pi)
@@ -209,6 +196,6 @@ def generate_data(use_true_model = False, num_observations=50):
 # Main code
 if __name__ == "__main__":
 
-    generate_data(use_true_model = False, num_observations = 1)
+    #generate_data(use_true_model = False, num_observations = 1)
 
     run_test()

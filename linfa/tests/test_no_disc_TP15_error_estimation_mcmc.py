@@ -10,7 +10,6 @@ tfd = tfp.distributions
 # Import the RCR model
 from linfa.models.discrepancy_models import PhysChem_error
 
-
 def run_test(num_results, num_burnin_steps):
     
     # Set variable grid
@@ -23,22 +22,25 @@ def run_test(num_results, num_burnin_steps):
     # Read data
     model.data = np.loadtxt('observations.csv', delimiter=',', skiprows=1)
 
+    data_mean = np.mean(model.data[:,2:])
+        
     # Form tensors for variables and results in observations
-    var_grid_in = tf.convert_to_tensor(model.data[:,:2], dtype = tf.float32)
-    var_grid_out = tf.convert_to_tensor(model.data[:,2:], dtype = tf.float32)
+    var_grid_in = tf.convert_to_tensor(model.data[:,:2], dtype=tf.float32)
+    var_grid_out = tf.convert_to_tensor(model.data[:,2:], dtype=tf.float32)
 
     def target_log_prob_fn(theta, log_sigma):
     
         # Transform log_sigma to sigma (ensuring sigma is positive)
-        sigma = tf.exp(log_sigma)
-        
+        sigma = tf.exp(log_sigma) * data_mean
         # Transformations on theta
         theta1 = tf.exp(theta[0])  # Keep theta_1 on the log scale
-        theta2 = -21E3 + 1000 * tf.tanh(theta[1])  # Allow some flexibility around -21E3
+        
+        # Use sigmoid transformation for theta2 to map between (-15E3, -30E3)
+        theta2 = -30E3 + (tf.sigmoid(theta[1]) * 15E3)  # Maps theta_2 between -22E3 and -21E3
 
         # Priors on transformed parameters
-        prior_theta1 = tfd.Normal(loc=1000.0, scale=100.0).log_prob(theta1)
-        prior_theta2 = tfd.Normal(loc=-21.0E3, scale=500.0).log_prob(theta2)
+        prior_theta1 = tfd.Normal(loc = 1000.0, scale = 100.0).log_prob(theta1)
+        prior_theta2 = tfd.Normal(loc = -21.0E3, scale = 500.0).log_prob(theta2)
         prior_theta = prior_theta1 + prior_theta2
 
         # Prior on sigma^2 (Beta prior as used)
@@ -59,7 +61,7 @@ def run_test(num_results, num_burnin_steps):
         y_pred_tf = tf.convert_to_tensor(y_pred_np, dtype=tf.float32)
 
         # Likelihood: y_i ~ N(g(x_i, theta), sigma^2)
-        likelihood = tfd.MultivariateNormalDiag(loc=y_pred_tf, scale_diag=sigma * tf.ones_like(y_pred_tf)).log_prob(var_grid_out)
+        likelihood = tfd.MultivariateNormalDiag(loc=y_pred_tf, scale_diag = sigma * tf.ones_like(y_pred_tf)).log_prob(var_grid_out)
 
         return tf.reduce_sum(likelihood) + tf.reduce_sum(prior_theta) + tf.reduce_sum(prior_sigma)
 
@@ -67,21 +69,22 @@ def run_test(num_results, num_burnin_steps):
     step_size = 0.1  # Adjust step size for better exploration
 
     mh_kernel = tfp.mcmc.RandomWalkMetropolis(
-        target_log_prob_fn = target_log_prob_fn,
-        new_state_fn = tfp.mcmc.random_walk_normal_fn(scale = step_size))
+        target_log_prob_fn=target_log_prob_fn,
+        new_state_fn=tfp.mcmc.random_walk_normal_fn(scale=step_size)
+    )
     
-    initial_theta1 = tf.math.log(tf.ones([], dtype=tf.float32) * 1E3)
-    initial_theta2 = tf.zeros([], dtype=tf.float32)
+    initial_theta1 = tf.math.log(tf.ones([], dtype=tf.float32) * 1200)
+    initial_theta2 = tf.zeros([], dtype=tf.float32)  # Initialize at 0 to center sigmoid at midpoint of range
     initial_theta = tf.stack([initial_theta1, initial_theta2])
     initial_log_sigma = tf.math.log(tf.ones([], dtype=tf.float32) * 0.05)  # Start with sigma = 0.05
 
     # Run MCMC sampling
     samples, kernel_results = tfp.mcmc.sample_chain(
-        num_results = num_results,
-        num_burnin_steps = num_burnin_steps,
-        current_state = [initial_theta, initial_log_sigma],
-        kernel = mh_kernel,
-        trace_fn = lambda current_state, kernel_results: kernel_results.is_accepted
+        num_results=num_results,
+        num_burnin_steps=num_burnin_steps,
+        current_state=[initial_theta, initial_log_sigma],
+        kernel=mh_kernel,
+        trace_fn=lambda current_state, kernel_results: kernel_results.is_accepted
     )
 
     # Unpack theta samples and transform back
@@ -90,8 +93,8 @@ def run_test(num_results, num_burnin_steps):
     # Transform theta1 back to original scale (it was on log scale during sampling)
     theta1_samples = tf.exp(theta_samples[:, 0])
 
-    # Theta2 is already transformed using the affine transformation, so no further transformation needed
-    theta2_samples = -21E3 + 1000 * tf.tanh(theta_samples[:, 1])
+    # Apply the same sigmoid transformation for theta2 back to the original scale
+    theta2_samples = -30E3 + (tf.sigmoid(theta_samples[:, 1]) * 15E3)
 
     # Transform log_sigma samples back to sigma
     sigma_samples = tf.exp(log_sigma_samples)
@@ -185,7 +188,7 @@ if __name__ == "__main__":
 
     # generate_data(use_true_model = False, num_observations = 1)
     
-    samples, kernel_results = run_test(10000, 500)
+    samples, kernel_results = run_test(10000, 1000)
     
     save_results(samples)
 
