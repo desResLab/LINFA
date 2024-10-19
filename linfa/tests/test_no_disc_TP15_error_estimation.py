@@ -15,8 +15,8 @@ def run_test():
     exp = experiment()
     exp.name = "TP15_no_disc_error_estimation"
     exp.flow_type           = 'realnvp'     # str: Type of flow (default 'realnvp') # TODO: generalize to work for TP1
-    exp.n_blocks            = 15            # int: Number of hidden layers   
-    exp.hidden_size         = 200           # int: Hidden layer size for MADE in each layer (default 100)
+    exp.n_blocks            = 30            # int: Number of hidden layers  
+    exp.hidden_size         = 100           # int: Hidden layer size for MADE in each layer (default 100)
     exp.n_hidden            = 1             # int: Number of hidden layers in each MADE
     exp.activation_fn       = 'relu'        # str: Activation function used (default 'relu')
     exp.input_order         = 'sequential'  # str: Input oder for create_mask (default 'sequential')
@@ -27,8 +27,8 @@ def run_test():
     exp.input_size          = 3             # int: Dimensionalty of input (default 2)
     exp.batch_size          = 200           # int: Number of samples generated (default 100)
     exp.true_data_num       = 2             # double: Number of true model evaluted (default 2)
-    exp.n_iter              = 2000         # int: Number of iterations (default 25001)
-    exp.lr                  = 0.0001         # float: Learning rate (default 0.003)
+    exp.n_iter              = 2000          # int: Number of iterations (default 25001)
+    exp.lr                  = 0.0001        # float: Learning rate (default 0.003)
     exp.lr_decay            = 0.9999        # float:  Learning rate decay (default 0.9999)
     exp.log_interval        = 1             # int: How often to show loss stat (default 10)
 
@@ -36,7 +36,7 @@ def run_test():
     exp.surrogate_type      = 'discrepancy' # type of surrogate we are using
     exp.surr_pre_it         = 1000          # int: Number of pre-training iterations for surrogate model
     exp.surr_upd_it         = 2000          # int: Number of iterations for the surrogate model update
-    exp.calibrate_interval  = 1000          #:int:    How often the surrogate model is updated
+    exp.calibrate_interval  = 1000          # int: How often the surrogate model is updated
 
     exp.annealing           = False         
     exp.budget              = 216           # int: Total number of true model evaulations
@@ -166,7 +166,7 @@ def run_test():
         phys_inputs = transform.forward(calib_inputs)
         
         # Gaussian prior on physically meaningful inputs
-        mean = np.array([1.0E3,-21.0E3])
+        mean = np.array([1.0E3, -21.0E3])
         cov = np.array([[100.0**2, 0.0],
                         [0.0,   500.0**2]])
         gauss_prior_res = torch.from_numpy(stats.multivariate_normal.logpdf(phys_inputs[:,:2].detach().numpy(), mean = mean, cov = cov))

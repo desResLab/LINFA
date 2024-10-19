@@ -25,12 +25,13 @@ plt.rcParams['savefig.bbox']        = 'tight'
 def plot_marginals(param_data, idx1, fig_format='png'):
 
   param_data = np.loadtxt(param_data)  # [5000, 3]
-  mcmc_1_data = np.loadtxt(os.path.join(out_dir,'posterior_samples_'+str(idx1)))
+  data = np.loadtxt(os.path.join(out_dir, 'mcmc'))
+  mcmc_1_data = data[:,idx1]
   gt_params = [1000, -21.0E3, 0.05]
 
   plt.figure(figsize=(6, 6))
-  plt.hist(param_data[:,idx1], color = 'blue', alpha = 0.25, label = 'LINFA', density = True)
-  plt.hist(mcmc_1_data, color = 'red', alpha = 0.25, label = 'MCMC', density = True)
+  plt.hist(param_data[:, idx1], color = 'blue', alpha = 0.25, label = 'LINFA') #, density = True)
+  plt.hist(mcmc_1_data, color = 'red', alpha = 0.25, label = 'MCMC') #density = True)
   plt.axvline(gt_params[idx1], color = 'r')
   plt.xlabel(r'$\theta_{K,'+str(idx1+1)+'}$')
   plt.legend()
@@ -43,9 +44,10 @@ def plot_params(param_data, LL_data, idx1, idx2, out_dir, out_info, fig_format='
   # Read data
   param_data = np.loadtxt(param_data)  # [5000, 3]
   dent_data  = np.loadtxt(LL_data)     # [5000, ]
-  mcmc_1_data = np.loadtxt(os.path.join(out_dir,'posterior_samples_'+str(idx1)))
-  mcmc_2_data = np.loadtxt(os.path.join(out_dir,'posterior_samples_'+str(idx2)))
-  gt_params = [1000, -21.0E3, 0.15]
+  data = np.loadtxt(os.path.join(out_dir, 'mcmc'))
+  mcmc_1_data = data[:,idx1]
+  mcmc_2_data = data[:,idx2]
+  gt_params = [1000, -21.0E3, 0.05]
 
   # Combine MCMC samples
   samples = np.vstack([mcmc_1_data, mcmc_2_data])  # Transpose to get shape (n, d)
@@ -149,6 +151,7 @@ if __name__ == '__main__':
     for loopA in range(tot_params): # loop over total number of parameters
       plot_marginals(param_file, loopA)
       for loopB in range(loopA+1, tot_params): # get next parameter
+          
         plot_params(param_file,LL_file,loopA,loopB,out_dir,out_info,fig_format=args.img_format,use_dark_mode=args.use_dark_mode)
   else:
     print('File with posterior samples not found: '+param_file)

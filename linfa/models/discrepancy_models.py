@@ -139,20 +139,23 @@ class PhysChem_error(PhysChem_general):
         self.var_in = torch.tensor(list(itertools.product(*var_inputs)))
         
         # calibration inputs
-        self.defParams = torch.tensor([[1e3, -21e3, 0.05]]) # standard presssure (MPa) and energy of ads. (J/mol)
+        self.defParams = torch.tensor([[1e3, -21e3, 0.05]])     # standard presssure (MPa) and energy of ads. (J/mol)
         self.limits = [[5e2, 1.5e3],[-30e3, -15e3],[0.01, 0.3]] # range on defParams
                 
         ## model constants
         self.RConst = torch.tensor(8.314) # universal gas constant (J/ mol/ K)
         self.data = None # dataset of model
-        self.stdRatio = 0.10 # standard deviation ratio
+        self.stdRatio = 0.05 # standard deviation ratio
         self.defOut = self.solve_t(self.defParams)
         
     def solve_t(self, cal_inputs):
 
-        # TODO: update cal_inputs to pass other variables for inference
+        # Ensure cal_inputs is 2D, even if batch size is 1
+        if cal_inputs.dim() == 1:
+            # Add a batch dimension for the single-batch case
+            cal_inputs = cal_inputs.unsqueeze(0)
 
-        num_batch = len(cal_inputs)
+        num_batch = cal_inputs.shape[0]
         num_vars = len(self.var_in)
         
         # unpack variable inputs
@@ -161,7 +164,12 @@ class PhysChem_error(PhysChem_general):
         P = P.repeat(1, num_batch)
 
         # unpack calibration inputs
-        p0Const, eConst, std_dev_ratio = torch.chunk(cal_inputs, chunks = 3, dim = 1) # split cal_inputs into two chunks along the second dimension
+        if num_batch == 1:
+            # If num_batch is 1, cal_inputs is now guaranteed to be 2D
+            p0Const, eConst, std_dev_ratio = cal_inputs[0]  # Unpack the row
+        else:
+            p0Const, eConst, std_dev_ratio = torch.chunk(cal_inputs, chunks = 3, dim = 1) # split cal_inputs into two chunks along the second dimension
+        
         p0Const = p0Const.repeat(1, num_vars).t()
         eConst  = eConst.repeat(1, num_vars).t()
         
@@ -169,7 +177,7 @@ class PhysChem_error(PhysChem_general):
         kConst = 1 / p0Const * torch.exp(-eConst / self.RConst / T)
         
         # compute surface coverage fraction
-        cov_frac = kConst * P / (1 + kConst*P)
+        cov_frac = kConst * P / (1 + kConst * P)
 
         # Return coverages        
         return cov_frac
