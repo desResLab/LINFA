@@ -119,10 +119,11 @@ class PhysChem(PhysChem_general):
 
         # compute equilibrium constant of site one
         k1Const = 1.0/p01Const * torch.exp(-e1Const / self.RConst / T)
+        print(k1Const)
 
         # compute equilibrium constant of site two
         k2Const = 1.0/p02Const * torch.exp(-e2Const / self.RConst / T)
-
+        print(k2Const)
         # compute surface coverage fraction for two adsorption sites with different equilibrium conditions
         cov_frac = lambda1Const * (k1Const*P/(1 + k1Const*P)) + lambda2Const * (k2Const*P/(1 + k2Const*P))
 

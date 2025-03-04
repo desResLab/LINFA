@@ -6,6 +6,7 @@ import random
 import numpy as np
 from scipy import stats
 import matplotlib.pyplot as plt
+import time 
 
 # Import rcr model
 from linfa.models.discrepancy_models import PhysChem_error
@@ -13,10 +14,10 @@ from linfa.models.discrepancy_models import PhysChem_error
 def run_test():
 
     exp = experiment()
-    exp.name = "TP15_no_disc_error_estimation_2"
+    exp.name = "TP15_no_disc_error_estimation"
     exp.flow_type           = 'realnvp'     # str: Type of flow (default 'realnvp') # TODO: generalize to work for TP1
-    exp.n_blocks            = 1            # int: Number of hidden layers  
-    exp.hidden_size         = 10           # int: Hidden layer size for MADE in each layer (default 100)
+    exp.n_blocks            = 10            # int: Number of hidden layers  
+    exp.hidden_size         = 100           # int: Hidden layer size for MADE in each layer (default 100)
     exp.n_hidden            = 1             # int: Number of hidden layers in each MADE
     exp.activation_fn       = 'relu'        # str: Activation function used (default 'relu')
     exp.input_order         = 'sequential'  # str: Input oder for create_mask (default 'sequential')
@@ -27,7 +28,7 @@ def run_test():
     exp.input_size          = 3             # int: Dimensionalty of input (default 2)
     exp.batch_size          = 100           # int: Number of samples generated (default 100)
     exp.true_data_num       = 1             # double: Number of true model evaluted (default 2)
-    exp.n_iter              = 10000          # int: Number of iterations (default 25001)
+    exp.n_iter              = 6000          # int: Number of iterations (default 25001)
     exp.lr                  = 0.001        # float: Learning rate (default 0.003)
     exp.lr_decay            = 0.9999        # float:  Learning rate decay (default 0.9999)
     exp.log_interval        = 10            # int: How often to show loss stat (default 10)
@@ -177,8 +178,17 @@ def run_test():
     exp.model_logprior = lambda x: log_prior(x, exp.transform)
     # exp.model_logprior = None
 
+    # Start timing for Linfa experiment run
+    start_time = time.time()
+
     # Run VI
     exp.run()
+
+    # End timing for Linfa experiment run
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+
+    print(f"Linfa experiment run took {elapsed_time:.2f} seconds")
 
 def generate_data(use_true_model = False, num_observations=50):
 
