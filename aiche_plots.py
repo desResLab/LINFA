@@ -122,45 +122,92 @@ if False:
 
     plt.savefig("normalized_density_fig", dpi = 300)
 
+
 import os
 import torch
-from linfa.models.discrepancy_models import PhysChem
+from linfa.models.discrepancy_models import PhysChem_error
 import matplotlib.pyplot as plt
 
 
 
-samples = np.loadtxt('results/TP15_no_disc_error_estimation_aiche/TP15_no_disc_error_estimation_aiche_outputs_lf+noise_6000')
-observations = np.loadtxt("observations.csv", skiprows=1, delimiter=',')
+data = np.loadtxt("observations.csv", skiprows=1, delimiter=',')
+unique_values = np.unique(data[:, 0])
+mrkrs = ['o', 'v', 's']
+colores = ['m', 'red', 'orange']
+# Plot each unique value as a separate line
+plt.figure(figsize=(5, 5))
 
 
-# Set variable grid
-T = [50.0, 400.0, 450.0]
-P = [1.0, 2.0, 3.0, 4.0, 5.0]
+# Add temperatures and pressures for each evaluation
 
-samples = samples.reshape(3,5,5000)
+samples = np.loadtxt('results/TP15_no_disc_error_estimation_aiche/TP15_no_disc_error_estimation_aiche_params_6000')
+temps = [350.0, 400.0, 450.0]
+pressures =  np.linspace(0.0, 5.5).tolist()
+for i, temp in enumerate(temps):
+    for j, sample in enumerate(samples):
+        variable_inputs = [[temp], pressures]
+        langmuir = PhysChem_error(variable_inputs)
+        ssl = langmuir.solve_t(torch.tensor(sample))
+        plt.plot(pressures, ssl, color = colores[i], linewidth = 0.1, alpha = 0.2)
+    ssl_true = langmuir.solve_t(torch.tensor([1000, -21E3, 0.05]))
+    if i == 0:
+        plt.plot(pressures, ssl_true, 'k--', label = "True")
+        plt.plot([], [], 'k-', alpha = 0.2, label = "Estimated")
+    else:
+        plt.plot(pressures, ssl_true, 'k--')
 
+for i, val in enumerate(unique_values):
+    subset = data[data[:, 0] == val]
+    plt.plot(subset[:, 1], subset[:, 2], color = colores[i], marker = mrkrs[i], markeredgecolor = 'k', linestyle = "None", label=f'{int(val)} K')
 
-# Plot the samples
-for i in range(5000):
-    plt.plot(P, samples[0, :, i], 'm-', linewidth=0.005)
-    plt.plot(P, samples[1, :, i], 'r-', linewidth=0.005)
-    plt.plot(P, samples[2, :, i], color="orange", linestyle='-', linewidth=0.005)
-
-# Plot observations
-plt.plot(observations[:, 1], observations[:, 2], 'ko')
-
-# Add custom legend entries by plotting representative lines
-plt.plot([], [], 'm-', label="350 K")       # Magenta line
-plt.plot([], [], 'r-', label="400 K")       # Red line
-plt.plot([], [], color="orange", linestyle='-', label="450 K")  # Orange line
-plt.plot([], [], 'ko', label="Observations")  # Black circles for observations
-
-# Add legend, labels, and limits
+plt.xlabel(r'Pressure, $P$ [Pa]')
+plt.ylabel(r'Coverage, [ ]')
+plt.xlim(0,5.5)
+plt.ylim(0,1.0)
 plt.legend()
-plt.xlim(1, 5)
-plt.xlabel("Pressure, $P$ [Pa]")
-plt.ylabel("Coverage")
-plt.savefig("function", dpi=300)
+plt.savefig("results/TP15_no_disc_error_estimation_aiche/fxn_pred")
+
+
+
+
+# import os
+# import torch
+# from linfa.models.discrepancy_models import PhysChem
+# import matplotlib.pyplot as plt
+
+# samples = np.loadtxt('results/TP15_no_disc_error_estimation_aiche/TP15_no_disc_error_estimation_aiche_outputs_lf+noise_6000')
+
+
+# samples = np.loadtxt('results/TP15_no_disc_error_estimation_aiche/TP15_no_disc_error_estimation_aiche_samples_6000')
+# observations = np.loadtxt("observations.csv", skiprows=1, delimiter=',')
+
+# # Set variable grid
+# T = [300.0, 400.0, 450.0]
+# P = [1.0, 2.0, 3.0, 4.0, 5.0]
+
+# samples = samples.reshape(3,5,5000)
+
+# # Plot the samples
+# for i in range(5000):
+#     plt.plot(P, samples[0, :, i], 'm-', linewidth=0.005)
+#     plt.plot(P, samples[1, :, i], 'r-', linewidth=0.005)
+#     plt.plot(P, samples[2, :, i], color="orange", linestyle='-', linewidth=0.005)
+
+# # Plot observations
+# plt.plot(observations[:, 1], observations[:, 2], 'ko')
+
+# # Add custom legend entries by plotting representative lines
+# plt.plot([], [], 'm-', label="350 K")       # Magenta line
+# plt.plot([], [], 'r-', label="400 K")       # Red line
+# plt.plot([], [], color="orange", linestyle='-', label="450 K")  # Orange line
+# plt.plot([], [], 'ko', label="Observations")  # Black circles for observations
+
+# # Add legend, labels, and limits
+# plt.legend()
+# plt.xlim(1, 5)
+# plt.xlabel("Pressure, $P$ [Pa]")
+# plt.ylabel("Coverage")
+# plt.savefig("function", dpi=300)
 
 # for i in range(5000):
 #     plt.plot(P, samples[0,:,i],'m-', linewidth = 0.005)

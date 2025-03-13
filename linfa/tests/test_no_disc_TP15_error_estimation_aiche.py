@@ -24,12 +24,12 @@ def run_test():
     exp.batch_norm_order    = True          # bool: Order to decide if batch_norm is used (default True)
     exp.save_interval       = 1000          # int: How often to sample from normalizing flow
     
-    # p0,e,sigma_e (measurement noise also estimated)
+    # p0, e, sigma_e (measurement noise also estimated)
     exp.input_size          = 3             # int: Dimensionalty of input (default 2)
     exp.batch_size          = 100           # int: Number of samples generated (default 100)
     exp.true_data_num       = 1             # double: Number of true model evaluted (default 2)
     exp.n_iter              = 6000          # int: Number of iterations (default 25001)
-    exp.lr                  = 0.001        # float: Learning rate (default 0.003)
+    exp.lr                  = 0.001         # float: Learning rate (default 0.003)
     exp.lr_decay            = 0.9999        # float:  Learning rate decay (default 0.9999)
     exp.log_interval        = 10            # int: How often to show loss stat (default 10)
 

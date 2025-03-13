@@ -22,19 +22,24 @@ plt.rcParams['savefig.bbox']        = 'tight'
 
 def plot_pairwise(param_data, out_dir, out_info, fig_format='png'):
     """Generate a pair plot with marginal KDEs and scatter plots for pairwise distributions using Matplotlib."""
-    
     # Load parameter data
     param_samples = np.loadtxt(param_data)
+    param_samples_mcmc = np.loadtxt(os.path.join(out_dir, "mcmc"))
 
-    true_params = [1000, -21.0, 0.05]
+    true_params = [1.0, -21.0, 0.05]
+    param_names = ['Pre-exp. Factor', 'Ads. Energy', 'Noise s.d. Ratio']
+    units = ['[kPa]', r'[kJ$\cdot$mol$^{-1}$]', '[ ]']
 
+    param_samples[:,0] = param_samples[:,0] / 1000
     param_samples[:,1] = param_samples[:,1] / 1000
+    param_samples_mcmc[:,0] = param_samples_mcmc[:,0] / 1000
+    param_samples_mcmc[:,1] = param_samples_mcmc[:,1] / 1000
 
     # Number of parameters
     num_params = param_samples.shape[1]
 
     # Create figure
-    fig, axes = plt.subplots(num_params, num_params, figsize=(3.5*num_params, 3.5*num_params))
+    fig, axes = plt.subplots(num_params, num_params, figsize=(4*num_params, 4*num_params))
 
     # Loop through each pair of parameters
     for i in range(num_params):
@@ -43,15 +48,15 @@ def plot_pairwise(param_data, out_dir, out_info, fig_format='png'):
 
             if i == j:
                 # Diagonal: Marginal KDE
-                kde = gaussian_kde(param_samples[:, i])
-                x = np.linspace(param_samples[:, i].min(), param_samples[:, i].max(), 100)
-                ax.hist(param_samples[:, i], density = True, edgecolor = 'k', alpha = 0.5, label = "FA-VI")
+                kde = gaussian_kde(param_samples_mcmc[:, i])
+                x = np.linspace(param_samples_mcmc[:, i].min(), param_samples_mcmc[:, i].max(), 100)
+                ax.hist(param_samples_mcmc[:, i], density = True, edgecolor = 'k', alpha = 0.5, label = "FA-VI")
                 ax.plot(x, kde(x), 'r-', label = "MH MCMC")
                 ax.axvline(true_params[i], color = "limegreen", label = "True")
 
                 # X-label only on the last row
                 if i == num_params - 1:
-                    ax.set_xlabel(f"$z_{i+1}$")
+                    ax.set_xlabel(param_names[i]+f", $z_{i+1}$ {units[i]}")
                 else:
                     ax.set_xticklabels([])
 
@@ -81,7 +86,7 @@ def plot_pairwise(param_data, out_dir, out_info, fig_format='png'):
 
                 # Add y-labels **only in the first column**
                 if j == 0:
-                    ax.set_ylabel(f"$z_{i+1}$")
+                    ax.set_ylabel(param_names[i]+f", $z_{i+1}$ {units[i]}")
                     if i==1:
                       ax.legend()
                 else:
@@ -89,7 +94,7 @@ def plot_pairwise(param_data, out_dir, out_info, fig_format='png'):
 
                 # Add x-labels **only in the last row**
                 if i == num_params - 1:
-                    ax.set_xlabel(f"$z_{j+1}$")
+                    ax.set_xlabel(param_names[j]+f", $z_{j+1}$ {units[j]}")
                 else:
                     ax.set_xticklabels([])
             
